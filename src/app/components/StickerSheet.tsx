@@ -127,13 +127,13 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
           ))}
         </div>
 
-        {/* 選択されたシールの近くにエディター表示（デスクトップのみ） */}
+        {/* 選択されたシールの近くにエディター表示 */}
         {selectedSticker && onUpdateStickerWithHistory && (
           <div
-            className="hidden lg:block absolute z-50"
+            className="absolute z-50 w-48 lg:w-auto"
             style={{
-              left: `${Math.min(Math.max(selectedSticker.x + 60, 200), 400)}px`,
-              top: `${Math.max(selectedSticker.y - 80, 20)}px`,
+              left: `${Math.min(Math.max(selectedSticker.x + 50, 60), 280)}px`,
+              top: `${Math.max(selectedSticker.y - 60, 20)}px`,
             }}
           >
             <StickerEditor

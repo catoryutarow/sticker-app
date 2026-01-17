@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { StickerSheet } from '@/app/components/StickerSheet';
 import { StickerPalette } from '@/app/components/StickerPalette';
 import { ControlPanel } from '@/app/components/ControlPanel';
-import { StickerEditor } from '@/app/components/StickerEditor';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { Menu, X } from 'lucide-react';
 
@@ -243,18 +242,6 @@ export function StickerAlbum() {
           />
         </div>
       </div>
-
-      {/* モバイル用: 選択されたシールの編集UI（コントロールパネルの上） */}
-      {selectedStickerId && stickers.find(s => s.id === selectedStickerId) && (
-        <div className="lg:hidden fixed bottom-24 left-0 right-0 z-50">
-          <StickerEditor
-            sticker={stickers.find(s => s.id === selectedStickerId)!}
-            onUpdate={handleUpdateSticker}
-            onPreview={handleUpdateStickerPreview}
-            onClose={handleDeselectSticker}
-          />
-        </div>
-      )}
 
       {/* モバイル用フッター固定コントロールパネル */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pb-safe">

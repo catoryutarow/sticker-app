@@ -58,8 +58,8 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose }: Sticker
 
   return (
     <div className="mb-4 lg:mb-6">
-      <div 
-        className="relative rounded-none lg:rounded-lg shadow-xl overflow-hidden"
+      <div
+        className="relative rounded-lg shadow-xl overflow-hidden"
         style={{
           background: '#fef3c7',
         }}
@@ -93,7 +93,7 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose }: Sticker
                 max="180"
                 value={rotation}
                 onChange={handleRotationChange}
-                className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                className="w-full h-3 lg:h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
                 style={{
                   background: `linear-gradient(to right, #fcd34d 0%, #fb7185 50%, #fcd34d 100%)`,
                 }}
@@ -118,7 +118,7 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose }: Sticker
                 step="0.1"
                 value={scale}
                 onChange={handleScaleChange}
-                className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                className="w-full h-3 lg:h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
                 style={{
                   background: `linear-gradient(to right, #fcd34d 0%, #a855f7 50%, #fcd34d 100%)`,
                 }}
