@@ -9,7 +9,7 @@ export default function App() {
   return (
     <DndProvider
       backend={isTouchDevice ? TouchBackend : HTML5Backend}
-      options={isTouchDevice ? { delayTouchStart: 150 } : undefined}
+      options={isTouchDevice ? { delayTouchStart: 80 } : undefined}
     >
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-4 lg:p-8 pb-32 lg:pb-8">
         <StickerAlbum />
