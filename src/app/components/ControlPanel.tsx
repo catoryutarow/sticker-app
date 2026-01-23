@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Undo2, Redo2, Save, FolderOpen, RotateCcw, Download } from 'lucide-react';
+import { Undo2, Redo2, RotateCcw, Download } from 'lucide-react';
 import { AudioControls } from './AudioControls';
 import { StickerType } from '../../audio';
 
@@ -8,8 +8,8 @@ interface ControlPanelProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onSave: () => void;
-  onLoad: () => void;
+  onSave?: () => void;  // 一時的に非表示
+  onLoad?: () => void;  // 一時的に非表示
   onClear: () => void;
   // Audio props
   isPlaying: boolean;
@@ -28,8 +28,8 @@ export function ControlPanel({
   canRedo,
   onUndo,
   onRedo,
-  onSave,
-  onLoad,
+  // onSave,  // 一時的に非表示
+  // onLoad,  // 一時的に非表示
   onClear,
   // Audio props
   isPlaying,
@@ -148,30 +148,6 @@ export function ControlPanel({
                 onToggle={onAudioToggle}
                 onInitialize={onAudioInitialize}
               />
-
-              {/* 区切り */}
-              <div className="w-px h-8 bg-gray-400"></div>
-
-              {/* 保存/読込 */}
-              <div className="flex gap-2">
-                <button
-                  onClick={onSave}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
-                  title="保存"
-                >
-                  <Save className="w-5 h-5" />
-                  <span className="hidden sm:inline">保存</span>
-                </button>
-
-                <button
-                  onClick={onLoad}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
-                  title="読込"
-                >
-                  <FolderOpen className="w-5 h-5" />
-                  <span className="hidden sm:inline">読込</span>
-                </button>
-              </div>
 
               {/* 区切り */}
               <div className="w-px h-8 bg-gray-400"></div>

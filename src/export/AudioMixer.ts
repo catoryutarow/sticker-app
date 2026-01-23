@@ -2,7 +2,7 @@
  * AudioMixer.ts - オフライン音声ミキシング
  *
  * OfflineAudioContextを使用して、エクスポート用の音声をレンダリング
- * シールの状態（位置、サイズ、回転）に応じたエフェクトを適用
+ * シールの状態（位置、サイズ、回転、ピッチ）に応じたエフェクトを適用
  */
 
 import { LOOP_DURATION } from '../audio/AudioEngine';
@@ -14,8 +14,10 @@ import { Sticker } from '../app/components/StickerAlbum';
 const BASE_VOLUME = 0.3;
 const SCALE_VOLUME_MULTIPLIER = 0.5;
 const MAX_ROTATION_EFFECT = 45;
-const SATURATION_THRESHOLD = 2.0;
-const MAX_SATURATION = 0.6;
+
+// ピッチシフト用の設定
+const PITCH_SHIFT_GRAIN_SIZE = 0.1; // グレインサイズ（秒）
+const PITCH_SHIFT_OVERLAP = 0.5; // オーバーラップ率
 
 export interface AudioMixerOptions {
   duration: number; // 秒
@@ -28,11 +30,105 @@ export class AudioMixer {
   private sampleRate: number;
   private sheetWidth: number;
   private audioBufferCache: Map<string, AudioBuffer> = new Map();
+  private pitchShiftedCache: Map<string, AudioBuffer> = new Map();
 
   constructor(options: AudioMixerOptions) {
     this.duration = options.duration;
     this.sampleRate = options.sampleRate || 44100;
     this.sheetWidth = options.sheetWidth || 800;
+  }
+
+  /**
+   * ピッチシフトを適用したAudioBufferを作成
+   * グレインベースのピッチシフト（PSOLA風）
+   */
+  private applyPitchShift(
+    buffer: AudioBuffer,
+    semitones: number,
+    context: OfflineAudioContext
+  ): AudioBuffer {
+    if (semitones === 0) return buffer;
+
+    // ピッチ比率を計算（半音 = 2^(1/12)）
+    const pitchRatio = Math.pow(2, semitones / 12);
+
+    const numChannels = buffer.numberOfChannels;
+    const originalLength = buffer.length;
+    const sampleRate = buffer.sampleRate;
+
+    // 出力の長さは同じ（テンポを維持）
+    const outputLength = originalLength;
+    const outputBuffer = context.createBuffer(numChannels, outputLength, sampleRate);
+
+    // グレインサイズ（サンプル数）
+    const grainSize = Math.floor(sampleRate * PITCH_SHIFT_GRAIN_SIZE);
+    const hopSize = Math.floor(grainSize * (1 - PITCH_SHIFT_OVERLAP));
+
+    // ハニング窓を作成
+    const window = new Float32Array(grainSize);
+    for (let i = 0; i < grainSize; i++) {
+      window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (grainSize - 1)));
+    }
+
+    for (let channel = 0; channel < numChannels; channel++) {
+      const inputData = buffer.getChannelData(channel);
+      const outputData = outputBuffer.getChannelData(channel);
+
+      // 出力バッファをゼロで初期化
+      outputData.fill(0);
+
+      // グレインごとに処理
+      let outputPos = 0;
+      let inputPos = 0;
+
+      while (outputPos < outputLength - grainSize) {
+        // 入力位置を計算（ピッチ比率に応じて進む）
+        const readPos = Math.floor(inputPos);
+
+        // グレインを抽出してリサンプル
+        for (let i = 0; i < grainSize; i++) {
+          // 入力からの読み取り位置（ピッチ比率でスケール）
+          const srcPos = readPos + i * pitchRatio;
+          const srcIndex = Math.floor(srcPos);
+          const frac = srcPos - srcIndex;
+
+          // 線形補間
+          let sample = 0;
+          if (srcIndex >= 0 && srcIndex < originalLength - 1) {
+            sample = inputData[srcIndex] * (1 - frac) + inputData[srcIndex + 1] * frac;
+          } else if (srcIndex >= 0 && srcIndex < originalLength) {
+            sample = inputData[srcIndex];
+          }
+
+          // 窓関数を適用してオーバーラップ加算
+          outputData[outputPos + i] += sample * window[i];
+        }
+
+        // 次のグレインへ
+        outputPos += hopSize;
+        inputPos += hopSize;
+
+        // 入力がループする場合
+        if (inputPos >= originalLength) {
+          inputPos = inputPos % originalLength;
+        }
+      }
+
+      // 正規化（オーバーラップによる振幅増加を補正）
+      const normFactor = hopSize / grainSize * 2;
+      for (let i = 0; i < outputLength; i++) {
+        outputData[i] *= normFactor;
+      }
+    }
+
+    return outputBuffer;
+  }
+
+  /**
+   * ピッチシフト済みバッファのキャッシュキーを生成
+   */
+  private getPitchCacheKey(type: string, pitch: number): string {
+    return `${type}_pitch_${pitch}`;
   }
 
   /**
@@ -102,41 +198,6 @@ export class AudioMixer {
   }
 
   /**
-   * 合計音量からサチュレーション量を計算
-   */
-  private calculateSaturationAmount(stickers: Sticker[]): number {
-    let total = 0;
-    for (const sticker of stickers) {
-      if (isStickerType(sticker.type)) {
-        total += this.calculateStickerVolume(sticker);
-      }
-    }
-
-    if (total > SATURATION_THRESHOLD) {
-      const excess = total - SATURATION_THRESHOLD;
-      return Math.min(excess / (SATURATION_THRESHOLD * 2), 1) * MAX_SATURATION;
-    }
-    return 0;
-  }
-
-  /**
-   * ディストーションカーブを生成
-   */
-  private makeDistortionCurve(amount: number): Float32Array {
-    const samples = 44100;
-    const curve = new Float32Array(samples);
-    const deg = Math.PI / 180;
-    const k = amount * 100;
-
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1;
-      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-    }
-
-    return curve;
-  }
-
-  /**
    * フェイザーエフェクトを適用するためのフィルターチェーンを作成
    * （簡易版：オールパスフィルターを使用）
    */
@@ -201,15 +262,7 @@ export class AudioMixer {
     const masterGain = offlineContext.createGain();
     masterGain.gain.value = masterVolume;
 
-    // サチュレーション/ディストーション
-    const saturationAmount = this.calculateSaturationAmount(stickers);
-    const distortion = offlineContext.createWaveShaper();
-    if (saturationAmount > 0.01) {
-      distortion.curve = this.makeDistortionCurve(saturationAmount);
-      distortion.oversample = '2x';
-    }
-
-    // コンプレッサー
+    // コンプレッサー（自然なピーク制御）
     const compressor = offlineContext.createDynamicsCompressor();
     compressor.threshold.value = -24;
     compressor.knee.value = 30;
@@ -217,21 +270,30 @@ export class AudioMixer {
     compressor.attack.value = 0.003;
     compressor.release.value = 0.25;
 
-    // マスターチェーン接続
-    if (saturationAmount > 0.01) {
-      masterGain.connect(distortion);
-      distortion.connect(compressor);
-    } else {
-      masterGain.connect(compressor);
-    }
+    // マスターチェーン接続: masterGain -> compressor -> destination
+    masterGain.connect(compressor);
     compressor.connect(offlineContext.destination);
 
     // 各シールごとにトラックを作成
     for (const sticker of stickers) {
       if (!isStickerType(sticker.type)) continue;
 
-      const buffer = await this.loadAudioFile(sticker.type, offlineContext);
+      let buffer = await this.loadAudioFile(sticker.type, offlineContext);
       if (!buffer) continue;
+
+      // ピッチシフトが必要な場合
+      const pitch = sticker.pitch ?? 0;
+      if (pitch !== 0) {
+        const cacheKey = this.getPitchCacheKey(sticker.type, pitch);
+        let pitchShiftedBuffer = this.pitchShiftedCache.get(cacheKey);
+
+        if (!pitchShiftedBuffer) {
+          pitchShiftedBuffer = this.applyPitchShift(buffer, pitch, offlineContext);
+          this.pitchShiftedCache.set(cacheKey, pitchShiftedBuffer);
+        }
+
+        buffer = pitchShiftedBuffer;
+      }
 
       // 各シールのパラメータを計算
       const volume = this.calculateStickerVolume(sticker);
@@ -344,6 +406,7 @@ export class AudioMixer {
    */
   clearCache(): void {
     this.audioBufferCache.clear();
+    this.pitchShiftedCache.clear();
   }
 }
 

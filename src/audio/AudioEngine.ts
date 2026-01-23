@@ -24,13 +24,6 @@ const LOOP_DURATION = SECONDS_PER_MEASURE * MEASURES_PER_LOOP; // 16秒
 const BASE_VOLUME = 0.3; // 基本音量
 const SCALE_VOLUME_MULTIPLIER = 0.5; // スケールによる音量増加係数
 const MAX_ROTATION_EFFECT = 45; // この角度で最大エフェクト
-const SATURATION_THRESHOLD = 2.0; // サチュレーション開始の総音量閾値
-const MAX_SATURATION = 0.6; // 最大サチュレーション量
-
-// 種類数に基づくゲイン調整
-const TYPE_THRESHOLD = 2; // この種類数までは100%音量
-const GAIN_REDUCTION_PER_TYPE = 0.15; // 閾値を超えた種類ごとの音量減少率
-const MIN_TYPE_GAIN = 0.4; // 最小ゲイン（これ以下には下がらない）
 
 export interface StickerState {
   id: string;
@@ -39,6 +32,7 @@ export interface StickerState {
   y: number;
   rotation: number;
   scale: number;
+  pitch: number; // semitones (-6 to +6)
 }
 
 interface TrackNode {
@@ -46,6 +40,7 @@ interface TrackNode {
   gain: Tone.Gain;
   panner: Tone.Panner;
   phaser: Tone.Phaser;
+  pitchShift: Tone.PitchShift;
   stickerId: string;
 }
 
@@ -78,8 +73,6 @@ class AudioEngine {
   private isInitialized: boolean = false;
   private masterVolume: number = 1.0;
   private totalVolume: number = 0;
-  private saturationAmount: number = 0;
-  private typeGain: number = 1.0; // 種類数に基づくゲイン調整値
   private sheetWidth: number = 800; // デフォルト台紙幅（後で更新可能）
 
   private stateChangeCallbacks: Set<StateChangeCallback> = new Set();
@@ -221,14 +214,22 @@ class AudioEngine {
       wet: effectIntensity * 0.6, // 0 ~ 0.6
     });
 
-    // チェーン接続: player -> gain -> phaser -> panner -> masterGain
-    player.chain(gain, phaser, panner, this.masterGain);
+    // ピッチシフト（テンポを変えずに音程を変更）
+    const pitchShift = new Tone.PitchShift({
+      pitch: sticker.pitch || 0, // semitones
+      windowSize: 0.1,
+      delayTime: 0,
+    });
+
+    // チェーン接続: player -> gain -> pitchShift -> phaser -> panner -> masterGain
+    player.chain(gain, pitchShift, phaser, panner, this.masterGain);
 
     return {
       player,
       gain,
       panner,
       phaser,
+      pitchShift,
       stickerId: sticker.id,
     };
   }
@@ -307,48 +308,28 @@ class AudioEngine {
       wet: effectIntensity * 0.6,
     });
 
+    // ピッチを更新
+    trackNode.pitchShift.pitch = sticker.pitch || 0;
+
     // 状態を保存
     this.stickerStates.set(sticker.id, sticker);
   }
 
   /**
-   * 合計音量とサチュレーションを更新
+   * 合計音量を更新（シンプルな加算方式）
+   * コンプレッサー/リミッターが自然にピーク制御を行う
    */
   private updateMasterEffects(): void {
-    // 合計音量を計算
+    // 合計音量を計算（参考値として保持）
     let total = 0;
     for (const state of this.stickerStates.values()) {
       total += this.calculateStickerVolume(state);
     }
     this.totalVolume = total;
 
-    // アクティブな種類数を計算
-    const activeTypeCount = this.stickerCounts.size;
-
-    // 種類数に基づくゲイン調整
-    this.typeGain = 1.0;
-    if (activeTypeCount > TYPE_THRESHOLD) {
-      const excessTypes = activeTypeCount - TYPE_THRESHOLD;
-      this.typeGain = Math.max(MIN_TYPE_GAIN, 1.0 - excessTypes * GAIN_REDUCTION_PER_TYPE);
-    }
-
-    // サチュレーション量を計算（種類数で調整した音量に基づく）
-    const adjustedTotal = total * this.typeGain;
-    if (adjustedTotal > SATURATION_THRESHOLD) {
-      const excess = adjustedTotal - SATURATION_THRESHOLD;
-      this.saturationAmount = Math.min(excess / (SATURATION_THRESHOLD * 2), 1) * MAX_SATURATION;
-    } else {
-      this.saturationAmount = 0;
-    }
-
-    // マスターゲインを更新（種類数に基づく調整 × ユーザー設定音量）
+    // マスターゲインはユーザー設定音量のみ（自動減衰なし）
     if (this.masterGain) {
-      this.masterGain.gain.rampTo(this.masterVolume * this.typeGain, 0.1);
-    }
-
-    // マスターディストーションを更新
-    if (this.masterDistortion) {
-      this.masterDistortion.distortion = this.saturationAmount;
+      this.masterGain.gain.rampTo(this.masterVolume, 0.1);
     }
 
     this.notifyStateChange();
@@ -499,6 +480,12 @@ class AudioEngine {
     } catch {
       // Ignore dispose errors
     }
+
+    try {
+      trackNode.pitchShift.dispose();
+    } catch {
+      // Ignore dispose errors
+    }
   }
 
   /**
@@ -518,8 +505,7 @@ class AudioEngine {
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
     if (this.masterGain) {
-      // 種類数に基づくゲイン調整も適用
-      this.masterGain.gain.rampTo(this.masterVolume * this.typeGain, 0.1);
+      this.masterGain.gain.rampTo(this.masterVolume, 0.1);
     }
     this.notifyStateChange();
   }
@@ -534,7 +520,7 @@ class AudioEngine {
       masterVolume: this.masterVolume,
       activeTracks: new Map(this.stickerCounts),
       totalVolume: this.totalVolume,
-      saturationAmount: this.saturationAmount,
+      saturationAmount: 0, // サチュレーションは無効化（コンプレッサー/リミッターで保護）
     };
   }
 
@@ -575,10 +561,10 @@ class AudioEngine {
   }
 
   /**
-   * 現在のサチュレーション量を取得
+   * 現在のサチュレーション量を取得（無効化済み、常に0を返す）
    */
   getSaturationAmount(): number {
-    return this.saturationAmount;
+    return 0;
   }
 
   /**

@@ -2,9 +2,11 @@ import { useDrop } from 'react-dnd';
 import type { Sticker } from '@/app/components/StickerAlbum';
 import { PlacedSticker } from '@/app/components/PlacedSticker';
 import { StickerEditor } from '@/app/components/StickerEditor';
+import { getBackgroundImagePath } from '../../config/backgroundConfig';
 
 interface StickerSheetProps {
   stickers: Sticker[];
+  backgroundId?: string;
   onAddSticker: (type: string, x: number, y: number, size?: number, rotation?: number, paletteId?: string) => void;
   onSelectSticker?: (id: string) => void;
   onDeselectSticker?: () => void;
@@ -17,6 +19,7 @@ interface StickerSheetProps {
 
 export function StickerSheet({
   stickers,
+  backgroundId = 'default',
   onAddSticker,
   onSelectSticker,
   onDeselectSticker,
@@ -26,6 +29,7 @@ export function StickerSheet({
   onDeleteSticker,
   selectedStickerId,
 }: StickerSheetProps) {
+  const backgroundImagePath = getBackgroundImagePath(backgroundId);
   const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
   const [{ isOver }, drop] = useDrop(
     () => ({
@@ -79,7 +83,7 @@ export function StickerSheet({
         }`}
         style={{
           minHeight: '800px',
-          backgroundImage: 'url(/backgrounds/AdobeStock_584852960.jpeg)',
+          backgroundImage: `url(${backgroundImagePath})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backdropFilter: 'blur(10px)',

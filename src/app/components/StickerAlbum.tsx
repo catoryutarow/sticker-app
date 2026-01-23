@@ -4,8 +4,11 @@ import { StickerPalette, removeStickerFromPalette, addStickerToPalette, removeSt
 import { ControlPanel } from '@/app/components/ControlPanel';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
+import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
+import { ThreeBackground } from '@/app/components/ThreeBackground';
 import { Menu, X } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
+import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
 
 export interface Sticker {
   id: string;
@@ -14,6 +17,7 @@ export interface Sticker {
   y: number;
   rotation: number;
   scale: number;
+  pitch: number; // 音程調整 (-6 to +6 semitones)
   paletteId?: string; // 元のパレットアイテムID（Undo/Redo用）
 }
 
@@ -25,6 +29,7 @@ export function StickerAlbum() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
 
   // Ref for StickerSheet DOM element
   const stickerSheetRef = useRef<HTMLDivElement>(null);
@@ -76,6 +81,7 @@ export function StickerAlbum() {
         y,
         rotation: rotation ?? (Math.random() * 10 - 5),
         scale,
+        pitch: 0, // 音程調整のデフォルト値
         paletteId, // Undo/Redo用に元のパレットIDを保存
       };
       const newStickers = [...stickers, newSticker];
@@ -254,9 +260,12 @@ export function StickerAlbum() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Three.js 背景アニメーション */}
+      <ThreeBackground isPlaying={isPlaying} />
+
       <header className="mb-4 lg:mb-8 text-center">
         <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-2">
-          My Sticker Album
+          シール帳
         </h1>
         <p className="text-sm lg:text-base text-gray-600">ドラッグ＆ドロップでシールを貼ろう</p>
       </header>
@@ -324,8 +333,13 @@ export function StickerAlbum() {
 
         {/* 台紙エリア */}
         <div className="lg:col-span-3" ref={stickerSheetRef}>
+          <BackgroundSwitcher
+            currentBackgroundId={backgroundId}
+            onBackgroundChange={setBackgroundId}
+          />
           <StickerSheet
             stickers={stickers}
+            backgroundId={backgroundId}
             onAddSticker={handleAddSticker}
             onSelectSticker={handleSelectSticker}
             onDeselectSticker={handleDeselectSticker}
@@ -370,6 +384,7 @@ export function StickerAlbum() {
         onClose={handleExportClose}
         stickers={stickers}
         stickerSheetRef={stickerSheetRef}
+        backgroundId={backgroundId}
       />
     </div>
   );

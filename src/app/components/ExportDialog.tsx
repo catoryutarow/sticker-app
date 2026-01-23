@@ -22,11 +22,12 @@ interface ExportDialogProps {
   onClose: () => void;
   stickers: Sticker[];
   stickerSheetRef: RefObject<HTMLDivElement | null>;
+  backgroundId?: string;
 }
 
 type ExportPhase = 'idle' | 'exporting' | 'complete' | 'error';
 
-export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef }: ExportDialogProps) {
+export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backgroundId = 'default' }: ExportDialogProps) {
   // Export settings
   const [greenScreen, setGreenScreen] = useState(false);
   const [includeAudio, setIncludeAudio] = useState(true);
@@ -64,6 +65,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef }: Exp
         greenScreen,
         includeAudio,
         masterVolume: 0.7,
+        backgroundId,
       });
 
       exporter.onProgress((p) => {

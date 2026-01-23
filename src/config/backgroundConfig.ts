@@ -29,6 +29,12 @@ export const BACKGROUNDS: BackgroundDefinition[] = [
     nameJa: 'パネル',
     filename: 'panel.jpg',
   },
+  {
+    id: 'p0436',
+    name: 'P0436',
+    nameJa: 'P0436',
+    filename: 'p0436_m.jpeg',
+  },
 ];
 
 /**

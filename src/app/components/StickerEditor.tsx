@@ -1,4 +1,4 @@
-import { RotateCw, ZoomIn, Check, Undo2 } from 'lucide-react';
+import { RotateCw, ZoomIn, Check, Undo2, Music } from 'lucide-react';
 import type { Sticker } from '@/app/components/StickerAlbum';
 import { useState, useEffect, useRef } from 'react';
 import { addStickerToPalette } from './StickerPalette';
@@ -15,13 +15,15 @@ interface StickerEditorProps {
 export function StickerEditor({ sticker, onUpdate, onPreview, onClose, onDelete }: StickerEditorProps) {
   const [rotation, setRotation] = useState(sticker.rotation);
   const [scale, setScale] = useState(sticker.scale);
+  const [pitch, setPitch] = useState(sticker.pitch ?? 0);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // stickerが変わったら内部stateを更新
   useEffect(() => {
     setRotation(sticker.rotation);
     setScale(sticker.scale);
-  }, [sticker.id, sticker.rotation, sticker.scale]);
+    setPitch(sticker.pitch ?? 0);
+  }, [sticker.id, sticker.rotation, sticker.scale, sticker.pitch]);
 
   const handleRotationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newRotation = Number(e.target.value);
@@ -44,18 +46,36 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose, onDelete 
   const handleScaleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newScale = Number(e.target.value);
     setScale(newScale);
-    
+
     // 即座にプレビューを更新（履歴には残さない）
     if (onPreview) {
       onPreview(sticker.id, { scale: newScale });
     }
-    
+
     // デバウンス: 500ms後に履歴に反映
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     updateTimeoutRef.current = setTimeout(() => {
       onUpdate(sticker.id, { scale: newScale });
+    }, 500);
+  };
+
+  const handlePitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPitch = Number(e.target.value);
+    setPitch(newPitch);
+
+    // 即座にプレビューを更新（履歴には残さない）
+    if (onPreview) {
+      onPreview(sticker.id, { pitch: newPitch });
+    }
+
+    // デバウンス: 500ms後に履歴に反映
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    updateTimeoutRef.current = setTimeout(() => {
+      onUpdate(sticker.id, { pitch: newPitch });
     }, 500);
   };
 
@@ -185,6 +205,31 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose, onDelete 
                 step="0.1"
                 value={scale}
                 onChange={handleScaleChange}
+                className="w-full h-3 lg:h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-gray-800"
+                style={{
+                  background: `linear-gradient(to right, #d1d5db 0%, #374151 50%, #d1d5db 100%)`,
+                }}
+              />
+            </div>
+
+            {/* キー調整 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                  <Music className="w-4 h-4" />
+                  キー
+                </label>
+                <span className="text-sm font-mono text-gray-700 bg-white px-2 py-1 rounded">
+                  {pitch > 0 ? `+${pitch}` : pitch}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-6"
+                max="6"
+                step="1"
+                value={pitch}
+                onChange={handlePitchChange}
                 className="w-full h-3 lg:h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-gray-800"
                 style={{
                   background: `linear-gradient(to right, #d1d5db 0%, #374151 50%, #d1d5db 100%)`,
