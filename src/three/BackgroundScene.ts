@@ -52,8 +52,8 @@ export class BackgroundScene {
     this.frequencyBoost = [];
     for (let i = 0; i < this.barCount; i++) {
       const t = i / this.barCount;
-      // 低音を強め、高音を弱める曲線
-      this.frequencyBoost.push(2.5 - t * 1.8);
+      // フラットに近い曲線（低音のブーストを抑える）
+      this.frequencyBoost.push(1.2 - t * 0.4);
     }
 
     // グループで全体を回転
@@ -126,8 +126,8 @@ export class BackgroundScene {
       // ブースト適用
       value *= this.frequencyBoost[i];
 
-      // 派手な非線形マッピング
-      value = Math.pow(value, 0.6) * 2.0;
+      // 非線形マッピング（控えめに）
+      value = Math.pow(value, 0.8) * 1.3;
       value = Math.min(value, 1.0);
 
       // スムージング（上昇速い、下降遅い）
