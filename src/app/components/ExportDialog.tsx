@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Progress } from './ui/progress';
-import { Download, Video, Volume2, VolumeX, Loader2, Check, X, Share, Copy, ExternalLink } from 'lucide-react';
+import { Video, Loader2, Check, X, Share, Copy, ExternalLink } from 'lucide-react';
 import { VideoExporter, ExportProgress } from '../../export';
 import { Sticker } from './StickerAlbum';
 import { LOOP_DURATION } from '../../audio';
@@ -138,37 +138,13 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               </select>
             </div>
 
-            {/* 音声設定 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {includeAudio ? (
-                  <Volume2 className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-gray-400" />
-                )}
-                <span className="text-sm font-medium">音声を含める</span>
-              </div>
-              <button
-                onClick={() => setIncludeAudio(!includeAudio)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  includeAudio ? 'bg-indigo-500' : 'bg-gray-200'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    includeAudio ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* グリーンバック設定 */}
+            {/* 合成用（グリーンバック）設定 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-5 h-5 rounded border ${greenScreen ? 'bg-green-500 border-green-600' : 'bg-gray-100 border-gray-300'}`}
                 />
-                <span className="text-sm font-medium">グリーンバック（クロマキー用）</span>
+                <span className="text-sm font-medium">合成用</span>
               </div>
               <button
                 onClick={() => setGreenScreen(!greenScreen)}
@@ -182,16 +158,6 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                   }`}
                 />
               </button>
-            </div>
-
-            {/* 情報 */}
-            <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
-              <p>
-                シール数: <strong>{stickers.length}</strong>
-              </p>
-              <p>
-                出力形式: <strong>MP4</strong> (H.264)
-              </p>
             </div>
           </div>
         )}
