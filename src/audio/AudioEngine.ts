@@ -340,9 +340,20 @@ class AudioEngine {
 
   /**
    * 台紙の幅を設定（パンニング計算用）
+   * 幅が変わったら全トラックのパンを再計算
    */
   setSheetWidth(width: number): void {
+    if (this.sheetWidth === width) return;
     this.sheetWidth = width;
+
+    // 全トラックのパンを再計算
+    for (const [stickerId, trackNode] of this.trackNodes.entries()) {
+      const sticker = this.stickerStates.get(stickerId);
+      if (sticker) {
+        const panValue = this.calculatePanValue(sticker);
+        trackNode.panner.pan.rampTo(panValue, 0.1);
+      }
+    }
   }
 
   /**
