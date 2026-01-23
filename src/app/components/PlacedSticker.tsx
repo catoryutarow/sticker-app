@@ -11,19 +11,21 @@ interface PlacedStickerProps {
 }
 
 export function PlacedSticker({ sticker, isSelected, onSelect }: PlacedStickerProps) {
-  const [{ isDragging }, drag, preview] = useDrag(() => ({
-    type: 'placed-sticker',
-    item: { 
-      id: sticker.id, 
-      type: sticker.type, 
-      imageUrl: sticker.imageUrl,
-      rotation: sticker.rotation,
-      scale: sticker.scale,
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+  const [{ isDragging }, drag, preview] = useDrag(
+    () => ({
+      type: 'placed-sticker',
+      item: {
+        id: sticker.id,
+        type: sticker.type,
+        rotation: sticker.rotation,
+        scale: sticker.scale,
+      },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
     }),
-  }), [sticker.id, sticker.type, sticker.imageUrl, sticker.rotation, sticker.scale]);
+    [sticker.id, sticker.type, sticker.rotation, sticker.scale]
+  );
 
   // デフォルトのドラッグプレビューを無効化
   useEffect(() => {
@@ -38,33 +40,31 @@ export function PlacedSticker({ sticker, isSelected, onSelect }: PlacedStickerPr
         left: `${sticker.x}px`,
         top: `${sticker.y}px`,
         transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
-        filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.2))',
+        // リアルなシール影: 台紙に密着した柔らかい影
+        filter: `
+          drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15))
+          drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1))
+          drop-shadow(0 0 1px rgba(0, 0, 0, 0.08))
+        `,
       }}
       onClick={(e) => {
         e.stopPropagation();
         onSelect?.(sticker.id);
       }}
     >
-      {/* 選択時の枠 */}
+      {/* 選択時のハイライト - 控えめなグロー効果 */}
       {isSelected && (
-        <div className="absolute inset-0 -m-2 border-3 border-blue-500 rounded-lg pointer-events-none animate-pulse"
+        <div
+          className="absolute inset-0 -m-1 rounded-full pointer-events-none"
           style={{
-            boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.3)',
+            boxShadow: '0 0 8px 2px rgba(59, 130, 246, 0.4)',
           }}
         />
       )}
-      
-      {sticker.imageUrl ? (
-        <img 
-          src={sticker.imageUrl} 
-          alt="Sticker" 
-          className="w-[80px] h-[80px] object-contain pointer-events-none"
-        />
-      ) : (
-        <div className="pointer-events-none">
-          <StickerShape type={sticker.type} size={80} />
-        </div>
-      )}
+
+      <div className="pointer-events-none">
+        <StickerShape type={sticker.type} size={80} />
+      </div>
     </div>
   );
 }

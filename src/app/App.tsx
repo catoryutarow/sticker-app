@@ -11,7 +11,15 @@ export default function App() {
       backend={isTouchDevice ? TouchBackend : HTML5Backend}
       options={isTouchDevice ? { delayTouchStart: 80 } : undefined}
     >
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-4 lg:p-8 pb-32 lg:pb-8">
+      <div
+        className="min-h-screen p-4 lg:p-8 pb-32 lg:pb-8"
+        style={{
+          backgroundImage: 'url(/page-backgrounds/background.png), linear-gradient(to bottom right, #fffbeb, #fff7ed, #fff1f2)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
         <StickerAlbum />
       </div>
     </DndProvider>

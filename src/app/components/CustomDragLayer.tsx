@@ -17,7 +17,7 @@ export function CustomDragLayer() {
     // 配置済みシールの場合は角度を保持、サイズは統一
     if (itemType === 'placed-sticker') {
       const rotation = item.rotation || 0;
-      
+
       return (
         <div
           style={{
@@ -26,41 +26,29 @@ export function CustomDragLayer() {
             opacity: 0.8,
           }}
         >
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt="Sticker" 
-              className="w-[80px] h-[80px] object-contain pointer-events-none"
-            />
-          ) : (
-            <div className="pointer-events-none">
-              <StickerShape type={item.type} size={80} />
-            </div>
-          )}
+          <div className="pointer-events-none">
+            <StickerShape type={item.type} size={80} />
+          </div>
         </div>
       );
     }
 
-    // パレットからの新規シールの場合は通常表示
+    // パレットからの新規シールの場合（角度とサイズを引き継ぐ）
     if (itemType === 'sticker') {
+      const rotation = item.rotation || 0;
+      const size = item.size || 80;
+
       return (
         <div
           style={{
+            transform: `rotate(${rotation}deg)`,
             filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))',
             opacity: 0.8,
           }}
         >
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt="Sticker" 
-              className="w-[80px] h-[80px] object-contain pointer-events-none"
-            />
-          ) : (
-            <div className="pointer-events-none">
-              <StickerShape type={item.type} size={80} />
-            </div>
-          )}
+          <div className="pointer-events-none">
+            <StickerShape type={item.type} size={size} />
+          </div>
         </div>
       );
     }

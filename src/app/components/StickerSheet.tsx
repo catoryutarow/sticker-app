@@ -5,42 +5,56 @@ import { StickerEditor } from '@/app/components/StickerEditor';
 
 interface StickerSheetProps {
   stickers: Sticker[];
-  onAddSticker: (type: string, x: number, y: number, imageUrl?: string) => void;
+  onAddSticker: (type: string, x: number, y: number, size?: number, rotation?: number, paletteId?: string) => void;
   onSelectSticker?: (id: string) => void;
   onDeselectSticker?: () => void;
   onUpdateSticker?: (id: string, updates: Partial<Sticker>) => void;
   onUpdateStickerWithHistory?: (id: string, updates: Partial<Sticker>) => void;
   onMoveSticker?: (id: string, x: number, y: number) => void;
+  onDeleteSticker?: (id: string) => void;
   selectedStickerId?: string | null;
 }
 
-export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDeselectSticker, onUpdateSticker, onUpdateStickerWithHistory, selectedStickerId, onMoveSticker }: StickerSheetProps) {
-  const selectedSticker = stickers.find(s => s.id === selectedStickerId);
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ['sticker', 'placed-sticker'],
-    drop: (item: { type: string; imageUrl?: string; id?: string }, monitor) => {
-      const offset = monitor.getClientOffset();
-      const dropTargetRef = document.getElementById('sticker-sheet');
-      
-      if (offset && dropTargetRef) {
-        const rect = dropTargetRef.getBoundingClientRect();
-        const x = offset.x - rect.left;
-        const y = offset.y - rect.top;
-        
-        // 配置済みシールの移動か新規追加かを判定
-        if (monitor.getItemType() === 'placed-sticker' && item.id) {
-          // 既存シールの移動
-          onMoveSticker?.(item.id, x, y);
-        } else {
-          // 新しいシールのインスタンスを毎回作成
-          onAddSticker(item.type, x, y, item.imageUrl);
+export function StickerSheet({
+  stickers,
+  onAddSticker,
+  onSelectSticker,
+  onDeselectSticker,
+  onUpdateSticker,
+  onUpdateStickerWithHistory,
+  onMoveSticker,
+  onDeleteSticker,
+  selectedStickerId,
+}: StickerSheetProps) {
+  const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
+  const [{ isOver }, drop] = useDrop(
+    () => ({
+      accept: ['sticker', 'placed-sticker'],
+      drop: (item: { type: string; id?: string; size?: number; rotation?: number; paletteId?: string }, monitor) => {
+        const offset = monitor.getClientOffset();
+        const dropTargetRef = document.getElementById('sticker-sheet');
+
+        if (offset && dropTargetRef) {
+          const rect = dropTargetRef.getBoundingClientRect();
+          const x = offset.x - rect.left;
+          const y = offset.y - rect.top;
+
+          // 配置済みシールの移動か新規追加かを判定
+          if (monitor.getItemType() === 'placed-sticker' && item.id) {
+            // 既存シールの移動
+            onMoveSticker?.(item.id, x, y);
+          } else {
+            // 新しいシールのインスタンスを毎回作成（パレットのサイズと回転を引き継ぐ）
+            onAddSticker(item.type, x, y, item.size, item.rotation, item.paletteId);
+          }
         }
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+      }),
     }),
-  }), [onAddSticker, onMoveSticker]);
+    [onAddSticker, onMoveSticker]
+  );
 
   return (
     <div className="relative">
@@ -55,7 +69,7 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
           </div>
         ))}
       </div>
-      
+
       {/* メインの台紙 */}
       <div
         id="sticker-sheet"
@@ -65,7 +79,9 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
         }`}
         style={{
           minHeight: '800px',
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.85) 100%)',
+          backgroundImage: 'url(/backgrounds/AdobeStock_584852960.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           backdropFilter: 'blur(10px)',
           boxShadow: `
             0 8px 32px rgba(0, 0, 0, 0.1),
@@ -76,7 +92,7 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
         }}
       >
         {/* 透明感のある光沢表現 */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `
@@ -92,7 +108,7 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
         />
 
         {/* グリッドパターン（薄く） */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none opacity-20"
           style={{
             backgroundImage: `
@@ -105,8 +121,8 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
         {/* 穴あき部分の装飾 */}
         <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-around items-center py-12">
           {[...Array(8)].map((_, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="w-8 h-8 rounded-full bg-white shadow-inner"
               style={{
                 boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)',
@@ -132,9 +148,10 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
           <div
             className="absolute z-50 w-44 lg:w-auto"
             style={{
-              left: selectedSticker.x > 180
-                ? `${Math.max(selectedSticker.x - 200, 10)}px`
-                : `${Math.min(selectedSticker.x + 50, 200)}px`,
+              left:
+                selectedSticker.x > 180
+                  ? `${Math.max(selectedSticker.x - 200, 10)}px`
+                  : `${Math.min(selectedSticker.x + 50, 200)}px`,
               top: `${Math.max(selectedSticker.y - 40, 20)}px`,
             }}
           >
@@ -143,6 +160,7 @@ export function StickerSheet({ stickers, onAddSticker, onSelectSticker, onDesele
               onUpdate={onUpdateStickerWithHistory}
               onPreview={onUpdateSticker}
               onClose={onDeselectSticker}
+              onDelete={onDeleteSticker}
             />
           </div>
         )}

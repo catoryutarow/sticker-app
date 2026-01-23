@@ -5,22 +5,23 @@ import { getEmptyImage } from 'react-dnd-html5-backend';
 
 interface DraggableStickerProps {
   type: string;
-  imageUrl?: string;
+  size?: number;
+  rotation?: number;
+  paletteId?: string; // パレット内のシールID（有限シール用）
   onDragStart?: () => void;
 }
 
-export function DraggableSticker({ type, imageUrl, onDragStart }: DraggableStickerProps) {
-  const [{ isDragging }, drag, preview] = useDrag(() => ({
-    type: 'sticker',
-    item: { type, imageUrl },
-    end: (item, monitor) => {
-      // ドロップが成功しても、元のシールは残す
-      // 何もしない
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+export function DraggableSticker({ type, size = 80, rotation = 0, paletteId, onDragStart }: DraggableStickerProps) {
+  const [{ isDragging }, drag, preview] = useDrag(
+    () => ({
+      type: 'sticker',
+      item: { type, size, rotation, paletteId },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
     }),
-  }), [type, imageUrl]);
+    [type, size, rotation, paletteId]
+  );
 
   // デフォルトのドラッグプレビューを無効化
   useEffect(() => {
@@ -43,16 +44,16 @@ export function DraggableSticker({ type, imageUrl, onDragStart }: DraggableStick
         touchAction: 'none',
       }}
     >
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg p-4 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-100">
-        {imageUrl ? (
-          <img 
-            src={imageUrl} 
-            alt="Custom sticker" 
-            className="w-[60px] h-[60px] object-contain"
-          />
-        ) : (
-          <StickerShape type={type} size={60} />
-        )}
+      <div
+        className="transition-all hover:scale-110"
+        style={{
+          filter: `
+            drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12))
+            drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08))
+          `,
+        }}
+      >
+        <StickerShape type={type} size={size} />
       </div>
     </div>
   );

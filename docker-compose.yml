@@ -1,0 +1,6 @@
+services:
+  encoder:
+    build: ./server
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
