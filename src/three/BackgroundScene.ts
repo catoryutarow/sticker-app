@@ -76,9 +76,9 @@ export class BackgroundScene {
       const geometry = new THREE.PlaneGeometry(barWidth * 0.85, 0.01);
 
       const material = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
+        color: 0x000000,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.1,
       });
 
       const bar = new THREE.Mesh(geometry, material);
@@ -143,11 +143,10 @@ export class BackgroundScene {
       bar.scale.y = barHeight / 0.01;
       bar.position.y = -1.2 + barHeight / 2;
 
-      // モノクロ：白の濃淡で表現
+      // 黒のまま、不透明度だけ変化
       const material = this.barMaterials[i];
-      const brightness = 0.15 + smoothedValue * 0.7; // 0.15 ~ 0.85
-      material.color.setRGB(brightness, brightness, brightness);
-      material.opacity = 0.2 + smoothedValue * 0.6;
+      material.color.setRGB(0, 0, 0);
+      material.opacity = 0.1 + smoothedValue * 0.5;
     }
   }
 
