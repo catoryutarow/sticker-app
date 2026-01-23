@@ -1,6 +1,5 @@
 /**
- * BackgroundScene.ts - ミキサー風オーディオスペクトラム
- * デジタルミキサーのレベルメーター風表示
+ * BackgroundScene.ts - 斜めフルスクリーン・モノクロスペクトラム
  */
 
 import * as THREE from 'three';
@@ -13,33 +12,22 @@ export class BackgroundScene {
   private animationFrameId: number | null = null;
 
   // バーの設定
-  private readonly barCount = 32; // バーの数
-  private readonly barWidth = 0.025; // バーの幅
-  private readonly barGap = 0.015; // バー間のギャップ
-  private readonly maxBarHeight = 0.5; // 最大高さ
-  private readonly baseY = -0.85; // 下端のY座標
+  private readonly barCount = 48;
+  private readonly barGap = 0.03;
+  private readonly maxBarHeight = 2.5; // 画面いっぱいに
+  private readonly angle = -25 * (Math.PI / 180); // 斜め角度（度→ラジアン）
 
   // バーメッシュ
   private bars: THREE.Mesh[] = [];
   private barMaterials: THREE.MeshBasicMaterial[] = [];
-
-  // ピークホールド
-  private peakValues: Float32Array;
-  private peakHoldTime: Float32Array;
-  private readonly peakDecay = 0.02;
-  private readonly peakHoldDuration = 30; // フレーム数
+  private barGroup: THREE.Group;
 
   // スムージング
   private smoothedData: Float32Array;
-  private readonly smoothingFactor = 0.4; // 高いほど反応が速い
+  private readonly smoothingFactor = 0.35;
 
-  // 周波数マッピング用のブースト値（低音・中音を強調）
-  private readonly frequencyBoost = [
-    2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, // 低音域をブースト
-    1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, // 中低音
-    1.0, 1.0, 1.0, 1.0, 0.95, 0.9, 0.85, 0.8, // 中音
-    0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, // 高音域（抑える）
-  ];
+  // 周波数ブースト
+  private readonly frequencyBoost: number[];
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -59,33 +47,45 @@ export class BackgroundScene {
 
     // データ初期化
     this.smoothedData = new Float32Array(this.barCount);
-    this.peakValues = new Float32Array(this.barCount);
-    this.peakHoldTime = new Float32Array(this.barCount);
+
+    // 周波数ブースト配列を生成
+    this.frequencyBoost = [];
+    for (let i = 0; i < this.barCount; i++) {
+      const t = i / this.barCount;
+      // 低音を強め、高音を弱める曲線
+      this.frequencyBoost.push(2.5 - t * 1.8);
+    }
+
+    // グループで全体を回転
+    this.barGroup = new THREE.Group();
+    this.barGroup.rotation.z = this.angle;
+    this.scene.add(this.barGroup);
 
     this.initBars();
     this.animate();
   }
 
   private initBars(): void {
-    const totalWidth = this.barCount * (this.barWidth + this.barGap) - this.barGap;
+    const aspect = window.innerWidth / window.innerHeight;
+    // 斜めにしても画面をカバーする幅
+    const totalWidth = Math.sqrt(4 * aspect * aspect + 4) * 1.2;
+    const barWidth = (totalWidth - this.barGap * (this.barCount - 1)) / this.barCount;
     const startX = -totalWidth / 2;
 
     for (let i = 0; i < this.barCount; i++) {
-      // バーのジオメトリ（高さは後で更新）
-      const geometry = new THREE.PlaneGeometry(this.barWidth, 0.01);
+      const geometry = new THREE.PlaneGeometry(barWidth * 0.85, 0.01);
 
-      // グラデーション色（緑→黄→赤）
       const material = new THREE.MeshBasicMaterial({
-        color: 0x333333,
+        color: 0xffffff,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.15,
       });
 
       const bar = new THREE.Mesh(geometry, material);
-      bar.position.x = startX + i * (this.barWidth + this.barGap) + this.barWidth / 2;
-      bar.position.y = this.baseY;
+      bar.position.x = startX + i * (barWidth + this.barGap) + barWidth / 2;
+      bar.position.y = -1.2; // 下から開始
 
-      this.scene.add(bar);
+      this.barGroup.add(bar);
       this.bars.push(bar);
       this.barMaterials.push(material);
     }
@@ -106,15 +106,13 @@ export class BackgroundScene {
     const dataLength = frequencyData.length;
 
     for (let i = 0; i < this.barCount; i++) {
-      // 周波数インデックス計算（対数スケールで低周波を拡大）
       const normalizedIndex = i / this.barCount;
-      // より急な指数カーブで低音域に多くのバーを割り当て
       const freqIndex = Math.min(
-        Math.floor(Math.pow(normalizedIndex, 2.0) * dataLength * 0.8),
+        Math.floor(Math.pow(normalizedIndex, 2.2) * dataLength * 0.75),
         dataLength - 1
       );
 
-      // 複数の周波数ビンを平均（より安定した表示）
+      // 周波数ビンを複数平均
       let sum = 0;
       const binCount = Math.max(1, Math.floor(dataLength / this.barCount / 2));
       for (let j = 0; j < binCount; j++) {
@@ -123,46 +121,33 @@ export class BackgroundScene {
       }
       let value = sum / binCount;
 
-      // 周波数ブーストを適用
-      value *= this.frequencyBoost[i] || 1.0;
+      // ブースト適用
+      value *= this.frequencyBoost[i];
 
-      // 非線形マッピングで派手に
-      value = Math.pow(value, 0.7) * 1.5;
+      // 派手な非線形マッピング
+      value = Math.pow(value, 0.6) * 2.0;
       value = Math.min(value, 1.0);
 
-      // スムージング（上昇は速く、下降は遅く）
+      // スムージング（上昇速い、下降遅い）
       if (value > this.smoothedData[i]) {
         this.smoothedData[i] += (value - this.smoothedData[i]) * this.smoothingFactor;
       } else {
-        this.smoothedData[i] += (value - this.smoothedData[i]) * (this.smoothingFactor * 0.5);
+        this.smoothedData[i] += (value - this.smoothedData[i]) * (this.smoothingFactor * 0.4);
       }
 
       const smoothedValue = this.smoothedData[i];
 
-      // ピークホールド更新
-      if (smoothedValue > this.peakValues[i]) {
-        this.peakValues[i] = smoothedValue;
-        this.peakHoldTime[i] = this.peakHoldDuration;
-      } else if (this.peakHoldTime[i] > 0) {
-        this.peakHoldTime[i]--;
-      } else {
-        this.peakValues[i] -= this.peakDecay;
-        if (this.peakValues[i] < 0) this.peakValues[i] = 0;
-      }
-
-      // バーの高さを更新
-      const barHeight = Math.max(0.01, smoothedValue * this.maxBarHeight);
+      // バーの高さと位置
+      const barHeight = Math.max(0.02, smoothedValue * this.maxBarHeight);
       const bar = this.bars[i];
-      bar.scale.y = barHeight / 0.01; // 基準高さに対するスケール
-      bar.position.y = this.baseY + barHeight / 2;
+      bar.scale.y = barHeight / 0.01;
+      bar.position.y = -1.2 + barHeight / 2;
 
-      // 色を更新（レベルに応じて緑→黄→赤）
+      // モノクロ：白の濃淡で表現
       const material = this.barMaterials[i];
-      const hue = (1 - smoothedValue) * 0.35; // 0.35(緑) → 0(赤)
-      const saturation = 0.7 + smoothedValue * 0.3;
-      const lightness = 0.3 + smoothedValue * 0.2;
-      material.color.setHSL(hue, saturation, lightness);
-      material.opacity = 0.5 + smoothedValue * 0.4;
+      const brightness = 0.15 + smoothedValue * 0.7; // 0.15 ~ 0.85
+      material.color.setRGB(brightness, brightness, brightness);
+      material.opacity = 0.2 + smoothedValue * 0.6;
     }
   }
 
@@ -176,12 +161,15 @@ export class BackgroundScene {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // バーの位置を再計算
-    const totalWidth = this.barCount * (this.barWidth + this.barGap) - this.barGap;
+    // バーを再配置
+    const totalWidth = Math.sqrt(4 * aspect * aspect + 4) * 1.2;
+    const barWidth = (totalWidth - this.barGap * (this.barCount - 1)) / this.barCount;
     const startX = -totalWidth / 2;
 
     for (let i = 0; i < this.barCount; i++) {
-      this.bars[i].position.x = startX + i * (this.barWidth + this.barGap) + this.barWidth / 2;
+      const bar = this.bars[i];
+      bar.position.x = startX + i * (barWidth + this.barGap) + barWidth / 2;
+      bar.scale.x = barWidth * 0.85 / (bar.geometry as THREE.PlaneGeometry).parameters.width;
     }
   }
 
@@ -191,12 +179,13 @@ export class BackgroundScene {
     }
 
     for (const bar of this.bars) {
-      this.scene.remove(bar);
+      this.barGroup.remove(bar);
       bar.geometry.dispose();
     }
     for (const material of this.barMaterials) {
       material.dispose();
     }
+    this.scene.remove(this.barGroup);
 
     this.renderer.dispose();
   }
