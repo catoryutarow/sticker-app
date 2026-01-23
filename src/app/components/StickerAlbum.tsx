@@ -5,7 +5,6 @@ import { ControlPanel } from '@/app/components/ControlPanel';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
-import { ThreeBackground } from '@/app/components/ThreeBackground';
 import { Menu, X } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
@@ -260,9 +259,6 @@ export function StickerAlbum() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Three.js 背景アニメーション */}
-      <ThreeBackground isPlaying={isPlaying} />
-
       <header className="mb-4 lg:mb-8 text-center">
         <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-2">
           シール帳

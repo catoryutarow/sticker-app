@@ -68,6 +68,7 @@ class AudioEngine {
   private masterDistortion: Tone.Distortion | null = null;
   private masterCompressor: Tone.Compressor | null = null;
   private masterLimiter: Tone.Limiter | null = null;
+  private analyser: Tone.Analyser | null = null;
 
   private isPlaying: boolean = false;
   private isInitialized: boolean = false;
@@ -109,12 +110,14 @@ class AudioEngine {
         release: 0.25,
       });
       this.masterLimiter = new Tone.Limiter(-1);
+      this.analyser = new Tone.Analyser('fft', 128);
 
-      // チェーン接続: masterGain -> distortion -> compressor -> limiter -> destination
+      // チェーン接続: masterGain -> distortion -> compressor -> limiter -> analyser -> destination
       this.masterGain.chain(
         this.masterDistortion,
         this.masterCompressor,
         this.masterLimiter,
+        this.analyser,
         Tone.getDestination()
       );
 
@@ -568,6 +571,22 @@ class AudioEngine {
   }
 
   /**
+   * スペクトラムデータを取得（0-1の配列）
+   */
+  getFrequencyData(): Float32Array {
+    if (!this.analyser || !this.isPlaying) {
+      return new Float32Array(128);
+    }
+    const data = this.analyser.getValue() as Float32Array;
+    // dB値を0-1に変換 (-100dB ~ 0dB -> 0 ~ 1)
+    const normalized = new Float32Array(data.length);
+    for (let i = 0; i < data.length; i++) {
+      normalized[i] = Math.max(0, Math.min(1, (data[i] + 100) / 100));
+    }
+    return normalized;
+  }
+
+  /**
    * 状態変更コールバックを登録
    */
   onStateChange(callback: StateChangeCallback): () => void {
@@ -599,6 +618,7 @@ class AudioEngine {
     this.masterDistortion?.dispose();
     this.masterCompressor?.dispose();
     this.masterLimiter?.dispose();
+    this.analyser?.dispose();
 
     this.stickerCounts.clear();
     this.stickerStates.clear();
