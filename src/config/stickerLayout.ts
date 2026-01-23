@@ -21,6 +21,7 @@ export interface StickerLayoutItem {
  * シールパレット内の配置設定
  */
 export const STICKER_LAYOUT: StickerLayoutItem[] = [
+  // === kit-001 ===
   { id: '1', stickerId: '001-001', x: 0, y: 0, size: 120, rotation: -8 },
   { id: '2', stickerId: '001-002', x: 68.5, y: 18.2, size: 78, rotation: 12 },
   { id: '3', stickerId: '001-003', x: 4.9, y: 34.1, size: 47, rotation: -3 },
@@ -36,6 +37,16 @@ export const STICKER_LAYOUT: StickerLayoutItem[] = [
   { id: '13', stickerId: '001-002', x: 46.2, y: 10, size: 78, rotation: 0 },
   { id: '14', stickerId: '001-003', x: 2.6, y: 59.3, size: 47, rotation: -3 },
   { id: '15', stickerId: '001-003', x: 24.9, y: 54.1, size: 47, rotation: -3 },
+
+  // === kit-002 ===
+  { id: '16', stickerId: '002-001', x: 5, y: 100, size: 90, rotation: -5 },
+  { id: '17', stickerId: '002-002', x: 35, y: 105, size: 85, rotation: 8 },
+  { id: '18', stickerId: '002-003', x: 65, y: 100, size: 80, rotation: -3 },
+  { id: '19', stickerId: '002-004', x: 10, y: 125, size: 95, rotation: 12 },
+  { id: '20', stickerId: '002-005', x: 45, y: 130, size: 100, rotation: -8 },
+  { id: '21', stickerId: '002-006', x: 75, y: 125, size: 75, rotation: 5 },
+  { id: '22', stickerId: '002-007', x: 20, y: 155, size: 85, rotation: -10 },
+  { id: '23', stickerId: '002-008', x: 55, y: 160, size: 90, rotation: 6 },
 ];
 
 /**

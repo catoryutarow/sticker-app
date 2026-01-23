@@ -8,6 +8,7 @@ import { CanvasRenderer } from './CanvasRenderer';
 import { AudioMixer } from './AudioMixer';
 import { Sticker } from '../app/components/StickerAlbum';
 import { LOOP_DURATION } from '../audio/AudioEngine';
+import { DEFAULT_BACKGROUND_ID } from '../config/backgroundConfig';
 
 // エンコードサーバーのURL（スマホからもアクセスできるように現在のホストを使用）
 const getEncoderUrl = () => {
@@ -28,6 +29,7 @@ export interface ExportOptions {
   greenScreen: boolean;
   includeAudio: boolean;
   masterVolume: number;
+  backgroundId: string;
 }
 
 export interface ExportProgress {
@@ -56,11 +58,13 @@ export class VideoExporter {
       greenScreen: options.greenScreen || false,
       includeAudio: options.includeAudio !== false,
       masterVolume: options.masterVolume ?? 0.7,
+      backgroundId: options.backgroundId || DEFAULT_BACKGROUND_ID,
     };
 
     this.renderer = new CanvasRenderer({
       width: this.options.width,
       height: this.options.height,
+      backgroundId: this.options.backgroundId,
     });
 
     this.audioMixer = new AudioMixer({

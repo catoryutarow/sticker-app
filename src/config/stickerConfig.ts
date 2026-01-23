@@ -25,12 +25,23 @@ export interface StickerDefinition {
  * ID形式: {パッケージID}-{シールID} (例: 001-001)
  */
 export const STICKERS: StickerDefinition[] = [
+  // === kit-001 ===
   { id: '001-001', name: 'Star', nameJa: 'スター', color: '#FFD700' },
   { id: '001-002', name: 'Heart', nameJa: 'ハート', color: '#FF69B4' },
   { id: '001-003', name: 'Circle', nameJa: 'サークル', color: '#87CEEB' },
   { id: '001-004', name: 'Square', nameJa: 'スクエア', color: '#90EE90' },
   { id: '001-005', name: 'Triangle', nameJa: 'トライアングル', color: '#DDA0DD' },
   { id: '001-006', name: 'Flower', nameJa: 'フラワー', color: '#FFB6C1' },
+
+  // === kit-002 ===
+  { id: '002-001', name: 'Sticker 1', nameJa: 'シール1', color: '#FF6B6B' },
+  { id: '002-002', name: 'Sticker 2', nameJa: 'シール2', color: '#4ECDC4' },
+  { id: '002-003', name: 'Sticker 3', nameJa: 'シール3', color: '#45B7D1' },
+  { id: '002-004', name: 'Sticker 4', nameJa: 'シール4', color: '#96CEB4' },
+  { id: '002-005', name: 'Sticker 5', nameJa: 'シール5', color: '#FFEAA7' },
+  { id: '002-006', name: 'Sticker 6', nameJa: 'シール6', color: '#DDA0DD' },
+  { id: '002-007', name: 'Sticker 7', nameJa: 'シール7', color: '#98D8C8' },
+  { id: '002-008', name: 'Sticker 8', nameJa: 'シール8', color: '#F7DC6F' },
 ];
 
 /**

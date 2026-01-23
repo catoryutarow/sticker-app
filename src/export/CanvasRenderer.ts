@@ -5,21 +5,13 @@
  */
 
 import { Sticker } from '../app/components/StickerAlbum';
-
-// シール設定
-const stickerConfig: Record<string, { color: string; strokeColor: string; gradientEnd: string }> = {
-  star: { color: '#FFD700', strokeColor: '#FFA500', gradientEnd: 'rgba(255, 215, 0, 0.7)' },
-  heart: { color: '#FF69B4', strokeColor: '#FF1493', gradientEnd: 'rgba(255, 105, 180, 0.7)' },
-  circle: { color: '#87CEEB', strokeColor: '#4682B4', gradientEnd: 'rgba(135, 206, 235, 0.7)' },
-  square: { color: '#90EE90', strokeColor: '#32CD32', gradientEnd: 'rgba(144, 238, 144, 0.7)' },
-  triangle: { color: '#DDA0DD', strokeColor: '#BA55D3', gradientEnd: 'rgba(221, 160, 221, 0.7)' },
-  flower: { color: '#FFB6C1', strokeColor: '#FF69B4', gradientEnd: 'rgba(255, 182, 193, 0.7)' },
-};
+import { getStickerImagePath, getStickerById } from '../config/stickerConfig';
+import { getBackgroundImagePath, DEFAULT_BACKGROUND_ID } from '../config/backgroundConfig';
 
 export interface CanvasRendererOptions {
   width: number;
   height: number;
-  backgroundColor?: string;
+  backgroundId?: string;
   greenScreen?: boolean;
 }
 
@@ -27,12 +19,23 @@ export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private imageCache: Map<string, HTMLImageElement> = new Map();
+  private backgroundImage: HTMLImageElement | null = null;
+  private backgroundId: string;
 
   constructor(options: CanvasRendererOptions) {
     this.canvas = document.createElement('canvas');
     this.canvas.width = options.width;
     this.canvas.height = options.height;
     this.ctx = this.canvas.getContext('2d')!;
+    this.backgroundId = options.backgroundId || DEFAULT_BACKGROUND_ID;
+  }
+
+  /**
+   * 背景IDを設定
+   */
+  setBackgroundId(id: string): void {
+    this.backgroundId = id;
+    this.backgroundImage = null; // キャッシュをクリア
   }
 
   getCanvas(): HTMLCanvasElement {
@@ -54,15 +57,49 @@ export class CanvasRenderer {
       ctx.fillStyle = '#00FF00';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
-      // 通常の台紙背景
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#FFFFFF');
-      gradient.addColorStop(1, '#E8F4FF');
-      ctx.fillStyle = gradient;
+      // 背景画像を描画（cover風にフィット）
+      if (this.backgroundImage) {
+        const img = this.backgroundImage;
+        const imgAspect = img.width / img.height;
+        const canvasAspect = canvas.width / canvas.height;
+
+        let drawWidth, drawHeight, drawX, drawY;
+
+        if (imgAspect > canvasAspect) {
+          // 画像の方が横長 → 高さを合わせて横をクロップ
+          drawHeight = canvas.height;
+          drawWidth = drawHeight * imgAspect;
+          drawX = (canvas.width - drawWidth) / 2;
+          drawY = 0;
+        } else {
+          // 画像の方が縦長 → 幅を合わせて縦をクロップ
+          drawWidth = canvas.width;
+          drawHeight = drawWidth / imgAspect;
+          drawX = 0;
+          drawY = (canvas.height - drawHeight) / 2;
+        }
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      } else {
+        // フォールバック: グラデーション背景
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#FFFFFF');
+        gradient.addColorStop(1, '#E8F4FF');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // 透明感のある光沢表現
+      const glossGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      glossGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+      glossGradient.addColorStop(0.3, 'transparent');
+      glossGradient.addColorStop(0.7, 'transparent');
+      glossGradient.addColorStop(1, 'rgba(200, 220, 255, 0.15)');
+      ctx.fillStyle = glossGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // グリッド線（薄い）
-      ctx.strokeStyle = 'rgba(200, 220, 255, 0.3)';
+      // グリッド線（薄く）
+      ctx.strokeStyle = 'rgba(100, 150, 200, 0.08)';
       ctx.lineWidth = 1;
       const gridSize = 20;
       for (let x = 0; x < canvas.width; x += gridSize) {
@@ -81,13 +118,38 @@ export class CanvasRenderer {
   }
 
   /**
-   * カスタムシール用の画像をプリロード
+   * 背景画像をプリロード
+   */
+  private async preloadBackgroundImage(): Promise<void> {
+    const imagePath = getBackgroundImagePath(this.backgroundId);
+
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        this.backgroundImage = img;
+        resolve();
+      };
+      img.onerror = () => {
+        console.error(`Failed to load background image: ${imagePath}`);
+        resolve();
+      };
+      img.src = imagePath;
+    });
+  }
+
+  /**
+   * シール画像をプリロード
    */
   async preloadImages(stickers: Sticker[]): Promise<void> {
-    const imageUrls = stickers
-      .filter((s) => s.imageUrl)
-      .map((s) => s.imageUrl!)
-      .filter((url, i, arr) => arr.indexOf(url) === i);
+    // 背景画像をプリロード
+    await this.preloadBackgroundImage();
+
+    // シールタイプ（ID）からユニークな画像パスを取得
+    const stickerTypes = [...new Set(stickers.map((s) => s.type))];
+    const imageUrls = stickerTypes
+      .filter((type) => getStickerById(type)) // 有効なシールIDのみ
+      .map((type) => getStickerImagePath(type));
 
     await Promise.all(
       imageUrls.map((url) => {
@@ -97,6 +159,7 @@ export class CanvasRenderer {
             return;
           }
           const img = new Image();
+          img.crossOrigin = 'anonymous'; // CORS対応
           img.onload = () => {
             this.imageCache.set(url, img);
             resolve();
@@ -115,11 +178,11 @@ export class CanvasRenderer {
    * 全シールを描画
    */
   async drawStickers(stickers: Sticker[], greenScreen: boolean = false): Promise<void> {
+    // 先に画像をプリロード（背景含む）
+    await this.preloadImages(stickers);
+
     // 背景を描画
     this.drawBackground(greenScreen);
-
-    // 画像をプリロード
-    await this.preloadImages(stickers);
 
     // シールを描画（z-index順）
     for (const sticker of stickers) {
@@ -146,172 +209,22 @@ export class CanvasRenderer {
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 4;
 
-    if (sticker.imageUrl) {
-      // カスタム画像シール
-      this.drawImageSticker(sticker, size);
-    } else {
-      // 基本シェイプ
-      this.drawShapeSticker(sticker.type, size);
-    }
-
-    ctx.restore();
-  }
-
-  /**
-   * 画像シールを描画
-   */
-  private drawImageSticker(sticker: Sticker, size: number): void {
-    const { ctx } = this;
-    const img = this.imageCache.get(sticker.imageUrl!);
+    // シールIDから画像パスを取得して描画
+    const imagePath = getStickerImagePath(sticker.type);
+    const img = this.imageCache.get(imagePath);
 
     if (img) {
       ctx.drawImage(img, -size / 2, -size / 2, size, size);
-    }
-  }
-
-  /**
-   * シェイプシールを描画
-   */
-  private drawShapeSticker(type: string, size: number): void {
-    const { ctx } = this;
-    const config = stickerConfig[type] || stickerConfig.circle;
-    const scale = size / 100;
-
-    // グラデーション作成
-    const gradient = ctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, config.color);
-    gradient.addColorStop(1, config.gradientEnd);
-
-    ctx.fillStyle = gradient;
-    ctx.strokeStyle = config.strokeColor;
-    ctx.lineWidth = 2 * scale;
-
-    switch (type) {
-      case 'star':
-        this.drawStar(scale);
-        break;
-      case 'heart':
-        this.drawHeart(scale);
-        break;
-      case 'circle':
-        this.drawCircle(scale);
-        break;
-      case 'square':
-        this.drawSquare(scale);
-        break;
-      case 'triangle':
-        this.drawTriangle(scale);
-        break;
-      case 'flower':
-        this.drawFlower(scale, config);
-        break;
-      default:
-        this.drawCircle(scale);
-    }
-  }
-
-  private drawStar(scale: number): void {
-    const { ctx } = this;
-    const points = [
-      [50, 10],
-      [61, 39],
-      [92, 39],
-      [67, 58],
-      [78, 87],
-      [50, 68],
-      [22, 87],
-      [33, 58],
-      [8, 39],
-      [39, 39],
-    ];
-
-    ctx.beginPath();
-    points.forEach(([x, y], i) => {
-      const px = (x - 50) * scale;
-      const py = (y - 50) * scale;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private drawHeart(scale: number): void {
-    const { ctx } = this;
-
-    ctx.beginPath();
-    ctx.moveTo(0 * scale, 35 * scale);
-    ctx.bezierCurveTo(0 * scale, 20 * scale, -20 * scale, -5 * scale, -30 * scale, -10 * scale);
-    ctx.bezierCurveTo(-45 * scale, -25 * scale, -30 * scale, -50 * scale, 0 * scale, -30 * scale);
-    ctx.bezierCurveTo(30 * scale, -50 * scale, 45 * scale, -25 * scale, 30 * scale, -10 * scale);
-    ctx.bezierCurveTo(20 * scale, -5 * scale, 0 * scale, 20 * scale, 0 * scale, 35 * scale);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private drawCircle(scale: number): void {
-    const { ctx } = this;
-    ctx.beginPath();
-    ctx.arc(0, 0, 40 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private drawSquare(scale: number): void {
-    const { ctx } = this;
-    const size = 70 * scale;
-    const radius = 8 * scale;
-
-    ctx.beginPath();
-    ctx.roundRect(-size / 2, -size / 2, size, size, radius);
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private drawTriangle(scale: number): void {
-    const { ctx } = this;
-
-    ctx.beginPath();
-    ctx.moveTo(0, -35 * scale);
-    ctx.lineTo(35 * scale, 35 * scale);
-    ctx.lineTo(-35 * scale, 35 * scale);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private drawFlower(
-    scale: number,
-    config: { color: string; strokeColor: string; gradientEnd: string }
-  ): void {
-    const { ctx } = this;
-
-    // 花びら
-    const petalAngles = [0, 72, 144, 216, 288];
-    for (const angle of petalAngles) {
-      ctx.save();
-      ctx.rotate((angle * Math.PI) / 180);
-      ctx.translate(0, -15 * scale);
-
+    } else {
+      // フォールバック: 画像が読み込めない場合は色付きの円を描画
+      const stickerDef = getStickerById(sticker.type);
+      ctx.fillStyle = stickerDef?.color || '#888888';
       ctx.beginPath();
-      ctx.ellipse(0, 0, 15 * scale, 25 * scale, 0, 0, Math.PI * 2);
+      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.lineWidth = 1.5 * scale;
-      ctx.stroke();
-
-      ctx.restore();
     }
 
-    // 中心
-    ctx.fillStyle = '#FFD700';
-    ctx.strokeStyle = '#FFA500';
-    ctx.lineWidth = 2 * scale;
-    ctx.beginPath();
-    ctx.arc(0, 0, 12 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.restore();
   }
 
   /**
