@@ -8,6 +8,8 @@ import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
 import { Menu, X } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
+import { getKitBaseSemitone } from '../../config/kitConfig';
+import { isStickerPercussion } from '../../config/stickerConfig';
 
 export interface Sticker {
   id: string;
@@ -46,8 +48,17 @@ export function StickerAlbum() {
   } = useAudioEngine();
 
   // シールが変更されたときにオーディオエンジンと同期
+  // pitch値をスライダー位置から実際の転調量に変換
   useEffect(() => {
-    syncWithStickers(stickers);
+    const stickersForAudio = stickers.map(s => {
+      const kitId = s.type.split('-')[0] || '001';
+      const baseSemitone = isStickerPercussion(s.type) ? 0 : getKitBaseSemitone(kitId);
+      return {
+        ...s,
+        pitch: s.pitch - baseSemitone, // スライダー位置 - ベースキー = 実際の転調量
+      };
+    });
+    syncWithStickers(stickersForAudio);
   }, [stickers, syncWithStickers]);
 
   // 台紙の幅をオーディオエンジンに設定（パンニング計算用）
@@ -73,6 +84,9 @@ export function StickerAlbum() {
     (type: string, x: number, y: number, size?: number, rotation?: number, paletteId?: string) => {
       // パレットからのサイズをscaleに変換（基準サイズ80pxに対する比率）
       const scale = size ? size / 80 : 1;
+      // メロディ系はキットのベースキー位置からスタート（パーカッションは0）
+      const kitId = type.split('-')[0] || '001';
+      const initialPitch = isStickerPercussion(type) ? 0 : getKitBaseSemitone(kitId);
       const newSticker: Sticker = {
         id: `${Date.now()}-${Math.random()}`,
         type,
@@ -80,7 +94,7 @@ export function StickerAlbum() {
         y,
         rotation: rotation ?? (Math.random() * 10 - 5),
         scale,
-        pitch: 0, // 音程調整のデフォルト値
+        pitch: initialPitch, // スライダー位置（実際の転調はベースキー分を引く）
         paletteId, // Undo/Redo用に元のパレットIDを保存
       };
       const newStickers = [...stickers, newSticker];

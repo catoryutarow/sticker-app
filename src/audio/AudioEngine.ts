@@ -395,8 +395,8 @@ class AudioEngine {
           // 既存トラックの状態を更新
           this.updateTrack(sticker);
         } else {
-          // 新しいトラックを開始（共通基準時刻を使用）
-          this.startTrack(sticker, false, referenceTime);
+          // 新しいトラックを即座に開始（ループ位置は自動同期）
+          this.startTrack(sticker, true, referenceTime);
         }
       } else {
         // 再生していない場合は状態のみ保存

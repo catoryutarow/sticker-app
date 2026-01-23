@@ -48,6 +48,16 @@ export const STICKER_LAYOUT_BY_KIT: Record<string, StickerLayoutItem[]> = {
     { id: '22', stickerId: '002-007', x: 5, y: 65, size: 85, rotation: -10 },
     { id: '23', stickerId: '002-008', x: 45, y: 70, size: 90, rotation: 6 },
   ],
+  '003': [
+    { id: '24', stickerId: '003-001', x: 5, y: 5, size: 90, rotation: -8 },
+    { id: '25', stickerId: '003-002', x: 55, y: 0, size: 85, rotation: 10 },
+    { id: '26', stickerId: '003-003', x: 25, y: 22, size: 80, rotation: -5 },
+    { id: '27', stickerId: '003-004', x: 65, y: 28, size: 95, rotation: 15 },
+    { id: '28', stickerId: '003-005', x: 8, y: 42, size: 100, rotation: -10 },
+    { id: '29', stickerId: '003-006', x: 52, y: 48, size: 75, rotation: 3 },
+    { id: '30', stickerId: '003-007', x: 5, y: 68, size: 85, rotation: -12 },
+    { id: '31', stickerId: '003-008', x: 48, y: 72, size: 90, rotation: 8 },
+  ],
 };
 
 /**

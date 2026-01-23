@@ -3,6 +3,7 @@ import type { Sticker } from '@/app/components/StickerAlbum';
 import { useState, useEffect, useRef } from 'react';
 import { addStickerToPalette } from './StickerPalette';
 import { getDefaultStickerProps } from '../../config/stickerLayout';
+import { isStickerPercussion, semitoneToKey } from '../../config/stickerConfig';
 
 interface StickerEditorProps {
   sticker: Sticker;
@@ -212,15 +213,18 @@ export function StickerEditor({ sticker, onUpdate, onPreview, onClose, onDelete 
               />
             </div>
 
-            {/* キー調整 */}
+            {/* キー/高さ調整 */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
                   <Music className="w-4 h-4" />
-                  キー
+                  {isStickerPercussion(sticker.type) ? '高さ' : 'キー'}
                 </label>
                 <span className="text-sm font-mono text-gray-700 bg-white px-2 py-1 rounded">
-                  {pitch > 0 ? `+${pitch}` : pitch}
+                  {isStickerPercussion(sticker.type)
+                    ? (pitch > 0 ? `+${pitch}` : pitch)
+                    : semitoneToKey(pitch)
+                  }
                 </span>
               </div>
               <input
