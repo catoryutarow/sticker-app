@@ -7,7 +7,7 @@ import AudioEngine from '../audio/AudioEngine';
 
 export class BackgroundScene {
   private scene: THREE.Scene;
-  private camera: THREE.OrthographicCamera;
+  private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private animationFrameId: number | null = null;
 
@@ -33,8 +33,8 @@ export class BackgroundScene {
     this.scene = new THREE.Scene();
 
     const aspect = window.innerWidth / window.innerHeight;
-    this.camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
-    this.camera.position.z = 1;
+    this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 100);
+    this.camera.position.z = 3;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -66,14 +66,12 @@ export class BackgroundScene {
   }
 
   private initBars(): void {
-    const aspect = window.innerWidth / window.innerHeight;
-    // 斜めにしても画面をカバーする幅
-    const totalWidth = Math.sqrt(4 * aspect * aspect + 4) * 1.2;
+    const totalWidth = 4;
     const barWidth = (totalWidth - this.barGap * (this.barCount - 1)) / this.barCount;
     const startX = -totalWidth / 2;
 
     for (let i = 0; i < this.barCount; i++) {
-      const geometry = new THREE.PlaneGeometry(barWidth * 0.85, 0.01);
+      const geometry = new THREE.BoxGeometry(barWidth * 0.8, 0.01, 0.1);
 
       const material = new THREE.MeshBasicMaterial({
         color: 0x000000,
@@ -83,7 +81,7 @@ export class BackgroundScene {
 
       const bar = new THREE.Mesh(geometry, material);
       bar.position.x = startX + i * (barWidth + this.barGap) + barWidth / 2;
-      bar.position.y = -1.2; // 下から開始
+      bar.position.y = -1; // 下から開始
 
       this.barGroup.add(bar);
       this.bars.push(bar);
@@ -96,6 +94,10 @@ export class BackgroundScene {
 
     const audioEngine = AudioEngine.getInstance();
     const frequencyData = audioEngine.getFrequencyData();
+
+    // ゆっくり3D回転
+    this.barGroup.rotation.x += 0.002;
+    this.barGroup.rotation.y += 0.003;
 
     this.updateBars(frequencyData);
 
@@ -141,7 +143,7 @@ export class BackgroundScene {
       const barHeight = Math.max(0.02, smoothedValue * this.maxBarHeight);
       const bar = this.bars[i];
       bar.scale.y = barHeight / 0.01;
-      bar.position.y = -1.2 + barHeight / 2;
+      bar.position.y = -1 + barHeight / 2;
 
       // 黒のまま、不透明度だけ変化
       const material = this.barMaterials[i];
@@ -155,21 +157,9 @@ export class BackgroundScene {
 
   resize(): void {
     const aspect = window.innerWidth / window.innerHeight;
-    this.camera.left = -aspect;
-    this.camera.right = aspect;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-    // バーを再配置
-    const totalWidth = Math.sqrt(4 * aspect * aspect + 4) * 1.2;
-    const barWidth = (totalWidth - this.barGap * (this.barCount - 1)) / this.barCount;
-    const startX = -totalWidth / 2;
-
-    for (let i = 0; i < this.barCount; i++) {
-      const bar = this.bars[i];
-      bar.position.x = startX + i * (barWidth + this.barGap) + barWidth / 2;
-      bar.scale.x = barWidth * 0.85 / (bar.geometry as THREE.PlaneGeometry).parameters.width;
-    }
   }
 
   dispose(): void {
