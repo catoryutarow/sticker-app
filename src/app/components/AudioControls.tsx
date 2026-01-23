@@ -3,7 +3,7 @@
  */
 
 import { Play, Pause } from 'lucide-react';
-import { StickerType, STICKER_SOUNDS } from '../../audio';
+import { StickerType } from '../../audio';
 
 interface AudioControlsProps {
   isPlaying: boolean;
@@ -48,22 +48,6 @@ export function AudioControls({
         {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
         <span className="hidden sm:inline">{isPlaying ? '停止' : '再生'}</span>
       </button>
-
-      {/* アクティブトラック表示 */}
-      {activeCount > 0 && (
-        <div className="hidden md:flex items-center gap-1">
-          {Array.from(activeTracks.entries())
-            .filter(([, count]) => count > 0)
-            .map(([type]) => (
-              <div
-                key={type}
-                className={`w-3 h-3 rounded-full ${isPlaying ? 'animate-pulse' : ''}`}
-                style={{ backgroundColor: STICKER_SOUNDS[type].color }}
-                title={`${STICKER_SOUNDS[type].nameJa}`}
-              />
-            ))}
-        </div>
-      )}
 
       {/* サチュレーション表示 */}
       {isPlaying && saturationAmount > 0 && (
