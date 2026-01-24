@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { StickerSheet } from '@/app/components/StickerSheet';
 import { StickerPalette, removeStickerFromPalette, addStickerToPalette, removeStickerByType, resetPalette } from '@/app/components/StickerPalette';
 import { ControlPanel } from '@/app/components/ControlPanel';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sparkles } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
 import { getKitBaseSemitone } from '../../config/kitConfig';
@@ -338,6 +339,20 @@ export function StickerAlbum() {
           </div>
           <div className="p-4 lg:p-0 space-y-4">
             <StickerPalette onDragStart={handleDragStart} />
+
+            {/* クリエイター登録導線 */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <Link
+                to="/creator/signup"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+              >
+                <Sparkles className="w-4 h-4" />
+                クリエイター登録してシールを作ろう
+              </Link>
+              <p className="mt-2 text-xs text-gray-500 text-center">
+                自分だけのシールキットを作成・公開できます
+              </p>
+            </div>
           </div>
         </div>
 

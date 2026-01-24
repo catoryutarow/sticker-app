@@ -5,3 +5,8 @@ dist/
 .env
 .env.local
 .env.production
+
+# Database files
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm

@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import { spawn } from 'child_process';
 import { writeFile, unlink, readFile } from 'fs/promises';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { tmpdir } from 'os';
+import authRoutes from './routes/auth.js';
 
 const app = express();
 
@@ -54,9 +56,14 @@ app.use(cors({
     }
   } : true,
   methods: ['GET', 'POST'],
+  credentials: true,
   maxAge: 86400,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
+
+// 認証ルート
+app.use('/api/auth', authRoutes);
 
 // ヘルスチェック
 app.get('/health', (req, res) => {
