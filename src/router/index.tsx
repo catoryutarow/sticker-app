@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from '@/app/App';
 import { AuthGuard } from '@/auth';
-import { CreatorLayout, SignupPage, LoginPage, DashboardPage } from '@/creator';
+import { CreatorLayout, SignupPage, LoginPage, DashboardPage, KitsPage, NewKitPage, KitDetailPage } from '@/creator';
 
 const router = createBrowserRouter([
   {
@@ -28,9 +28,18 @@ const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
-      // 将来のルート
-      // { path: 'kits', element: <KitsPage /> },
-      // { path: 'kits/new', element: <NewKitPage /> },
+      {
+        path: 'kits',
+        element: <KitsPage />,
+      },
+      {
+        path: 'kits/new',
+        element: <NewKitPage />,
+      },
+      {
+        path: 'kits/:kitId',
+        element: <KitDetailPage />,
+      },
     ],
   },
 ]);

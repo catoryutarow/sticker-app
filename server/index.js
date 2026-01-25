@@ -8,6 +8,7 @@ import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import authRoutes from './routes/auth.js';
+import kitRoutes from './routes/kits.js';
 
 const app = express();
 
@@ -55,7 +56,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   } : true,
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   maxAge: 86400,
 }));
@@ -64,6 +65,9 @@ app.use(express.json({ limit: '50mb' }));
 
 // 認証ルート
 app.use('/api/auth', authRoutes);
+
+// キットルート
+app.use('/api/kits', kitRoutes);
 
 // ヘルスチェック
 app.get('/health', (req, res) => {
