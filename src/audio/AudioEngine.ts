@@ -10,7 +10,7 @@
 
 import * as Tone from 'tone';
 import { getAllStickerTypes, isStickerType } from './audioAssets';
-import { getStickerAudioPath } from '../config/stickerConfig';
+import { getStickerAudioPath, isValidStickerId } from '../config/stickerConfig';
 
 // Constants
 const BPM = 120;
@@ -150,6 +150,34 @@ class AudioEngine {
     });
 
     await Promise.all(loadPromises);
+  }
+
+  /**
+   * オンデマンドで音声バッファをロード（動的シール用）
+   * 既にロード済みの場合は何もしない
+   */
+  async loadAudioBufferIfNeeded(stickerId: string): Promise<boolean> {
+    // 既にロード済み
+    if (this.audioBuffers.has(stickerId)) {
+      return true;
+    }
+
+    // 有効なシールIDかチェック（動的シールも含む）
+    if (!isValidStickerId(stickerId)) {
+      console.warn(`Invalid sticker ID: ${stickerId}`);
+      return false;
+    }
+
+    try {
+      const audioPath = getStickerAudioPath(stickerId);
+      const buffer = new Tone.ToneAudioBuffer(audioPath);
+      await buffer.load(audioPath);
+      this.audioBuffers.set(stickerId, buffer);
+      return true;
+    } catch (error) {
+      console.warn(`Failed to load audio for ${stickerId}:`, error);
+      return false;
+    }
   }
 
   /**
@@ -382,7 +410,8 @@ class AudioEngine {
 
     // 各シールの状態を更新または追加
     for (const sticker of stickers) {
-      if (!isStickerType(sticker.type)) continue;
+      // 動的シールも含めて有効なシールかチェック
+      if (!isStickerType(sticker.type) && !isValidStickerId(sticker.type)) continue;
 
       // カウントを更新
       const count = newCounts.get(sticker.type) || 0;
@@ -395,8 +424,8 @@ class AudioEngine {
           // 既存トラックの状態を更新
           this.updateTrack(sticker);
         } else {
-          // 新しいトラックを即座に開始（ループ位置は自動同期）
-          this.startTrack(sticker, true, referenceTime);
+          // 新しいトラックを開始（バッファがない場合はオンデマンドロード）
+          this.startTrackWithLoad(sticker, true, referenceTime);
         }
       } else {
         // 再生していない場合は状態のみ保存
@@ -408,6 +437,25 @@ class AudioEngine {
 
     // マスターエフェクトを更新
     this.updateMasterEffects();
+  }
+
+  /**
+   * トラックを開始（必要に応じてオンデマンドロード）
+   */
+  private async startTrackWithLoad(
+    sticker: StickerState,
+    immediate: boolean = false,
+    referenceTime?: number
+  ): Promise<void> {
+    // バッファがなければロード
+    if (!this.audioBuffers.has(sticker.type)) {
+      const loaded = await this.loadAudioBufferIfNeeded(sticker.type);
+      if (!loaded) {
+        console.warn(`Cannot start track for ${sticker.type}: audio not available`);
+        return;
+      }
+    }
+    this.startTrack(sticker, immediate, referenceTime);
   }
 
   /**

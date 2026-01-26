@@ -8,9 +8,21 @@ interface KitFormProps {
   isSubmitting?: boolean;
 }
 
+// 平行調をまとめたキー選択肢（メジャー/マイナー）
 const MUSICAL_KEYS = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-  'Am', 'A#m', 'Bm', 'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m'
+  { value: 'random', label: 'おまかせ（ランダム）' },
+  { value: 'C/Am', label: 'C / Am' },
+  { value: 'G/Em', label: 'G / Em' },
+  { value: 'D/Bm', label: 'D / Bm' },
+  { value: 'A/F#m', label: 'A / F#m' },
+  { value: 'E/C#m', label: 'E / C#m' },
+  { value: 'B/G#m', label: 'B / G#m' },
+  { value: 'F#/D#m', label: 'F# / D#m' },
+  { value: 'F/Dm', label: 'F / Dm' },
+  { value: 'Bb/Gm', label: 'B♭ / Gm' },
+  { value: 'Eb/Cm', label: 'E♭ / Cm' },
+  { value: 'Ab/Fm', label: 'A♭ / Fm' },
+  { value: 'Db/Bbm', label: 'D♭ / B♭m' },
 ];
 
 const PRESET_COLORS = [
@@ -23,7 +35,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
   const [nameJa, setNameJa] = useState(kit?.name_ja || '');
   const [description, setDescription] = useState(kit?.description || '');
   const [color, setColor] = useState(kit?.color || '#E0E0E0');
-  const [musicalKey, setMusicalKey] = useState(kit?.musical_key || 'Am');
+  const [musicalKey, setMusicalKey] = useState(kit?.musical_key || 'random');
   const [status, setStatus] = useState<'draft' | 'published'>(kit?.status || 'draft');
   const [error, setError] = useState('');
 
@@ -127,7 +139,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
 
       <div>
         <label htmlFor="musicalKey" className="block text-sm font-medium text-gray-700">
-          キー
+          キー（調）
         </label>
         <select
           id="musicalKey"
@@ -136,11 +148,41 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         >
           {MUSICAL_KEYS.map((key) => (
-            <option key={key} value={key}>
-              {key}
+            <option key={key.value} value={key.value}>
+              {key.label}
             </option>
           ))}
         </select>
+        <p className="mt-2 text-xs text-gray-500 leading-relaxed">
+          {kit ? (
+            // 編集時：確定済みのキーを表示
+            <>
+              このキットのキーは <strong className="text-gray-700">{kit.musical_key}</strong> です。<br />
+              音声ライブラリからは、このキーに合った音源のみ選択できます。
+            </>
+          ) : (
+            // 新規作成時
+            <>
+              {musicalKey === 'random' ? (
+                <>
+                  <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    おまかせ
+                  </span>
+                  を選ぶと、キット作成時にランダムなキーが自動で決定されます。<br />
+                  決定後は、そのキーに合った音源のみがライブラリに表示されます。
+                </>
+              ) : (
+                <>
+                  選択したキーに合った音源がライブラリに表示されます。<br />
+                  自分で音源をアップロードする場合は、このキーに合った音源をご用意ください。
+                </>
+              )}
+            </>
+          )}
+        </p>
       </div>
 
       {kit && (

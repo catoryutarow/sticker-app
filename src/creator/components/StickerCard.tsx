@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import type { Sticker, Kit } from '@/api/kitsApi';
 import { FileUploader } from './FileUploader';
+import { AudioSelector } from './AudioSelector';
 
 interface StickerCardProps {
   sticker: Sticker;
   kit: Kit;
   onUploadImage: (sticker: Sticker, file: File) => Promise<void>;
   onUploadAudio: (sticker: Sticker, file: File) => Promise<void>;
+  onSelectLibraryAudio?: (sticker: Sticker, soundId: string) => Promise<void>;
   onEdit: (sticker: Sticker) => void;
   onDelete: (sticker: Sticker) => void;
 }
@@ -16,16 +18,17 @@ export const StickerCard = ({
   kit,
   onUploadImage,
   onUploadAudio,
+  onSelectLibraryAudio,
   onEdit,
   onDelete,
 }: StickerCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const imagePath = sticker.image_uploaded
-    ? `/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png`
+    ? `/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png?t=${sticker.updated_at || ''}`
     : undefined;
   const audioPath = sticker.audio_uploaded
-    ? `/assets/audio/kit-${kit.kit_number}/${sticker.full_id}.mp3`
+    ? `/assets/audio/kit-${kit.kit_number}/${sticker.full_id}.mp3?t=${sticker.updated_at || ''}`
     : undefined;
 
   const handleImageUpload = async (file: File) => {
@@ -34,6 +37,12 @@ export const StickerCard = ({
 
   const handleAudioUpload = async (file: File) => {
     await onUploadAudio(sticker, file);
+  };
+
+  const handleSelectLibraryAudio = async (soundId: string) => {
+    if (onSelectLibraryAudio) {
+      await onSelectLibraryAudio(sticker, soundId);
+    }
   };
 
   return (
@@ -67,9 +76,20 @@ export const StickerCard = ({
               <h4 className="font-medium text-gray-900">{sticker.name}</h4>
               <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
                 <span className="font-mono">{sticker.full_id}</span>
-                {sticker.is_percussion === 1 && (
-                  <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">
-                    Perc
+                {sticker.is_percussion === 1 ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                      <circle cx="12" cy="12" r="7" strokeWidth={2} />
+                    </svg>
+                    ドラム
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                    </svg>
+                    メロディ
                   </span>
                 )}
               </div>
@@ -105,7 +125,8 @@ export const StickerCard = ({
         {/* 展開エリア */}
         {isExpanded && (
           <div className="mt-4 pt-4 border-t space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            {/* 画像・音声アップロード - モバイルは縦並び */}
+            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">画像</label>
                 <FileUploader
@@ -115,24 +136,51 @@ export const StickerCard = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">音声</label>
-                <FileUploader
-                  type="audio"
-                  currentPath={audioPath}
-                  onUpload={handleAudioUpload}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">音声</label>
+                {/* 音声タイプに応じたガイド */}
+                <p className="text-xs text-gray-500 mb-2">
+                  {sticker.is_percussion === 1 ? (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-orange-600 font-medium">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                          <circle cx="12" cy="12" r="7" strokeWidth={2} />
+                        </svg>
+                        ドラム
+                      </span>
+                      {' '}− ドラムやパーカッションの音声を設定してください
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                        </svg>
+                        メロディ
+                      </span>
+                      {' '}− キットのキーに合った音源を選んでください
+                    </>
+                  )}
+                </p>
+                {onSelectLibraryAudio ? (
+                  <AudioSelector
+                    kitId={kit.id}
+                    stickerId={sticker.id}
+                    kitMusicalKey={kit.musical_key}
+                    currentPath={audioPath}
+                    onUpload={handleAudioUpload}
+                    onSelectLibrary={handleSelectLibraryAudio}
+                    isPercussion={sticker.is_percussion === 1}
+                  />
+                ) : (
+                  <FileUploader
+                    type="audio"
+                    currentPath={audioPath}
+                    onUpload={handleAudioUpload}
+                  />
+                )}
               </div>
             </div>
-
-            {/* 音声プレビュー */}
-            {sticker.audio_uploaded && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">音声プレビュー</label>
-                <audio controls className="w-full h-10">
-                  <source src={audioPath} type="audio/mpeg" />
-                </audio>
-              </div>
-            )}
 
             {/* アクション */}
             <div className="flex items-center justify-end gap-2 pt-2">

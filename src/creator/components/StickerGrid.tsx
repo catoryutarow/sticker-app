@@ -6,6 +6,7 @@ interface StickerGridProps {
   kit: Kit;
   onUploadImage: (sticker: Sticker, file: File) => Promise<void>;
   onUploadAudio: (sticker: Sticker, file: File) => Promise<void>;
+  onSelectLibraryAudio?: (sticker: Sticker, soundId: string) => Promise<void>;
   onEditSticker: (sticker: Sticker) => void;
   onDeleteSticker: (sticker: Sticker) => void;
 }
@@ -15,6 +16,7 @@ export const StickerGrid = ({
   kit,
   onUploadImage,
   onUploadAudio,
+  onSelectLibraryAudio,
   onEditSticker,
   onDeleteSticker,
 }: StickerGridProps) => {
@@ -39,21 +41,23 @@ export const StickerGrid = ({
   return (
     <div className="space-y-4">
       {/* ステータスバー */}
-      <div className="flex items-center gap-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
-        <span>{stickers.length} シール</span>
-        <span className="text-gray-300">|</span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          画像: {imageCount}/{stickers.length}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-blue-500" />
-          音声: {audioCount}/{stickers.length}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-purple-500" />
-          完了: {uploadedCount}/{stickers.length}
-        </span>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg">
+        <span className="font-medium">{stickers.length} シール</span>
+        <span className="hidden sm:inline text-gray-300">|</span>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="hidden sm:inline">画像:</span> {imageCount}/{stickers.length}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="hidden sm:inline">音声:</span> {audioCount}/{stickers.length}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-purple-500" />
+            <span className="hidden sm:inline">完了:</span> {uploadedCount}/{stickers.length}
+          </span>
+        </div>
       </div>
 
       {/* シール一覧 */}
@@ -65,6 +69,7 @@ export const StickerGrid = ({
             kit={kit}
             onUploadImage={onUploadImage}
             onUploadAudio={onUploadAudio}
+            onSelectLibraryAudio={onSelectLibraryAudio}
             onEdit={onEditSticker}
             onDelete={onDeleteSticker}
           />

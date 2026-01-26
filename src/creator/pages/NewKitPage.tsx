@@ -27,8 +27,6 @@ export const NewKitPage = () => {
       <nav className="flex items-center gap-2 text-sm text-gray-500">
         <Link to="/creator" className="hover:text-gray-700">ダッシュボード</Link>
         <span>/</span>
-        <Link to="/creator/kits" className="hover:text-gray-700">キット一覧</Link>
-        <span>/</span>
         <span className="text-gray-900">新規作成</span>
       </nav>
 

@@ -9,6 +9,8 @@ import { randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import authRoutes from './routes/auth.js';
 import kitRoutes from './routes/kits.js';
+import audioLibraryRoutes from './routes/audioLibrary.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 
@@ -68,6 +70,12 @@ app.use('/api/auth', authRoutes);
 
 // キットルート
 app.use('/api/kits', kitRoutes);
+
+// 音声ライブラリルート
+app.use('/api/audio-library', audioLibraryRoutes);
+
+// 管理者ルート
+app.use('/api/admin', adminRoutes);
 
 // ヘルスチェック
 app.get('/health', (req, res) => {

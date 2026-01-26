@@ -20,6 +20,23 @@ export interface StickerDefinition {
   isPercussion?: boolean;  // パーカッション（キーなし）の場合true
 }
 
+// 動的に追加されるシール定義を保持するマップ
+const dynamicStickers = new Map<string, StickerDefinition>();
+
+/**
+ * 動的にシール定義を追加（KitDataContextから呼び出される）
+ */
+export function registerDynamicSticker(sticker: StickerDefinition) {
+  dynamicStickers.set(sticker.id, sticker);
+}
+
+/**
+ * 動的シールをクリア
+ */
+export function clearDynamicStickers() {
+  dynamicStickers.clear();
+}
+
 /**
  * シール定義一覧
  * 追加・削除はここで管理
@@ -56,24 +73,31 @@ export const STICKERS: StickerDefinition[] = [
 ];
 
 /**
- * IDからシール定義を取得
+ * IDからシール定義を取得（動的シールも含む）
  */
 export function getStickerById(id: string): StickerDefinition | undefined {
+  // まず動的シールをチェック
+  const dynamic = dynamicStickers.get(id);
+  if (dynamic) return dynamic;
+  // 静的シールをチェック
   return STICKERS.find((s) => s.id === id);
 }
 
 /**
- * 有効なシールIDかどうかを判定
+ * 有効なシールIDかどうかを判定（動的シールも含む）
  */
 export function isValidStickerId(id: string): boolean {
+  if (dynamicStickers.has(id)) return true;
   return STICKERS.some((s) => s.id === id);
 }
 
 /**
- * 全シールIDの配列を取得
+ * 全シールIDの配列を取得（静的+動的を返す）
  */
 export function getAllStickerIds(): string[] {
-  return STICKERS.map((s) => s.id);
+  const staticIds = STICKERS.map((s) => s.id);
+  const dynamicIds = Array.from(dynamicStickers.keys());
+  return [...new Set([...staticIds, ...dynamicIds])];
 }
 
 /**
@@ -106,28 +130,28 @@ export function isStickerPercussion(stickerId: string): boolean {
 }
 
 /**
- * 半音オフセット→キー名マッピング（Am=0基準）
+ * 半音オフセット→並行調マッピング（C/Am=0基準）
  */
 const SEMITONE_TO_KEY: Record<number, string> = {
-  [-6]: 'D#m',
-  [-5]: 'Em',
-  [-4]: 'Fm',
-  [-3]: 'F#m',
-  [-2]: 'Gm',
-  [-1]: 'G#m',
-  [0]: 'Am',
-  [1]: 'A#m',
-  [2]: 'Bm',
-  [3]: 'Cm',
-  [4]: 'C#m',
-  [5]: 'Dm',
-  [6]: 'D#m',
+  [-6]: 'F# / D#m',
+  [-5]: 'G / Em',
+  [-4]: 'Ab / Fm',
+  [-3]: 'A / F#m',
+  [-2]: 'Bb / Gm',
+  [-1]: 'B / G#m',
+  [0]: 'C / Am',
+  [1]: 'Db / Bbm',
+  [2]: 'D / Bm',
+  [3]: 'Eb / Cm',
+  [4]: 'E / C#m',
+  [5]: 'F / Dm',
+  [6]: 'F# / D#m',
 };
 
 /**
- * 半音オフセットからキー名を取得
+ * 半音オフセットから並行調名を取得
  */
 export function semitoneToKey(semitone: number): string {
   const clamped = Math.max(-6, Math.min(6, semitone));
-  return SEMITONE_TO_KEY[clamped] ?? 'Am';
+  return SEMITONE_TO_KEY[clamped] ?? 'C / Am';
 }

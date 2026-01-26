@@ -87,7 +87,7 @@ export function StickerKitCard({
         }}
       />
 
-      {/* キット番号ラベル */}
+      {/* キット名ラベル */}
       <div className="absolute top-3 left-4 z-20">
         <span
           className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -96,7 +96,7 @@ export function StickerKitCard({
             color: '#333',
           }}
         >
-          {kit.id}
+          {kit.nameJa || kit.name}
         </span>
       </div>
 

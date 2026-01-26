@@ -337,20 +337,31 @@ export function StickerAlbum() {
               <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="p-4 lg:p-0 space-y-4">
+          <div className="p-4 lg:p-0 pb-safe space-y-4">
             <StickerPalette onDragStart={handleDragStart} />
 
-            {/* クリエイター登録導線 */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <Link
-                to="/creator/signup"
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-              >
-                <Sparkles className="w-4 h-4" />
-                クリエイター登録してシールを作ろう
-              </Link>
+            {/* クリエイター導線 */}
+            <div className="mt-6 pt-6 border-t border-gray-200 pb-8 lg:pb-0">
+              <p className="text-sm text-gray-700 text-center mb-3 font-medium">
+                自分だけのシールキットを作ろう
+              </p>
+              <div className="flex gap-2">
+                <Link
+                  to="/creator/signup"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  登録
+                </Link>
+                <Link
+                  to="/creator/login"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                >
+                  ログイン
+                </Link>
+              </div>
               <p className="mt-2 text-xs text-gray-500 text-center">
-                自分だけのシールキットを作成・公開できます
+                クリエイターとして公開できます
               </p>
             </div>
           </div>

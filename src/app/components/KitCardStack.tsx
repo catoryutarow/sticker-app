@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { StickerKitCard } from './StickerKitCard';
-import { KITS, KitDefinition } from '@/config/kitConfig';
-import { STICKER_LAYOUT_BY_KIT, STICKER_LAYOUT, StickerLayoutItem } from '@/config/stickerLayout';
+import { KitDefinition } from '@/config/kitConfig';
+import { StickerLayoutItem } from '@/config/stickerLayout';
+import { useKitData } from '@/config/KitDataContext';
 
 interface KitCardStackProps {
   onDragStart?: () => void;
   onStickerUsed?: (paletteId: string) => void;
+  searchQuery?: string;
 }
 
 // グローバルコールバック
@@ -36,19 +38,45 @@ export function removeStickerByType(stickerId: string) {
   globalRemoveStickerByTypeCallback?.(stickerId);
 }
 
-export function KitCardStack({ onDragStart }: KitCardStackProps) {
+export function KitCardStack({ onDragStart, searchQuery = '' }: KitCardStackProps) {
+  const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading } = useKitData();
+
+  // 検索でキットをフィルタリング
+  const KITS = useMemo(() => {
+    if (!searchQuery.trim()) return ALL_KITS;
+    const query = searchQuery.toLowerCase();
+    return ALL_KITS.filter(kit =>
+      kit.name.toLowerCase().includes(query) ||
+      kit.nameJa.toLowerCase().includes(query) ||
+      (kit.description?.toLowerCase().includes(query))
+    );
+  }, [ALL_KITS, searchQuery]);
+
   const [activeKitIndex, setActiveKitIndex] = useState(0);
+
+  // KITSが変わったらインデックスをリセット
+  useEffect(() => {
+    setActiveKitIndex(0);
+  }, [KITS.length]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitingIndex, setExitingIndex] = useState<number | null>(null);
 
   // キットごとのレイアウト状態を管理
-  const [layoutByKit, setLayoutByKit] = useState<Record<string, StickerLayoutItem[]>>(() => {
+  const [layoutByKit, setLayoutByKit] = useState<Record<string, StickerLayoutItem[]>>({});
+
+  // Contextのデータが変わったらレイアウトを初期化
+  useEffect(() => {
     const initial: Record<string, StickerLayoutItem[]> = {};
     KITS.forEach(kit => {
-      initial[kit.id] = [...(STICKER_LAYOUT_BY_KIT[kit.id] || [])];
+      initial[kit.id] = [...(initialLayoutByKit[kit.id] || [])];
     });
-    return initial;
-  });
+    setLayoutByKit(initial);
+  }, [KITS, initialLayoutByKit]);
+
+  // 全シールレイアウト（フラット）
+  const STICKER_LAYOUT = useMemo(() => {
+    return Object.values(initialLayoutByKit).flat();
+  }, [initialLayoutByKit]);
 
   // グローバルコールバックを登録
   useEffect(() => {
@@ -97,7 +125,7 @@ export function KitCardStack({ onDragStart }: KitCardStackProps) {
     globalResetPaletteCallback = () => {
       const reset: Record<string, StickerLayoutItem[]> = {};
       KITS.forEach(kit => {
-        reset[kit.id] = [...(STICKER_LAYOUT_BY_KIT[kit.id] || [])];
+        reset[kit.id] = [...(initialLayoutByKit[kit.id] || [])];
       });
       setLayoutByKit(reset);
     };
@@ -121,7 +149,7 @@ export function KitCardStack({ onDragStart }: KitCardStackProps) {
       globalResetPaletteCallback = null;
       globalRemoveStickerByTypeCallback = null;
     };
-  }, []);
+  }, [KITS, initialLayoutByKit, STICKER_LAYOUT]);
 
   // 次のキットへ切り替え
   const handleNextKit = useCallback(() => {
@@ -149,6 +177,34 @@ export function KitCardStack({ onDragStart }: KitCardStackProps) {
   };
 
   const orderedKits = getOrderedKits();
+
+  if (isLoading) {
+    return (
+      <div className="relative">
+        <div className="flex items-center justify-center" style={{ height: '420px' }}>
+          <div className="text-center text-gray-500">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-2" />
+            <p className="text-sm">キットを読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (KITS.length === 0) {
+    return (
+      <div className="relative">
+        <div className="flex items-center justify-center" style={{ height: '420px' }}>
+          <div className="text-center text-gray-500">
+            <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p className="text-sm">「{searchQuery}」に一致するキットがありません</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
