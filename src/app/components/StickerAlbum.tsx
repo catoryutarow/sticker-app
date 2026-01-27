@@ -6,6 +6,7 @@ import { ControlPanel } from '@/app/components/ControlPanel';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
+import { WelcomeModal, shouldShowWelcome } from '@/app/components/WelcomeModal';
 import { Menu, X, Sparkles } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
@@ -32,6 +33,7 @@ export function StickerAlbum() {
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => shouldShowWelcome());
 
   // Ref for StickerSheet DOM element
   const stickerSheetRef = useRef<HTMLDivElement>(null);
@@ -312,6 +314,8 @@ export function StickerAlbum() {
           // Export props
           onExport={handleExport}
           hasStickers={stickers.length > 0}
+          // Help props
+          onShowHelp={() => setIsWelcomeOpen(true)}
         />
       </div>
 
@@ -342,26 +346,31 @@ export function StickerAlbum() {
 
             {/* クリエイター導線 */}
             <div className="mt-6 pt-6 border-t border-gray-200 pb-8 lg:pb-0">
-              <p className="text-sm text-gray-700 text-center mb-3 font-medium">
-                自分だけのシールキットを作ろう
-              </p>
-              <div className="flex gap-2">
-                <Link
-                  to="/creator/signup"
-                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors active:scale-[0.98]"
-                >
-                  登録
-                </Link>
-                <Link
-                  to="/creator/login"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.98]"
-                >
-                  ログイン
-                </Link>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                  <p className="text-sm text-gray-800 font-semibold">
+                    自分だけのシールキットを作ろう
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">
+                  クリエイターとして公開できます
+                </p>
+                <div className="flex gap-2">
+                  <Link
+                    to="/creator/signup"
+                    className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors active:scale-[0.98] min-h-[48px]"
+                  >
+                    登録
+                  </Link>
+                  <Link
+                    to="/creator/login"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.98] min-h-[48px]"
+                  >
+                    ログイン
+                  </Link>
+                </div>
               </div>
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                クリエイターとして公開できます
-              </p>
             </div>
           </div>
         </div>
@@ -387,8 +396,8 @@ export function StickerAlbum() {
         </div>
       </div>
 
-      {/* モバイル用フッター固定コントロールパネル */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pb-safe">
+      {/* モバイル用フッター固定コントロールパネル（パレットが開いているときは非表示） */}
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 pb-safe transition-transform duration-300 ${isPaletteOpen ? 'translate-y-full' : 'translate-y-0'}`}>
         <ControlPanel
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history.length - 1}
@@ -407,6 +416,8 @@ export function StickerAlbum() {
           // Export props
           onExport={handleExport}
           hasStickers={stickers.length > 0}
+          // Help props
+          onShowHelp={() => setIsWelcomeOpen(true)}
         />
       </div>
 
@@ -420,6 +431,12 @@ export function StickerAlbum() {
         stickers={stickers}
         stickerSheetRef={stickerSheetRef}
         backgroundId={backgroundId}
+      />
+
+      {/* ウェルカムモーダル */}
+      <WelcomeModal
+        isOpen={isWelcomeOpen}
+        onClose={() => setIsWelcomeOpen(false)}
       />
     </div>
   );

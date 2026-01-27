@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Undo2, Redo2, RotateCcw, Download } from 'lucide-react';
+import { Undo2, Redo2, RotateCcw, Download, HelpCircle } from 'lucide-react';
 import { AudioControls } from './AudioControls';
 import { StickerType } from '../../audio';
 
@@ -22,6 +22,8 @@ interface ControlPanelProps {
   // Export props
   onExport: () => void;
   hasStickers: boolean;
+  // Help props
+  onShowHelp?: () => void;
 }
 
 export function ControlPanel({
@@ -42,6 +44,8 @@ export function ControlPanel({
   // Export props
   onExport,
   hasStickers,
+  // Help props
+  onShowHelp,
 }: ControlPanelProps) {
   const [showResetDialog, setShowResetDialog] = useState(false);
 
@@ -180,6 +184,21 @@ export function ControlPanel({
                 <RotateCcw className="w-5 h-5" />
                 <span className="hidden sm:inline">初期化</span>
               </button>
+
+              {/* ヘルプ */}
+              {onShowHelp && (
+                <>
+                  <div className="w-px h-8 bg-gray-400"></div>
+                  <button
+                    onClick={onShowHelp}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
+                    title="使い方"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">使い方</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
