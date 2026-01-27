@@ -10,7 +10,7 @@ export default function App() {
   return (
     <DndProvider
       backend={isTouchDevice ? TouchBackend : HTML5Backend}
-      options={isTouchDevice ? { delayTouchStart: 80 } : undefined}
+      options={isTouchDevice ? { delayTouchStart: 50, enableMouseEvents: true } : undefined}
     >
       {/* 背景レイヤー（最背面） */}
       <div

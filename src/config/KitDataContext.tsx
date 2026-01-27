@@ -14,6 +14,7 @@ interface KitDataContextType {
   pagination: PaginationInfo | null;
   loadMore: () => Promise<void>;
   hasMore: boolean;
+  retry: () => void;
 }
 
 const KitDataContext = createContext<KitDataContextType>({
@@ -26,6 +27,7 @@ const KitDataContext = createContext<KitDataContextType>({
   pagination: null,
   loadMore: async () => {},
   hasMore: false,
+  retry: () => {},
 });
 
 export function useKitData() {
@@ -120,6 +122,7 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loadedKitIds, setLoadedKitIds] = useState<Set<string>>(new Set());
+  const [retryCount, setRetryCount] = useState(0);
 
   /**
    * キットデータを変換（ページネーションAPIから直接取得したデータを使用）
@@ -178,7 +181,15 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
     }
 
     loadInitialKits();
-  }, [convertKits]);
+  }, [convertKits, retryCount]);
+
+  /**
+   * エラー時のリトライ
+   */
+  const retry = useCallback(() => {
+    setError(null);
+    setRetryCount(prev => prev + 1);
+  }, []);
 
   /**
    * 追加読み込み（無限スクロール用）
@@ -258,6 +269,7 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
       pagination,
       loadMore,
       hasMore,
+      retry,
     }}>
       {children}
     </KitDataContext.Provider>

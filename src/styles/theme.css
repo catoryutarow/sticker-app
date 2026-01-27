@@ -119,6 +119,17 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@layer utilities {
+  /* スクロールバー非表示 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

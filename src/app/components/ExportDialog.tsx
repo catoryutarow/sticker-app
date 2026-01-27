@@ -117,7 +117,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
             <Video className="w-5 h-5" />
             動画エクスポート
           </DialogTitle>
-          <DialogDescription>シールと音楽を動画としてダウンロードします</DialogDescription>
+          <DialogDescription>シールと音楽を動画にして保存</DialogDescription>
         </DialogHeader>
 
         {exportPhase === 'idle' && (
@@ -138,13 +138,13 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               </select>
             </div>
 
-            {/* 合成用（グリーンバック）設定 */}
+            {/* グリーンバック設定 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-5 h-5 rounded border ${greenScreen ? 'bg-green-500 border-green-600' : 'bg-gray-100 border-gray-300'}`}
                 />
-                <span className="text-sm font-medium">合成用</span>
+                <span className="text-sm font-medium">背景を緑に（合成用）</span>
               </div>
               <button
                 onClick={() => setGreenScreen(!greenScreen)}
@@ -182,7 +182,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               <p className="text-sm font-medium text-green-600">エクスポートが完了しました</p>
               {saveMethod === 'shared' && (
                 <p className="text-xs text-gray-500 text-center">
-                  共有シートから「ビデオを保存」を選択してカメラロールに保存できます
+                  「ビデオを保存」でカメラロールに保存できます
                 </p>
               )}
               {saveMethod === 'downloaded' && (
@@ -196,7 +196,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                   <div className="bg-green-50 p-3 rounded-lg text-xs text-green-700 border border-green-200">
                     <p className="font-medium mb-2 flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" />
-                      Safariで開くと直接カメラロールに保存できます
+                      Safariならカメラロールに直接保存できます
                     </p>
                     <button
                       onClick={() => {
@@ -212,11 +212,11 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
 
                   {/* Chrome用手順 */}
                   <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 text-left">
-                    <p className="font-medium mb-1">Chromeで保存する場合:</p>
+                    <p className="font-medium mb-1">Chromeの場合:</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>「ファイルに保存」をタップ</li>
-                      <li>ファイルアプリで開く</li>
-                      <li>「ビデオを保存」をタップ</li>
+                      <li>下の「ファイルに保存」をタップ</li>
+                      <li>ファイルアプリで動画を開く</li>
+                      <li>共有 → 「ビデオを保存」</li>
                     </ol>
                   </div>
                 </div>

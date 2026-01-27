@@ -29,8 +29,12 @@ export function DraggableSticker({ type, size = 80, rotation = 0, paletteId, onD
   }, [preview]);
 
   useEffect(() => {
-    if (isDragging && onDragStart) {
-      onDragStart();
+    if (isDragging) {
+      // 振動フィードバック（モバイル）
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+      onDragStart?.();
     }
   }, [isDragging, onDragStart]);
 

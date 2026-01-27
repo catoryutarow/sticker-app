@@ -20,10 +20,11 @@ export function CustomDragLayer() {
 
       return (
         <div
+          className="transition-transform"
           style={{
-            transform: `rotate(${rotation}deg)`,
-            filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))',
-            opacity: 0.8,
+            transform: `rotate(${rotation}deg) scale(1.15)`,
+            filter: 'drop-shadow(4px 8px 12px rgba(0, 0, 0, 0.4))',
+            opacity: 0.9,
           }}
         >
           <div className="pointer-events-none">
@@ -40,10 +41,11 @@ export function CustomDragLayer() {
 
       return (
         <div
+          className="transition-transform"
           style={{
-            transform: `rotate(${rotation}deg)`,
-            filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))',
-            opacity: 0.8,
+            transform: `rotate(${rotation}deg) scale(1.15)`,
+            filter: 'drop-shadow(4px 8px 12px rgba(0, 0, 0, 0.4))',
+            opacity: 0.9,
           }}
         >
           <div className="pointer-events-none">

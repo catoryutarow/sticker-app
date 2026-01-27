@@ -5,6 +5,7 @@ import { StickerKitCard } from './StickerKitCard';
 import { KitDefinition } from '@/config/kitConfig';
 import { StickerLayoutItem } from '@/config/stickerLayout';
 import { useKitData } from '@/config/KitDataContext';
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 
 interface KitCardStackProps {
   onDragStart?: () => void;
@@ -40,7 +41,7 @@ export function removeStickerByType(stickerId: string) {
 }
 
 export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber = null }: KitCardStackProps) {
-  const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading, isLoadingMore, hasMore, loadMore } = useKitData();
+  const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading, isLoadingMore, hasMore, loadMore, error, retry } = useKitData();
 
   // 検索でキットをフィルタリング（名前、説明、タグで検索）
   const KITS = useMemo(() => {
@@ -212,6 +213,20 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
     );
   }
 
+  if (error) {
+    return (
+      <div className="relative">
+        <div className="flex items-center justify-center" style={{ height: '420px' }}>
+          <ErrorDisplay
+            message={error}
+            onRetry={retry}
+            variant="full"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (KITS.length === 0) {
     return (
       <div className="relative">
@@ -265,11 +280,11 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
       </div>
 
       {/* ヘルプテキスト */}
-      <div className="pt-3">
+      <div className="pt-16">
         <p className="text-xs text-gray-500 text-center">
           シールをドラッグして台紙に貼り付けよう
         </p>
-        <p className="text-xs text-gray-400 text-center mt-1">
+        <p className="text-xs text-gray-400 text-center mt-1.5">
           タップで次のキットへ
         </p>
         {/* 追加読み込み中インジケーター */}

@@ -1,8 +1,9 @@
 import { useDrop } from 'react-dnd';
+import { useState, useEffect } from 'react';
 import type { Sticker } from '@/app/components/StickerAlbum';
 import { PlacedSticker } from '@/app/components/PlacedSticker';
 import { StickerEditor } from '@/app/components/StickerEditor';
-import { getBackgroundImagePath } from '../../config/backgroundConfig';
+import { getBackgroundImagePath, BACKGROUNDS } from '../../config/backgroundConfig';
 
 interface StickerSheetProps {
   stickers: Sticker[];
@@ -29,8 +30,21 @@ export function StickerSheet({
   onDeleteSticker,
   selectedStickerId,
 }: StickerSheetProps) {
-  const backgroundImagePath = getBackgroundImagePath(backgroundId);
   const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
+
+  // 全背景画像を初回マウント時にプリロード
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  useEffect(() => {
+    const promises = BACKGROUNDS.map((bg) => {
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // エラーでも続行
+        img.src = getBackgroundImagePath(bg.id);
+      });
+    });
+    Promise.all(promises).then(() => setImagesLoaded(true));
+  }, []);
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ['sticker', 'placed-sticker'],
@@ -42,6 +56,11 @@ export function StickerSheet({
           const rect = dropTargetRef.getBoundingClientRect();
           const x = offset.x - rect.left;
           const y = offset.y - rect.top;
+
+          // 振動フィードバック（ドロップ成功）
+          if ('vibrate' in navigator) {
+            navigator.vibrate(15);
+          }
 
           // 配置済みシールの移動か新規追加かを判定
           if (monitor.getItemType() === 'placed-sticker' && item.id) {
@@ -83,9 +102,6 @@ export function StickerSheet({
         }`}
         style={{
           minHeight: '800px',
-          backgroundImage: `url(${backgroundImagePath})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
           backdropFilter: 'blur(10px)',
           boxShadow: `
             0 8px 32px rgba(0, 0, 0, 0.1),
@@ -95,6 +111,20 @@ export function StickerSheet({
           border: '2px solid rgba(255, 255, 255, 0.5)',
         }}
       >
+        {/* 背景画像レイヤー（全画像を重ねて、選択中のみ表示） */}
+        {BACKGROUNDS.map((bg) => (
+          <div
+            key={bg.id}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${getBackgroundImagePath(bg.id)})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: bg.id === backgroundId ? 1 : 0,
+              transition: imagesLoaded ? 'opacity 300ms ease-in-out' : 'none',
+            }}
+          />
+        ))}
         {/* 透明感のある光沢表現 */}
         <div
           className="absolute inset-0 pointer-events-none"
