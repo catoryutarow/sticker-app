@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Progress } from './ui/progress';
-import { Video, Loader2, Check, X, Share, Copy, ExternalLink } from 'lucide-react';
+import { Video, Loader2, Check, X, Share, Copy, ExternalLink, Share2 } from 'lucide-react';
 import { VideoExporter, ExportProgress } from '../../export';
 import { Sticker } from './StickerAlbum';
 import { LOOP_DURATION } from '../../audio';
@@ -23,11 +23,12 @@ interface ExportDialogProps {
   stickers: Sticker[];
   stickerSheetRef: RefObject<HTMLDivElement | null>;
   backgroundId?: string;
+  onShareRequest?: (videoBlob: Blob) => void;
 }
 
 type ExportPhase = 'idle' | 'exporting' | 'complete' | 'error';
 
-export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backgroundId = 'default' }: ExportDialogProps) {
+export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backgroundId = 'default', onShareRequest }: ExportDialogProps) {
   // Export settings
   const [greenScreen, setGreenScreen] = useState(false);
   const [includeAudio, setIncludeAudio] = useState(true);
@@ -102,6 +103,13 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
     videoBlobRef.current = null;
     onClose();
   }, [exportPhase, onClose]);
+
+  const handleShareClick = useCallback(() => {
+    if (videoBlobRef.current && onShareRequest) {
+      onShareRequest(videoBlobRef.current);
+      handleClose();
+    }
+  }, [onShareRequest, handleClose]);
 
   const durationOptions = [
     { value: 16, label: '16秒 (1ループ)' },
@@ -265,23 +273,45 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               >
                 閉じる
               </button>
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
-              >
-                <Share className="w-4 h-4" />
-                保存
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
+                >
+                  <Share className="w-4 h-4" />
+                  保存
+                </button>
+                {onShareRequest && (
+                  <button
+                    onClick={handleShareClick}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    共有
+                  </button>
+                )}
+              </div>
             </>
           )}
 
           {exportPhase === 'complete' && saveMethod && (
-            <button
-              onClick={handleClose}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
-            >
-              完了
-            </button>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={handleClose}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                閉じる
+              </button>
+              {onShareRequest && (
+                <button
+                  onClick={handleShareClick}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  共有
+                </button>
+              )}
+            </div>
           )}
 
           {exportPhase === 'error' && (

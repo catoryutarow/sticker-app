@@ -5,9 +5,12 @@ import { PlacedSticker } from '@/app/components/PlacedSticker';
 import { StickerEditor } from '@/app/components/StickerEditor';
 import { getBackgroundImagePath, BACKGROUNDS } from '../../config/backgroundConfig';
 
+export type AspectRatio = '3:4' | '1:1';
+
 interface StickerSheetProps {
   stickers: Sticker[];
   backgroundId?: string;
+  aspectRatio?: AspectRatio;
   onAddSticker: (type: string, x: number, y: number, size?: number, rotation?: number, paletteId?: string) => void;
   onSelectSticker?: (id: string) => void;
   onDeselectSticker?: () => void;
@@ -21,6 +24,7 @@ interface StickerSheetProps {
 export function StickerSheet({
   stickers,
   backgroundId = 'default',
+  aspectRatio = '3:4',
   onAddSticker,
   onSelectSticker,
   onDeselectSticker,
@@ -81,18 +85,6 @@ export function StickerSheet({
 
   return (
     <div className="relative">
-      {/* バインダーリング装飾 */}
-      <div className="absolute -left-8 top-0 bottom-0 flex flex-col justify-around items-center py-12">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="relative">
-            {/* リング */}
-            <div className="w-6 h-12 rounded-full border-4 border-white bg-gradient-to-br from-gray-100 to-gray-300 shadow-lg"></div>
-            {/* リングのハイライト */}
-            <div className="absolute top-1 left-1 w-3 h-4 rounded-full bg-white opacity-60"></div>
-          </div>
-        ))}
-      </div>
-
       {/* メインの台紙 */}
       <div
         id="sticker-sheet"
@@ -101,7 +93,8 @@ export function StickerSheet({
           isOver ? 'ring-4 ring-blue-300 ring-opacity-50' : ''
         }`}
         style={{
-          minHeight: '800px',
+          aspectRatio: aspectRatio === '1:1' ? '1 / 1' : '3 / 4',
+          minHeight: aspectRatio === '1:1' ? '600px' : '800px',
           backdropFilter: 'blur(10px)',
           boxShadow: `
             0 8px 32px rgba(0, 0, 0, 0.1),
@@ -152,21 +145,8 @@ export function StickerSheet({
           }}
         />
 
-        {/* 穴あき部分の装飾 */}
-        <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-around items-center py-12">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="w-8 h-8 rounded-full bg-white shadow-inner"
-              style={{
-                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)',
-              }}
-            />
-          ))}
-        </div>
-
         {/* シールを配置 */}
-        <div className="pl-12">
+        <div>
           {stickers.map((sticker) => (
             <PlacedSticker
               key={sticker.id}

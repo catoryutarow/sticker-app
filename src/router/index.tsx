@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import App from '@/app/App';
+import { WorkPage } from '@/app/pages/WorkPage';
 import { AuthGuard } from '@/auth';
 import { CreatorLayout, SignupPage, LoginPage, DashboardPage, NewKitPage, KitDetailPage } from '@/creator';
 import {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+  },
+  {
+    path: '/w/:shareId',
+    element: <WorkPage />,
   },
   {
     path: '/creator/signup',

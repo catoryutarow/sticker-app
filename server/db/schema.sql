@@ -105,3 +105,30 @@ CREATE INDEX IF NOT EXISTS idx_tags_usage ON tags(usage_count DESC);
 CREATE INDEX IF NOT EXISTS idx_kit_tags_kit ON kit_tags(kit_id);
 CREATE INDEX IF NOT EXISTS idx_kit_tags_tag ON kit_tags(tag_name);
 CREATE INDEX IF NOT EXISTS idx_kit_tags_custom ON kit_tags(is_custom);
+
+-- ================================
+-- 作品保存・共有システム（2024-01 追加）
+-- ================================
+
+-- 作品テーブル（シール配置の保存）
+CREATE TABLE IF NOT EXISTS works (
+  id TEXT PRIMARY KEY,
+  share_id TEXT UNIQUE NOT NULL,           -- 短いID (nanoid 8文字) for URL sharing
+  anonymous_id TEXT,                        -- 匿名ユーザーID (localStorage UUID)
+  user_id TEXT REFERENCES users(id),       -- ログインユーザー (nullable)
+  title TEXT DEFAULT '',
+  stickers_json TEXT NOT NULL,             -- JSON配列: シール配置データ
+  background_id TEXT DEFAULT 'default',
+  aspect_ratio TEXT DEFAULT '3:4',          -- アスペクト比: '3:4'(モバイル), '1:1'(PC)
+  video_url TEXT,                           -- エクスポート動画URL (nullable)
+  thumbnail_url TEXT,                       -- OGP用サムネイル (nullable)
+  view_count INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 作品検索用インデックス
+CREATE INDEX IF NOT EXISTS idx_works_share_id ON works(share_id);
+CREATE INDEX IF NOT EXISTS idx_works_anonymous_id ON works(anonymous_id);
+CREATE INDEX IF NOT EXISTS idx_works_user_id ON works(user_id);
+CREATE INDEX IF NOT EXISTS idx_works_created_at ON works(created_at DESC);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Undo2, Redo2, RotateCcw, Download, HelpCircle } from 'lucide-react';
+import { Undo2, Redo2, RotateCcw, Download, HelpCircle, Share2 } from 'lucide-react';
 import { AudioControls } from './AudioControls';
 import { StickerType } from '../../audio';
 
@@ -22,6 +22,8 @@ interface ControlPanelProps {
   // Export props
   onExport: () => void;
   hasStickers: boolean;
+  // Share props
+  onShare?: () => void;
   // Help props
   onShowHelp?: () => void;
 }
@@ -44,6 +46,8 @@ export function ControlPanel({
   // Export props
   onExport,
   hasStickers,
+  // Share props
+  onShare,
   // Help props
   onShowHelp,
 }: ControlPanelProps) {
@@ -157,20 +161,38 @@ export function ControlPanel({
               {/* 区切り */}
               <div className="w-px h-8 bg-gray-400"></div>
 
-              {/* エクスポート */}
-              <button
-                onClick={onExport}
-                disabled={!hasStickers}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
-                  hasStickers
-                    ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                title="動画エクスポート"
-              >
-                <Download className="w-5 h-5" />
-                <span className="hidden sm:inline">動画</span>
-              </button>
+              {/* エクスポート・共有 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={onExport}
+                  disabled={!hasStickers}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                    hasStickers
+                      ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  title="動画エクスポート"
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline">動画</span>
+                </button>
+
+                {onShare && (
+                  <button
+                    onClick={onShare}
+                    disabled={!hasStickers}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                      hasStickers
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title="共有"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">共有</span>
+                  </button>
+                )}
+              </div>
 
               {/* 区切り */}
               <div className="w-px h-8 bg-gray-400"></div>
