@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Kit, LayoutPreviewItem } from '@/api/kitsApi';
+import { getStickerImageUrl, getKitThumbnailUrl, getDefaultThumbnailUrl } from '@/config/assetUrl';
 
 interface KitCardProps {
   kit: Kit;
@@ -54,7 +55,7 @@ const MiniPreview = ({ kit, layouts }: { kit: Kit; layouts: LayoutPreviewItem[] 
           >
             {layout.image_uploaded ? (
               <img
-                src={`/assets/stickers/kit-${kit.kit_number}/${layout.full_id}.png`}
+                src={getStickerImageUrl(kit.kit_number, layout.full_id)}
                 alt={layout.name}
                 className="w-full h-full object-contain drop-shadow-sm"
                 loading="lazy"
@@ -83,12 +84,12 @@ const MiniPreview = ({ kit, layouts }: { kit: Kit; layouts: LayoutPreviewItem[] 
 
 // サムネイル画像コンポーネント（公開済みキット用、フォールバック対応）
 const ThumbnailImage = ({ kit }: { kit: Kit }) => {
-  const [imgSrc, setImgSrc] = useState(`/assets/thumbnails/kit-${kit.kit_number}.png`);
+  const [imgSrc, setImgSrc] = useState(getKitThumbnailUrl(kit.kit_number));
 
   const handleError = () => {
     // サムネイルが見つからない場合はデフォルト画像にフォールバック
     if (!imgSrc.includes('default.png')) {
-      setImgSrc('/assets/thumbnails/default.png');
+      setImgSrc(getDefaultThumbnailUrl());
     }
   };
 

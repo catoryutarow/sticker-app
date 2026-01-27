@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { kitsApi, type Sticker, type StickerLayout } from '@/api/kitsApi';
+import { getStickerImageUrl } from '@/config/assetUrl';
 
 type LocalSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -389,7 +390,7 @@ export const LayoutPreview = ({
             >
               {layout.sticker.image_uploaded ? (
                 <img
-                  src={`/assets/stickers/kit-${kitNumber}/${layout.sticker.full_id}.png`}
+                  src={getStickerImageUrl(kitNumber, layout.sticker.full_id)}
                   alt={layout.sticker.name}
                   className="w-full h-full object-contain pointer-events-none"
                   draggable={false}
@@ -490,7 +491,7 @@ export const LayoutPreview = ({
                     >
                       {selectedSticker.image_uploaded ? (
                         <img
-                          src={`/assets/stickers/kit-${kitNumber}/${selectedSticker.full_id}.png`}
+                          src={getStickerImageUrl(kitNumber, selectedSticker.full_id)}
                           alt={selectedSticker.name}
                           className="w-full h-full object-contain"
                         />
@@ -604,7 +605,7 @@ export const LayoutPreview = ({
                     >
                       {sticker.image_uploaded ? (
                         <img
-                          src={`/assets/stickers/kit-${kitNumber}/${sticker.full_id}.png`}
+                          src={getStickerImageUrl(kitNumber, sticker.full_id)}
                           alt={sticker.name}
                           className="w-full h-full object-contain"
                         />

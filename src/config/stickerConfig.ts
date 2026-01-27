@@ -100,25 +100,27 @@ export function getAllStickerIds(): string[] {
   return [...new Set([...staticIds, ...dynamicIds])];
 }
 
+import { getStickerImageUrl, getStickerAudioUrl } from './assetUrl';
+
 /**
  * IDからキットIDを抽出
  */
-function getKitId(id: string): string {
+export function getKitIdFromStickerId(id: string): string {
   const parts = id.split('-');
   return parts[0] || '001';
 }
 
 /**
- * アセットパスを生成
+ * アセットURLを生成（CDN対応）
  */
 export function getStickerImagePath(id: string): string {
-  const kitId = getKitId(id);
-  return `/assets/stickers/kit-${kitId}/${id}.png`;
+  const kitId = getKitIdFromStickerId(id);
+  return getStickerImageUrl(kitId, id);
 }
 
 export function getStickerAudioPath(id: string): string {
-  const kitId = getKitId(id);
-  return `/assets/audio/kit-${kitId}/${id}.mp3`;
+  const kitId = getKitIdFromStickerId(id);
+  return getStickerAudioUrl(kitId, id);
 }
 
 /**

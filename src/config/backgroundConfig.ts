@@ -49,17 +49,19 @@ export function getBackgroundById(id: string): BackgroundDefinition | undefined 
   return BACKGROUNDS.find((b) => b.id === id);
 }
 
+import { getBackgroundUrl } from './assetUrl';
+
 /**
- * IDから背景画像パスを取得
+ * IDから背景画像URLを取得（CDN対応）
  */
 export function getBackgroundImagePath(id: string): string {
   const bg = getBackgroundById(id);
   if (!bg) {
     // フォールバック: デフォルト背景
     const defaultBg = getBackgroundById(DEFAULT_BACKGROUND_ID);
-    return `/backgrounds/${defaultBg?.filename || 'AdobeStock_584852960.jpeg'}`;
+    return getBackgroundUrl(defaultBg?.filename || 'AdobeStock_584852960.jpeg');
   }
-  return `/backgrounds/${bg.filename}`;
+  return getBackgroundUrl(bg.filename);
 }
 
 /**

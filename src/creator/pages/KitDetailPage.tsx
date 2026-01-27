@@ -9,6 +9,7 @@ import { StickerGrid } from '../components/StickerGrid';
 import { LayoutPreview } from '../components/LayoutPreview';
 import { ImageCropper } from '../components/ImageCropper';
 import { TagSelector } from '../components/TagSelector';
+import { getStickerImageUrl } from '@/config/assetUrl';
 
 // 旧フォーマット（単独キー）から並行調への変換マップ
 const LEGACY_KEY_MAP: Record<string, string> = {
@@ -570,7 +571,7 @@ export const KitDetailPage = () => {
                       >
                         {sticker.image_uploaded ? (
                           <img
-                            src={`/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png`}
+                            src={getStickerImageUrl(kit.kit_number, sticker.full_id)}
                             alt={sticker.name}
                             className="w-full h-full object-contain"
                           />
@@ -614,7 +615,7 @@ export const KitDetailPage = () => {
                       >
                         {sticker.image_uploaded ? (
                           <img
-                            src={`/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png`}
+                            src={getStickerImageUrl(kit.kit_number, sticker.full_id)}
                             alt={sticker.name}
                             className="w-full h-full object-contain"
                           />
@@ -1058,7 +1059,7 @@ export const KitDetailPage = () => {
                       >
                         {newlyCreatedSticker.image_uploaded ? (
                           <img
-                            src={`/assets/stickers/kit-${kit.kit_number}/${newlyCreatedSticker.full_id}.png?t=${Date.now()}`}
+                            src={getStickerImageUrl(kit.kit_number, newlyCreatedSticker.full_id, Date.now())}
                             alt={newlyCreatedSticker.name}
                             className="w-full h-full object-contain"
                           />

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { kitsApi, type Sticker, type StickerLayout } from '@/api/kitsApi';
+import { getStickerImageUrl } from '@/config/assetUrl';
 
 interface LayoutEditorProps {
   kitId: string;
@@ -110,58 +111,100 @@ export const LayoutEditor = ({
     }
   };
 
-  // ドラッグ開始
-  const handleMouseDown = (e: React.MouseEvent, layout: LocalLayout) => {
-    e.preventDefault();
+  // ドラッグ開始共通処理
+  const startDrag = useCallback((layout: LocalLayout, clientX: number, clientY: number) => {
     setSelectedLayoutId(layout.id);
     setDragging({
       layoutId: layout.id,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: clientX,
+      startY: clientY,
       startLayoutX: layout.x,
       startLayoutY: layout.y,
     });
+  }, []);
+
+  // ドラッグ開始（マウス）
+  const handleMouseDown = (e: React.MouseEvent, layout: LocalLayout) => {
+    e.preventDefault();
+    startDrag(layout, e.clientX, e.clientY);
   };
 
-  // ドラッグ中
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragging || !stickerAreaRef.current) return;
-
-    const rect = stickerAreaRef.current.getBoundingClientRect();
-    const deltaX = ((e.clientX - dragging.startX) / rect.width) * 100;
-    const deltaY = ((e.clientY - dragging.startY) / rect.height) * 100;
-
-    const newX = Math.max(0, Math.min(90, dragging.startLayoutX + deltaX));
-    const newY = Math.max(0, Math.min(85, dragging.startLayoutY + deltaY));
-
-    setLayouts(prev =>
-      prev.map(l =>
-        l.id === dragging.layoutId ? { ...l, x: newX, y: newY } : l
-      )
-    );
+  // ドラッグ開始（タッチ）
+  const handleTouchStart = (e: React.TouchEvent, layout: LocalLayout) => {
+    const touch = e.touches[0];
+    startDrag(layout, touch.clientX, touch.clientY);
   };
 
-  // ドラッグ終了
-  const handleMouseUp = async () => {
-    if (dragging) {
-      const layout = layouts.find(l => l.id === dragging.layoutId);
-      if (layout) {
-        setIsSaving(true);
-        try {
-          await kitsApi.updateLayout(kitId, layout.sticker.id, layout.id, {
-            x: layout.x,
-            y: layout.y,
-          });
-          onLayoutsChanged();
-        } catch (error) {
-          console.error('Failed to update layout position:', error);
-        } finally {
-          setIsSaving(false);
-        }
+  // ドラッグ終了時のAPI保存処理
+  const saveDragPosition = useCallback(async (layoutId: string) => {
+    const layout = layouts.find(l => l.id === layoutId);
+    if (layout) {
+      setIsSaving(true);
+      try {
+        await kitsApi.updateLayout(kitId, layout.sticker.id, layout.id, {
+          x: layout.x,
+          y: layout.y,
+        });
+        onLayoutsChanged();
+      } catch (error) {
+        console.error('Failed to update layout position:', error);
+      } finally {
+        setIsSaving(false);
       }
     }
-    setDragging(null);
-  };
+  }, [kitId, layouts, onLayoutsChanged]);
+
+  // documentレベルでドラッグイベントを処理
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!stickerAreaRef.current) return;
+
+      const rect = stickerAreaRef.current.getBoundingClientRect();
+      const deltaX = ((clientX - dragging.startX) / rect.width) * 100;
+      const deltaY = ((clientY - dragging.startY) / rect.height) * 100;
+
+      const newX = Math.max(0, Math.min(90, dragging.startLayoutX + deltaX));
+      const newY = Math.max(0, Math.min(85, dragging.startLayoutY + deltaY));
+
+      setLayouts(prev =>
+        prev.map(l =>
+          l.id === dragging.layoutId ? { ...l, x: newX, y: newY } : l
+        )
+      );
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      handleMove(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    };
+
+    const handleEnd = () => {
+      saveDragPosition(dragging.layoutId);
+      setDragging(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+    document.addEventListener('touchcancel', handleEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleEnd);
+      document.removeEventListener('touchcancel', handleEnd);
+    };
+  }, [dragging, saveDragPosition]);
 
   // サイズ変更
   const handleSizeChange = async (size: number) => {
@@ -192,6 +235,38 @@ export const LayoutEditor = ({
       onLayoutsChanged();
     } catch (error) {
       console.error('Failed to update rotation:', error);
+    }
+  };
+
+  // X座標変更
+  const handleXChange = async (x: number) => {
+    if (!selectedLayout) return;
+
+    setLayouts(prev =>
+      prev.map(l => (l.id === selectedLayout.id ? { ...l, x } : l))
+    );
+
+    try {
+      await kitsApi.updateLayout(kitId, selectedLayout.sticker.id, selectedLayout.id, { x });
+      onLayoutsChanged();
+    } catch (error) {
+      console.error('Failed to update x:', error);
+    }
+  };
+
+  // Y座標変更
+  const handleYChange = async (y: number) => {
+    if (!selectedLayout) return;
+
+    setLayouts(prev =>
+      prev.map(l => (l.id === selectedLayout.id ? { ...l, y } : l))
+    );
+
+    try {
+      await kitsApi.updateLayout(kitId, selectedLayout.sticker.id, selectedLayout.id, { y });
+      onLayoutsChanged();
+    } catch (error) {
+      console.error('Failed to update y:', error);
     }
   };
 
@@ -278,11 +353,14 @@ export const LayoutEditor = ({
               {/* シール配置領域（StickerKitCardと完全一致: p-4 pt-10 height=380px） */}
               <div
                 ref={stickerAreaRef}
-                className="relative p-4 pt-10 cursor-crosshair"
-                style={{ height: '380px' }}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
+                className="relative p-4 pt-10 cursor-crosshair select-none"
+                style={{
+                  height: '380px',
+                  touchAction: 'none',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                }}
+                onContextMenu={(e) => e.preventDefault()}
               >
                 {/* レイアウト配置 */}
                 {layouts.map((layout) => {
@@ -291,7 +369,7 @@ export const LayoutEditor = ({
                   return (
                     <div
                       key={layout.id}
-                      className={`absolute cursor-move transition-shadow ${
+                      className={`absolute cursor-move transition-shadow select-none ${
                         isSelected ? 'ring-4 ring-blue-500 ring-offset-2 z-10' : ''
                       }`}
                       style={{
@@ -300,19 +378,26 @@ export const LayoutEditor = ({
                         width: layout.size,
                         height: layout.size,
                         transform: `rotate(${layout.rotation}deg)`,
+                        touchAction: 'none',
+                        WebkitUserSelect: 'none',
+                        WebkitTouchCallout: 'none',
                       }}
                       onMouseDown={(e) => handleMouseDown(e, layout)}
+                      onTouchStart={(e) => handleTouchStart(e, layout)}
+                      onContextMenu={(e) => e.preventDefault()}
                     >
                       {layout.sticker.image_uploaded ? (
                         <img
-                          src={`/assets/stickers/kit-${kitNumber}/${layout.sticker.full_id}.png`}
+                          src={getStickerImageUrl(kitNumber, layout.sticker.full_id)}
                           alt={layout.sticker.name}
-                          className="w-full h-full object-contain pointer-events-none"
+                          className="w-full h-full object-contain pointer-events-none select-none"
                           draggable={false}
+                          onContextMenu={(e) => e.preventDefault()}
+                          style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                         />
                       ) : (
                         <div
-                          className="w-full h-full rounded-lg flex items-center justify-center text-xs text-gray-500"
+                          className="w-full h-full rounded-lg flex items-center justify-center text-xs text-gray-500 select-none"
                           style={{ backgroundColor: layout.sticker.color + '40' }}
                         >
                           {layout.sticker.name}
@@ -353,7 +438,7 @@ export const LayoutEditor = ({
                     >
                       {selectedSticker.image_uploaded ? (
                         <img
-                          src={`/assets/stickers/kit-${kitNumber}/${selectedSticker.full_id}.png`}
+                          src={getStickerImageUrl(kitNumber, selectedSticker.full_id)}
                           alt={selectedSticker.name}
                           className="w-full h-full object-contain"
                         />
@@ -408,16 +493,36 @@ export const LayoutEditor = ({
                     />
                   </div>
 
-                  {/* 座標表示 */}
-                  <div className="pt-3 border-t text-xs text-gray-500">
-                    <div className="flex justify-between">
-                      <span>X座標:</span>
-                      <span className="font-mono">{selectedLayout.x.toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span>Y座標:</span>
-                      <span className="font-mono">{selectedLayout.y.toFixed(1)}%</span>
-                    </div>
+                  {/* X座標 */}
+                  <div>
+                    <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <span>横位置（X）</span>
+                      <span className="font-mono text-gray-900">{selectedLayout.x.toFixed(0)}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="90"
+                      value={selectedLayout.x}
+                      onChange={(e) => handleXChange(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                  </div>
+
+                  {/* Y座標 */}
+                  <div>
+                    <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <span>縦位置（Y）</span>
+                      <span className="font-mono text-gray-900">{selectedLayout.y.toFixed(0)}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="85"
+                      value={selectedLayout.y}
+                      onChange={(e) => handleYChange(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
                   </div>
                 </div>
               </>
@@ -449,7 +554,7 @@ export const LayoutEditor = ({
                       >
                         {sticker.image_uploaded ? (
                           <img
-                            src={`/assets/stickers/kit-${kitNumber}/${sticker.full_id}.png`}
+                            src={getStickerImageUrl(kitNumber, sticker.full_id)}
                             alt={sticker.name}
                             className="w-full h-full object-contain"
                           />

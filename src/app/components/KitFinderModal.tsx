@@ -6,6 +6,7 @@ import {
   type Tag,
   type PublicKitWithTags,
 } from '@/api/tagsApi';
+import { getKitThumbnailUrl } from '@/config/assetUrl';
 
 interface KitFinderModalProps {
   isOpen: boolean;
@@ -32,9 +33,11 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
       setIsTagsLoading(true);
       try {
         const data = await fetchTags();
-        setAllTags(data.tags);
+        // APIレスポンスにtagsが含まれているか確認
+        setAllTags(data?.tags || []);
       } catch (error) {
         console.error('Failed to load tags:', error);
+        setAllTags([]);
       } finally {
         setIsTagsLoading(false);
       }
@@ -54,16 +57,25 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
         limit: 12,
       });
 
+      // APIレスポンスの安全なアクセス
+      const kitsData = result?.kits || [];
+      const pagination = result?.pagination || { hasNext: false, total: 0 };
+
       if (resetPage) {
-        setKits(result.kits);
+        setKits(kitsData);
         setPage(1);
       } else {
-        setKits(prev => [...prev, ...result.kits]);
+        setKits(prev => [...prev, ...kitsData]);
       }
-      setHasMore(result.pagination.hasNext);
-      setTotal(result.pagination.total);
+      setHasMore(pagination.hasNext);
+      setTotal(pagination.total);
     } catch (error) {
       console.error('Failed to search kits:', error);
+      // エラー時は空の状態にリセット
+      if (resetPage) {
+        setKits([]);
+      }
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +85,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
   useEffect(() => {
     if (!isOpen) return;
     doSearch(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, searchQuery, selectedTags]);
 
   // モーダルを閉じたらリセット
@@ -266,7 +279,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
                     style={{ backgroundColor: kit.color }}
                   >
                     <img
-                      src={`/assets/thumbnails/kit-${kit.kit_number}.png`}
+                      src={getKitThumbnailUrl(kit.kit_number)}
                       alt={kit.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Sticker, Kit } from '@/api/kitsApi';
 import { FileUploader } from './FileUploader';
 import { AudioSelector } from './AudioSelector';
+import { getStickerImageUrl, getStickerAudioUrl } from '@/config/assetUrl';
 
 interface StickerCardProps {
   sticker: Sticker;
@@ -25,10 +26,10 @@ export const StickerCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const imagePath = sticker.image_uploaded
-    ? `/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png?t=${sticker.updated_at || ''}`
+    ? getStickerImageUrl(kit.kit_number, sticker.full_id, sticker.updated_at)
     : undefined;
   const audioPath = sticker.audio_uploaded
-    ? `/assets/audio/kit-${kit.kit_number}/${sticker.full_id}.mp3?t=${sticker.updated_at || ''}`
+    ? getStickerAudioUrl(kit.kit_number, sticker.full_id, sticker.updated_at)
     : undefined;
 
   const handleImageUpload = async (file: File) => {
