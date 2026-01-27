@@ -1,5 +1,5 @@
 /**
- * kitConfig.ts - シールキットの定義
+ * kitConfig.ts - シールキットの定義と音楽キー管理
  */
 
 export interface KitTag {
