@@ -10,6 +10,7 @@ interface KitCardStackProps {
   onDragStart?: () => void;
   onStickerUsed?: (paletteId: string) => void;
   searchQuery?: string;
+  selectedKitNumber?: string | null;
 }
 
 // グローバルコールバック
@@ -38,26 +39,37 @@ export function removeStickerByType(stickerId: string) {
   globalRemoveStickerByTypeCallback?.(stickerId);
 }
 
-export function KitCardStack({ onDragStart, searchQuery = '' }: KitCardStackProps) {
-  const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading } = useKitData();
+export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber = null }: KitCardStackProps) {
+  const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading, isLoadingMore, hasMore, loadMore } = useKitData();
 
-  // 検索でキットをフィルタリング
+  // 検索でキットをフィルタリング（名前、説明、タグで検索）
   const KITS = useMemo(() => {
     if (!searchQuery.trim()) return ALL_KITS;
     const query = searchQuery.toLowerCase();
     return ALL_KITS.filter(kit =>
       kit.name.toLowerCase().includes(query) ||
       kit.nameJa.toLowerCase().includes(query) ||
-      (kit.description?.toLowerCase().includes(query))
+      kit.description?.toLowerCase().includes(query) ||
+      kit.tags?.some(tag => tag.name.toLowerCase().includes(query))
     );
   }, [ALL_KITS, searchQuery]);
 
   const [activeKitIndex, setActiveKitIndex] = useState(0);
 
-  // KITSが変わったらインデックスをリセット
+  // 検索クエリが変わったときだけインデックスをリセット（追加読み込み時はリセットしない）
   useEffect(() => {
     setActiveKitIndex(0);
-  }, [KITS.length]);
+  }, [searchQuery]);
+
+  // 選択されたキット番号が変わったらそのキットを表示
+  useEffect(() => {
+    if (selectedKitNumber) {
+      const index = KITS.findIndex(kit => kit.id === selectedKitNumber);
+      if (index >= 0) {
+        setActiveKitIndex(index);
+      }
+    }
+  }, [selectedKitNumber, KITS]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitingIndex, setExitingIndex] = useState<number | null>(null);
 
@@ -160,16 +172,25 @@ export function KitCardStack({ onDragStart, searchQuery = '' }: KitCardStackProp
 
     // アニメーション後に次のキットに切り替え
     setTimeout(() => {
-      setActiveKitIndex((prev) => (prev + 1) % KITS.length);
+      const nextIndex = (activeKitIndex + 1) % KITS.length;
+      setActiveKitIndex(nextIndex);
       setExitingIndex(null);
       setIsAnimating(false);
+
+      // 最後から2番目のキットに達したら追加読み込み
+      if (nextIndex >= KITS.length - 2 && hasMore && !isLoadingMore) {
+        loadMore();
+      }
     }, 300);
-  }, [isAnimating, activeKitIndex]);
+  }, [isAnimating, activeKitIndex, KITS.length, hasMore, isLoadingMore, loadMore]);
 
   // キットの順序を計算（アクティブなキットが最前面になるように）
+  // パフォーマンスのため、表示するカードは最大3枚に制限
+  const MAX_VISIBLE_CARDS = 3;
   const getOrderedKits = (): { kit: KitDefinition; stackIndex: number }[] => {
     const result: { kit: KitDefinition; stackIndex: number }[] = [];
-    for (let i = 0; i < KITS.length; i++) {
+    const visibleCount = Math.min(KITS.length, MAX_VISIBLE_CARDS);
+    for (let i = 0; i < visibleCount; i++) {
       const index = (activeKitIndex + i) % KITS.length;
       result.push({ kit: KITS[index], stackIndex: i });
     }
@@ -243,35 +264,6 @@ export function KitCardStack({ onDragStart, searchQuery = '' }: KitCardStackProp
         })}
       </div>
 
-      {/* インジケーター（ドット） */}
-      <div className="flex justify-center gap-2 mt-4">
-        {KITS.map((kit, index) => (
-          <button
-            key={kit.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isAnimating && index !== activeKitIndex) {
-                setIsAnimating(true);
-                setExitingIndex(activeKitIndex);
-                setTimeout(() => {
-                  setActiveKitIndex(index);
-                  setExitingIndex(null);
-                  setIsAnimating(false);
-                }, 300);
-              }
-            }}
-            className="w-2.5 h-2.5 rounded-full transition-all duration-200"
-            style={{
-              background: index === activeKitIndex ? kit.color : '#d1d5db',
-              border: index === activeKitIndex ? `2px solid ${kit.color}` : '2px solid #d1d5db',
-              transform: index === activeKitIndex ? 'scale(1.2)' : 'scale(1)',
-              boxShadow: index === activeKitIndex ? `0 0 6px ${kit.color}` : 'none',
-            }}
-            aria-label={`Switch to ${kit.nameJa}`}
-          />
-        ))}
-      </div>
-
       {/* ヘルプテキスト */}
       <div className="pt-3">
         <p className="text-xs text-gray-500 text-center">
@@ -280,6 +272,13 @@ export function KitCardStack({ onDragStart, searchQuery = '' }: KitCardStackProp
         <p className="text-xs text-gray-400 text-center mt-1">
           タップで次のキットへ
         </p>
+        {/* 追加読み込み中インジケーター */}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
+            <span className="text-xs text-gray-400">読み込み中...</span>
+          </div>
+        )}
       </div>
     </div>
   );

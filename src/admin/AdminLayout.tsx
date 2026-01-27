@@ -46,6 +46,9 @@ export const AdminLayout = () => {
                 <Link to="/admin/kits" className={navLinkClass('/admin/kits')}>
                   キット
                 </Link>
+                <Link to="/admin/tags" className={navLinkClass('/admin/tags')}>
+                  タグ
+                </Link>
               </nav>
             </div>
 

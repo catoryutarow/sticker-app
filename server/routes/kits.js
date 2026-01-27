@@ -9,9 +9,32 @@ import db from '../db/index.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { AUDIO_LIBRARY, libraryPath, getRandomMatchingSound } from './audioLibrary.js';
 import { generateKitThumbnail } from '../utils/thumbnail.js';
+import { normalizeTagName, validateTagName } from './tags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const router = Router();
+
+// 単一キー → 並行調フォーマット変換
+const SINGLE_KEY_TO_PARALLEL = {
+  'C': 'C/Am', 'Am': 'C/Am',
+  'G': 'G/Em', 'Em': 'G/Em',
+  'D': 'D/Bm', 'Bm': 'D/Bm',
+  'A': 'A/F#m', 'F#m': 'A/F#m',
+  'E': 'E/C#m', 'C#m': 'E/C#m',
+  'B': 'B/G#m', 'G#m': 'B/G#m',
+  'F#': 'F#/D#m', 'D#m': 'F#/D#m',
+  'F': 'F/Dm', 'Dm': 'F/Dm',
+  'Bb': 'Bb/Gm', 'Gm': 'Bb/Gm',
+  'Eb': 'Eb/Cm', 'Cm': 'Eb/Cm',
+  'Ab': 'Ab/Fm', 'Fm': 'Ab/Fm',
+  'Db': 'Db/Bbm', 'Bbm': 'Db/Bbm',
+};
+
+function normalizeMusicalKey(key) {
+  if (!key) return 'C/Am';
+  if (key.includes('/')) return key;
+  return SINGLE_KEY_TO_PARALLEL[key] || 'C/Am';
+}
 
 // ================================
 // 公開API（認証不要）
@@ -26,16 +49,30 @@ router.get('/public', (req, res) => {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const search = req.query.search || '';
+    const tags = req.query.tags ? req.query.tags.split(',').map(t => normalizeTagName(t)).filter(Boolean) : [];
     const offset = (page - 1) * limit;
 
     // 検索条件のベースクエリ
     let whereClause = 'WHERE k.status = ?';
     const params = ['published'];
 
+    // テキスト検索（キット名、日本語名、説明、タグ名を検索）
     if (search) {
-      whereClause += ' AND (k.name LIKE ? OR k.name_ja LIKE ? OR k.description LIKE ?)';
+      whereClause += ` AND (
+        k.name LIKE ? OR k.name_ja LIKE ? OR k.description LIKE ?
+        OR EXISTS (SELECT 1 FROM kit_tags kt WHERE kt.kit_id = k.id AND kt.tag_name LIKE ?)
+      )`;
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern);
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    // タグフィルタリング（AND条件：指定された全てのタグを持つキット）
+    if (tags.length > 0) {
+      whereClause += ` AND (
+        SELECT COUNT(DISTINCT kt.tag_name) FROM kit_tags kt
+        WHERE kt.kit_id = k.id AND kt.tag_name IN (${tags.map(() => '?').join(',')})
+      ) = ?`;
+      params.push(...tags, tags.length);
     }
 
     // 総件数を取得
@@ -45,7 +82,7 @@ router.get('/public', (req, res) => {
       ${whereClause}
     `).get(...params);
 
-    // ページネーション付きでキット取得
+    // ページネーション付きでキット取得（kit_number順）
     const kits = db.prepare(`
       SELECT k.*,
         (SELECT COUNT(*) FROM stickers WHERE kit_id = k.id) as sticker_count
@@ -55,11 +92,42 @@ router.get('/public', (req, res) => {
       LIMIT ? OFFSET ?
     `).all(...params, limit, offset);
 
+    // 各キットのタグとシール情報を取得し、musical_keyを正規化
+    const kitsWithDetails = kits.map(kit => {
+      const kitTags = db.prepare(`
+        SELECT tag_name, is_custom FROM kit_tags WHERE kit_id = ? ORDER BY created_at ASC
+      `).all(kit.id);
+
+      // シール情報を取得
+      const stickers = db.prepare(`
+        SELECT * FROM stickers WHERE kit_id = ? ORDER BY sort_order ASC
+      `).all(kit.id);
+
+      // 各シールのレイアウト情報を取得
+      const stickersWithLayouts = stickers.map(sticker => {
+        const layouts = db.prepare(`
+          SELECT * FROM sticker_layouts WHERE sticker_id = ? ORDER BY sort_order ASC
+        `).all(sticker.id);
+        return {
+          ...sticker,
+          full_id: `${kit.kit_number}-${sticker.sticker_number}`,
+          layouts,
+        };
+      });
+
+      return {
+        ...kit,
+        musical_key: normalizeMusicalKey(kit.musical_key),
+        tags: kitTags.map(t => ({ name: t.tag_name, isCustom: !!t.is_custom })),
+        stickers: stickersWithLayouts,
+      };
+    });
+
     const total = countResult.total;
     const totalPages = Math.ceil(total / limit);
 
     res.json({
-      kits,
+      kits: kitsWithDetails,
       pagination: {
         page,
         limit,
@@ -123,7 +191,12 @@ router.get('/public/all', (req, res) => {
         return { ...sticker, layouts };
       });
 
-      return { ...kit, stickers: stickersWithLayouts };
+      // キットのタグを取得
+      const tags = db.prepare(`
+        SELECT tag_name, is_custom FROM kit_tags WHERE kit_id = ? ORDER BY created_at ASC
+      `).all(kit.id).map(t => ({ name: t.tag_name, isCustom: !!t.is_custom }));
+
+      return { ...kit, musical_key: normalizeMusicalKey(kit.musical_key), stickers: stickersWithLayouts, tags };
     });
 
     res.json({ kits: result });
@@ -473,6 +546,216 @@ router.delete('/:kitId', authenticateToken, (req, res) => {
     res.json({ message: 'Kit deleted successfully' });
   } catch (error) {
     console.error('Delete kit error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ================================
+// タグAPI
+// ================================
+
+const MAX_TAGS_PER_KIT = 5;
+
+/**
+ * GET /api/kits/:kitId/tags
+ * キットのタグ一覧取得
+ */
+router.get('/:kitId/tags', authenticateToken, (req, res) => {
+  try {
+    const { kitId } = req.params;
+
+    const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
+    if (ownership.error) {
+      return res.status(ownership.status).json({ error: ownership.error });
+    }
+
+    const tags = db.prepare(`
+      SELECT tag_name, is_custom, created_at
+      FROM kit_tags
+      WHERE kit_id = ?
+      ORDER BY created_at ASC
+    `).all(kitId);
+
+    res.json({
+      tags: tags.map(t => ({
+        name: t.tag_name,
+        isCustom: !!t.is_custom,
+        createdAt: t.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Get kit tags error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/kits/:kitId/tags
+ * キットのタグを一括更新（最大5個）
+ */
+router.put('/:kitId/tags', authenticateToken, (req, res) => {
+  try {
+    const { kitId } = req.params;
+    const { tags } = req.body;
+
+    const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
+    if (ownership.error) {
+      return res.status(ownership.status).json({ error: ownership.error });
+    }
+
+    if (!Array.isArray(tags)) {
+      return res.status(400).json({ error: 'tagsは配列で指定してください' });
+    }
+
+    if (tags.length > MAX_TAGS_PER_KIT) {
+      return res.status(400).json({ error: `タグは最大${MAX_TAGS_PER_KIT}個までです` });
+    }
+
+    // タグのバリデーションと正規化
+    const normalizedTags = [];
+    const fixedTagNames = new Set(
+      db.prepare('SELECT name FROM tags').all().map(t => t.name)
+    );
+
+    for (const tagName of tags) {
+      const validation = validateTagName(tagName);
+      if (!validation.valid) {
+        return res.status(400).json({ error: `${tagName}: ${validation.error}` });
+      }
+      normalizedTags.push({
+        name: validation.normalized,
+        isCustom: !fixedTagNames.has(validation.normalized),
+      });
+    }
+
+    // 重複チェック
+    const uniqueNames = new Set(normalizedTags.map(t => t.name));
+    if (uniqueNames.size !== normalizedTags.length) {
+      return res.status(400).json({ error: '重複するタグがあります' });
+    }
+
+    // トランザクションで更新
+    const updateTags = db.transaction(() => {
+      // 既存のタグを削除
+      db.prepare('DELETE FROM kit_tags WHERE kit_id = ?').run(kitId);
+
+      // 新しいタグを追加
+      const insertStmt = db.prepare(`
+        INSERT INTO kit_tags (id, kit_id, tag_name, is_custom)
+        VALUES (?, ?, ?, ?)
+      `);
+
+      for (const tag of normalizedTags) {
+        insertStmt.run(uuidv4(), kitId, tag.name, tag.isCustom ? 1 : 0);
+      }
+    });
+
+    updateTags();
+
+    // 更新後のタグを返す
+    const updatedTags = db.prepare(`
+      SELECT tag_name, is_custom, created_at
+      FROM kit_tags
+      WHERE kit_id = ?
+      ORDER BY created_at ASC
+    `).all(kitId);
+
+    res.json({
+      tags: updatedTags.map(t => ({
+        name: t.tag_name,
+        isCustom: !!t.is_custom,
+        createdAt: t.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Update kit tags error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/kits/:kitId/tags
+ * キットにタグを追加
+ */
+router.post('/:kitId/tags', authenticateToken, (req, res) => {
+  try {
+    const { kitId } = req.params;
+    const { tagName } = req.body;
+
+    const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
+    if (ownership.error) {
+      return res.status(ownership.status).json({ error: ownership.error });
+    }
+
+    const validation = validateTagName(tagName);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // 現在のタグ数をチェック
+    const currentCount = db.prepare(
+      'SELECT COUNT(*) as count FROM kit_tags WHERE kit_id = ?'
+    ).get(kitId).count;
+
+    if (currentCount >= MAX_TAGS_PER_KIT) {
+      return res.status(400).json({ error: `タグは最大${MAX_TAGS_PER_KIT}個までです` });
+    }
+
+    // 固定タグかカスタムタグか判定
+    const isFixedTag = db.prepare('SELECT 1 FROM tags WHERE name = ?').get(validation.normalized);
+
+    // 重複チェック
+    const existing = db.prepare(
+      'SELECT 1 FROM kit_tags WHERE kit_id = ? AND tag_name = ?'
+    ).get(kitId, validation.normalized);
+
+    if (existing) {
+      return res.status(400).json({ error: 'このタグは既に追加されています' });
+    }
+
+    db.prepare(`
+      INSERT INTO kit_tags (id, kit_id, tag_name, is_custom)
+      VALUES (?, ?, ?, ?)
+    `).run(uuidv4(), kitId, validation.normalized, isFixedTag ? 0 : 1);
+
+    res.status(201).json({
+      tag: {
+        name: validation.normalized,
+        isCustom: !isFixedTag,
+      },
+    });
+  } catch (error) {
+    console.error('Add kit tag error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/kits/:kitId/tags/:tagName
+ * キットからタグを削除
+ */
+router.delete('/:kitId/tags/:tagName', authenticateToken, (req, res) => {
+  try {
+    const { kitId, tagName } = req.params;
+
+    const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
+    if (ownership.error) {
+      return res.status(ownership.status).json({ error: ownership.error });
+    }
+
+    const normalized = normalizeTagName(tagName);
+
+    const result = db.prepare(
+      'DELETE FROM kit_tags WHERE kit_id = ? AND tag_name = ?'
+    ).run(kitId, normalized);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'タグが見つかりません' });
+    }
+
+    res.json({ message: 'タグを削除しました' });
+  } catch (error) {
+    console.error('Delete kit tag error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

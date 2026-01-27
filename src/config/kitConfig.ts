@@ -2,6 +2,11 @@
  * kitConfig.ts - シールキットの定義
  */
 
+export interface KitTag {
+  name: string;
+  isCustom: boolean;
+}
+
 export interface KitDefinition {
   id: string;           // '001', '002'
   name: string;         // 'Basic Shapes'
@@ -9,6 +14,7 @@ export interface KitDefinition {
   color: string;        // カードの背景色アクセント
   description?: string;
   musicalKey?: string;  // 'C/Am', 'G/Em' など（並行調フォーマット）
+  tags?: KitTag[];      // キットのタグ
 }
 
 // musicalKeyは並行調フォーマット（メジャー/マイナー）

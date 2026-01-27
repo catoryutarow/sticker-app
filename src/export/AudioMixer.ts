@@ -7,7 +7,8 @@
 
 import { LOOP_DURATION } from '../audio/AudioEngine';
 import { isStickerType, getAllStickerTypes } from '../audio/audioAssets';
-import { getStickerAudioPath } from '../config/stickerConfig';
+import { getStickerAudioPath, isStickerPercussion } from '../config/stickerConfig';
+import { getKitBaseSemitone } from '../config/kitConfig';
 import { Sticker } from '../app/components/StickerAlbum';
 
 // Audio processing constants (AudioEngine.tsと同じ値)
@@ -282,7 +283,11 @@ export class AudioMixer {
       if (!buffer) continue;
 
       // ピッチシフトが必要な場合
-      const pitch = sticker.pitch ?? 0;
+      // sticker.pitchはスライダー位置、実際の転調量はベースキー分を引く
+      // （StickerAlbum.tsxのsyncWithStickersと同じロジック）
+      const kitId = sticker.type.split('-')[0] || '001';
+      const baseSemitone = isStickerPercussion(sticker.type) ? 0 : getKitBaseSemitone(kitId);
+      const pitch = (sticker.pitch ?? 0) - baseSemitone;
       if (pitch !== 0) {
         const cacheKey = this.getPitchCacheKey(sticker.type, pitch);
         let pitchShiftedBuffer = this.pitchShiftedCache.get(cacheKey);

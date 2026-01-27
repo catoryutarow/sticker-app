@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import kitRoutes from './routes/kits.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
 import adminRoutes from './routes/admin.js';
+import tagRoutes from './routes/tags.js';
 
 const app = express();
 
@@ -76,6 +77,9 @@ app.use('/api/audio-library', audioLibraryRoutes);
 
 // 管理者ルート
 app.use('/api/admin', adminRoutes);
+
+// タグルート
+app.use('/api/tags', tagRoutes);
 
 // ヘルスチェック
 app.get('/health', (req, res) => {

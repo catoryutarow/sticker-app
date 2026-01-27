@@ -72,3 +72,36 @@ CREATE TABLE IF NOT EXISTS sticker_layouts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sticker_layouts_sticker ON sticker_layouts(sticker_id);
+
+-- ================================
+-- タグシステム（2024-01 追加）
+-- ================================
+
+-- 固定タグテーブル（admin管理）
+CREATE TABLE IF NOT EXISTS tags (
+  id TEXT PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,              -- 小文字正規化: 'ambient', 'lo-fi' など
+  name_ja TEXT,                           -- 日本語名
+  sort_order INTEGER DEFAULT 0,           -- 表示順
+  usage_count INTEGER DEFAULT 0,          -- 使用数（非正規化）
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- キット-タグ関連テーブル
+CREATE TABLE IF NOT EXISTS kit_tags (
+  id TEXT PRIMARY KEY,
+  kit_id TEXT NOT NULL,
+  tag_name TEXT NOT NULL,                 -- 小文字正規化されたタグ名
+  is_custom INTEGER DEFAULT 0,            -- 0=固定タグ, 1=カスタムタグ
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (kit_id) REFERENCES kits(id) ON DELETE CASCADE,
+  UNIQUE(kit_id, tag_name)                -- 同一キットに同じタグは1回のみ
+);
+
+-- タグ検索用インデックス
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+CREATE INDEX IF NOT EXISTS idx_tags_usage ON tags(usage_count DESC);
+CREATE INDEX IF NOT EXISTS idx_kit_tags_kit ON kit_tags(kit_id);
+CREATE INDEX IF NOT EXISTS idx_kit_tags_tag ON kit_tags(tag_name);
+CREATE INDEX IF NOT EXISTS idx_kit_tags_custom ON kit_tags(is_custom);

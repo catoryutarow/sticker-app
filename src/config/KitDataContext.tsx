@@ -1,23 +1,31 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchPublicKits, PublicKit, PublicSticker } from '@/api/publicKitsApi';
-import { KITS as STATIC_KITS, KitDefinition, registerDynamicKit, clearDynamicKits } from './kitConfig';
-import { STICKER_LAYOUT_BY_KIT as STATIC_LAYOUT, StickerLayoutItem } from './stickerLayout';
-import { STICKERS as STATIC_STICKERS, StickerDefinition, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { fetchPublicKitsPaginated, PublicKit, PublicSticker, PaginationInfo } from '@/api/publicKitsApi';
+import { KitDefinition, registerDynamicKit, clearDynamicKits } from './kitConfig';
+import { StickerLayoutItem } from './stickerLayout';
+import { StickerDefinition, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
 
 interface KitDataContextType {
   kits: KitDefinition[];
   stickers: StickerDefinition[];
   layoutByKit: Record<string, StickerLayoutItem[]>;
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
+  pagination: PaginationInfo | null;
+  loadMore: () => Promise<void>;
+  hasMore: boolean;
 }
 
 const KitDataContext = createContext<KitDataContextType>({
-  kits: STATIC_KITS,
-  stickers: STATIC_STICKERS,
-  layoutByKit: STATIC_LAYOUT,
-  isLoading: false,
+  kits: [],
+  stickers: [],
+  layoutByKit: {},
+  isLoading: true,
+  isLoadingMore: false,
   error: null,
+  pagination: null,
+  loadMore: async () => {},
+  hasMore: false,
 });
 
 export function useKitData() {
@@ -31,7 +39,7 @@ interface KitDataProviderProps {
 /**
  * APIから取得したキットデータをフロントエンド形式に変換
  */
-function convertKitToDefinition(kit: PublicKit): KitDefinition {
+function convertKitToDefinition(kit: PublicKit & { tags?: Array<{ name: string; isCustom: boolean }> }): KitDefinition {
   return {
     id: kit.kit_number, // '004' など
     name: kit.name,
@@ -39,6 +47,7 @@ function convertKitToDefinition(kit: PublicKit): KitDefinition {
     color: kit.color,
     description: kit.description || undefined,
     musicalKey: kit.musical_key,
+    tags: kit.tags || [],
   };
 }
 
@@ -99,85 +108,157 @@ function generateLayoutForKit(kitNumber: string, stickers: PublicSticker[]): Sti
   return layout;
 }
 
-export function KitDataProvider({ children }: KitDataProviderProps) {
-  const [kits, setKits] = useState<KitDefinition[]>(STATIC_KITS);
-  const [stickers, setStickers] = useState<StickerDefinition[]>(STATIC_STICKERS);
-  const [layoutByKit, setLayoutByKit] = useState<Record<string, StickerLayoutItem[]>>(STATIC_LAYOUT);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// ページネーションの設定
+const KITS_PER_PAGE = 10;
 
+export function KitDataProvider({ children }: KitDataProviderProps) {
+  const [kits, setKits] = useState<KitDefinition[]>([]);
+  const [stickers, setStickers] = useState<StickerDefinition[]>([]);
+  const [layoutByKit, setLayoutByKit] = useState<Record<string, StickerLayoutItem[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [loadedKitIds, setLoadedKitIds] = useState<Set<string>>(new Set());
+
+  /**
+   * キットデータを変換（ページネーションAPIから直接取得したデータを使用）
+   */
+  const convertKits = useCallback((publicKits: PublicKit[]) => {
+    const apiKits: KitDefinition[] = [];
+    const apiStickers: StickerDefinition[] = [];
+    const apiLayout: Record<string, StickerLayoutItem[]> = {};
+
+    for (const kit of publicKits) {
+      apiKits.push(convertKitToDefinition(kit));
+      if (kit.stickers) {
+        kit.stickers.forEach(s => apiStickers.push(convertStickerToDefinition(s)));
+        apiLayout[kit.kit_number] = generateLayoutForKit(kit.kit_number, kit.stickers);
+      }
+    }
+
+    return { apiKits, apiStickers, apiLayout };
+  }, []);
+
+  /**
+   * 初期ロード
+   */
   useEffect(() => {
-    async function loadKits() {
+    async function loadInitialKits() {
       try {
         setIsLoading(true);
-        const publicKits = await fetchPublicKits();
 
-        if (publicKits.length > 0) {
-          // APIからのキットをフロントエンド形式に変換
-          const apiKits: KitDefinition[] = publicKits.map(convertKitToDefinition);
+        // ページネーション付きで最初のページを取得
+        const result = await fetchPublicKitsPaginated({ page: 1, limit: KITS_PER_PAGE });
 
-          // APIからのシールをフロントエンド形式に変換
-          const apiStickers: StickerDefinition[] = publicKits.flatMap(
-            kit => (kit.stickers || []).map(convertStickerToDefinition)
-          );
+        if (result.kits.length > 0) {
+          // キットデータを変換
+          const { apiKits, apiStickers, apiLayout } = convertKits(result.kits);
 
-          // APIからのレイアウトを生成
-          const apiLayout: Record<string, StickerLayoutItem[]> = {};
-          publicKits.forEach(kit => {
-            if (kit.stickers && kit.stickers.length > 0) {
-              apiLayout[kit.kit_number] = generateLayoutForKit(kit.kit_number, kit.stickers);
-            }
-          });
-
-          // 静的データとAPIデータをマージ（APIデータを優先）
-          const mergedKits = [...STATIC_KITS];
-          apiKits.forEach(apiKit => {
-            const existingIndex = mergedKits.findIndex(k => k.id === apiKit.id);
-            if (existingIndex >= 0) {
-              mergedKits[existingIndex] = apiKit;
-            } else {
-              mergedKits.push(apiKit);
-            }
-          });
-
-          const mergedStickers = [...STATIC_STICKERS];
-          apiStickers.forEach(apiSticker => {
-            const existingIndex = mergedStickers.findIndex(s => s.id === apiSticker.id);
-            if (existingIndex >= 0) {
-              mergedStickers[existingIndex] = apiSticker;
-            } else {
-              mergedStickers.push(apiSticker);
-            }
-          });
-
-          const mergedLayout = { ...STATIC_LAYOUT, ...apiLayout };
-
-          // 動的キット・シールをグローバルに登録（getKitById, isStickerPercussion等で参照するため）
+          // グローバル登録
           clearDynamicKits();
           clearDynamicStickers();
           apiKits.forEach(kit => registerDynamicKit(kit));
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
 
-          setKits(mergedKits);
-          setStickers(mergedStickers);
-          setLayoutByKit(mergedLayout);
+          setKits(apiKits);
+          setStickers(apiStickers);
+          setLayoutByKit(apiLayout);
+          setPagination(result.pagination);
+          setLoadedKitIds(new Set(apiKits.map(k => k.id)));
         }
 
         setError(null);
       } catch (err) {
         console.error('Failed to load kits from API:', err);
         setError('キットの読み込みに失敗しました');
-        // 静的データをフォールバックとして使用
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadKits();
-  }, []);
+    loadInitialKits();
+  }, [convertKits]);
+
+  /**
+   * 追加読み込み（無限スクロール用）
+   */
+  const loadMore = useCallback(async () => {
+    if (!pagination || !pagination.hasNext || isLoadingMore) return;
+
+    try {
+      setIsLoadingMore(true);
+
+      const result = await fetchPublicKitsPaginated({
+        page: pagination.page + 1,
+        limit: KITS_PER_PAGE
+      });
+
+      if (result.kits.length > 0) {
+        // 新しいキットのみフィルタリング
+        const newKits = result.kits.filter(k => !loadedKitIds.has(k.kit_number));
+
+        if (newKits.length > 0) {
+          // キットデータを変換
+          const { apiKits, apiStickers, apiLayout } = convertKits(newKits);
+
+          // 既存データに追加
+          setKits(prev => {
+            const updated = [...prev];
+            apiKits.forEach(apiKit => {
+              if (!updated.find(k => k.id === apiKit.id)) {
+                updated.push(apiKit);
+              }
+            });
+            return updated;
+          });
+
+          setStickers(prev => {
+            const updated = [...prev];
+            apiStickers.forEach(apiSticker => {
+              if (!updated.find(s => s.id === apiSticker.id)) {
+                updated.push(apiSticker);
+              }
+            });
+            return updated;
+          });
+
+          setLayoutByKit(prev => ({ ...prev, ...apiLayout }));
+
+          // グローバル登録
+          apiKits.forEach(kit => registerDynamicKit(kit));
+          apiStickers.forEach(sticker => registerDynamicSticker(sticker));
+
+          setLoadedKitIds(prev => {
+            const updated = new Set(prev);
+            apiKits.forEach(k => updated.add(k.id));
+            return updated;
+          });
+        }
+
+        setPagination(result.pagination);
+      }
+    } catch (err) {
+      console.error('Failed to load more kits:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [pagination, isLoadingMore, loadedKitIds, convertKits]);
+
+  const hasMore = pagination?.hasNext ?? false;
 
   return (
-    <KitDataContext.Provider value={{ kits, stickers, layoutByKit, isLoading, error }}>
+    <KitDataContext.Provider value={{
+      kits,
+      stickers,
+      layoutByKit,
+      isLoading,
+      isLoadingMore,
+      error,
+      pagination,
+      loadMore,
+      hasMore,
+    }}>
       {children}
     </KitDataContext.Provider>
   );

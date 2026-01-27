@@ -348,9 +348,8 @@ export function StickerAlbum() {
               <div className="flex gap-2">
                 <Link
                   to="/creator/signup"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors active:scale-[0.98]"
                 >
-                  <Sparkles className="w-4 h-4" />
                   登録
                 </Link>
                 <Link

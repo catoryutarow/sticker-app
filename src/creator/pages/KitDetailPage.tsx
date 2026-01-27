@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { kitsApi, type Kit, type Sticker, type UpdateKitRequest, type FallbackAssignment } from '@/api/kitsApi';
 import { audioLibraryApi } from '@/api/audioLibraryApi';
+import { fetchKitTags, updateKitTags, type KitTag } from '@/api/tagsApi';
 import { useAuth } from '@/auth';
 import { KitForm } from '../components/KitForm';
 import { StickerGrid } from '../components/StickerGrid';
 import { LayoutPreview } from '../components/LayoutPreview';
 import { ImageCropper } from '../components/ImageCropper';
+import { TagSelector } from '../components/TagSelector';
 
 // 旧フォーマット（単独キー）から並行調への変換マップ
 const LEGACY_KEY_MAP: Record<string, string> = {
@@ -74,6 +76,12 @@ export const KitDetailPage = () => {
   const [stickerForm, setStickerForm] = useState({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
   const [isStickerSubmitting, setIsStickerSubmitting] = useState(false);
 
+  // タグ管理
+  const [tags, setTags] = useState<KitTag[]>([]);
+  const [isTagsLoading, setIsTagsLoading] = useState(false);
+  const [isTagsSaving, setIsTagsSaving] = useState(false);
+  const [tagError, setTagError] = useState('');
+
   const isPublished = kit?.status === 'published';
   const isAdmin = user?.role === 'admin';
   // adminは公開済みキットも編集可能
@@ -98,6 +106,38 @@ export const KitDetailPage = () => {
   useEffect(() => {
     loadKit();
   }, [loadKit]);
+
+  // タグを読み込み
+  useEffect(() => {
+    const loadTags = async () => {
+      if (!kitId) return;
+      setIsTagsLoading(true);
+      try {
+        const kitTags = await fetchKitTags(kitId);
+        setTags(kitTags);
+      } catch (err) {
+        console.error('Failed to load tags:', err);
+      } finally {
+        setIsTagsLoading(false);
+      }
+    };
+    loadTags();
+  }, [kitId]);
+
+  const handleTagsChange = async (newTagNames: string[]) => {
+    if (!kitId || isTagsSaving) return;
+
+    setIsTagsSaving(true);
+    setTagError('');
+    try {
+      const updatedTags = await updateKitTags(kitId, newTagNames);
+      setTags(updatedTags);
+    } catch (err) {
+      setTagError(err instanceof Error ? err.message : 'タグの更新に失敗しました');
+    } finally {
+      setIsTagsSaving(false);
+    }
+  };
 
   const handleUpdateKit = async (data: UpdateKitRequest) => {
     if (!kitId || !kit || !canEditKit) return;
@@ -395,6 +435,24 @@ export const KitDetailPage = () => {
                 {kit.description && (
                   <p className="mt-3 text-gray-600">{kit.description}</p>
                 )}
+
+                {/* タグ表示（閲覧モード） */}
+                {tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {tags.map(tag => (
+                      <span
+                        key={tag.name}
+                        className={`inline-flex items-center px-2 py-0.5 text-xs rounded-full ${
+                          tag.isCustom
+                            ? 'bg-gray-100 text-gray-600'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               {canEditKit && (
                 <div className="flex items-center gap-3">
@@ -443,6 +501,36 @@ export const KitDetailPage = () => {
                 </div>
               </div>
             )}
+
+            {/* タグ編集セクション */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">タグを編集</span>
+                {isTagsSaving && (
+                  <span className="text-xs text-gray-400 animate-pulse">保存中...</span>
+                )}
+              </div>
+
+              {tagError && (
+                <div className="mb-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                  {tagError}
+                </div>
+              )}
+
+              {isTagsLoading ? (
+                <div className="animate-pulse h-10 bg-gray-100 rounded-lg"></div>
+              ) : (
+                <TagSelector
+                  selectedTags={tags.map(t => t.name)}
+                  onChange={handleTagsChange}
+                  maxTags={5}
+                  disabled={isTagsSaving}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

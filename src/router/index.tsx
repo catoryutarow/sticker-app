@@ -11,6 +11,7 @@ import {
   UserDetailPage,
   AdminKitsPage,
   AdminNewKitPage,
+  TagsPage,
 } from '@/admin';
 
 const router = createBrowserRouter([
@@ -88,6 +89,10 @@ const router = createBrowserRouter([
       {
         path: 'kits/:kitId',
         element: <KitDetailPage />,
+      },
+      {
+        path: 'tags',
+        element: <TagsPage />,
       },
     ],
   },

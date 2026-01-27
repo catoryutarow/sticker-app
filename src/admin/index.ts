@@ -6,3 +6,4 @@ export { UsersPage } from './pages/UsersPage';
 export { UserDetailPage } from './pages/UserDetailPage';
 export { AdminKitsPage } from './pages/AdminKitsPage';
 export { AdminNewKitPage } from './pages/AdminNewKitPage';
+export { TagsPage } from './pages/TagsPage';
