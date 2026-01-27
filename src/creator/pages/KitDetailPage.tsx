@@ -672,6 +672,9 @@ export const KitDetailPage = () => {
                 onRegenerateThumbnail={canEditKit ? async () => {
                   await kitsApi.regenerateThumbnail(kitId);
                 } : undefined}
+                onPublish={!isPublished ? handleOpenPublishConfirm : undefined}
+                canPublish={canPublish && !isCheckingLayouts}
+                isPublished={isPublished}
               />
             ) : (
               <div className="flex items-center justify-center h-40 lg:h-64 text-gray-400">

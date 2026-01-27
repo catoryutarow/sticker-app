@@ -88,6 +88,22 @@ class AudioEngine {
   }
 
   /**
+   * 全ての状態をリセット（シール状態、トラック、カウント）
+   * ページリロードやコンポーネント再マウント時に呼び出す
+   */
+  reset(): void {
+    // 再生を停止
+    this.stop();
+
+    // 全ての状態をクリア
+    this.stickerStates.clear();
+    this.stickerCounts.clear();
+    this.totalVolume = 0;
+
+    this.notifyStateChange();
+  }
+
+  /**
    * AudioContextを初期化（ユーザー操作後に呼び出す必要あり）
    */
   async initialize(): Promise<void> {
@@ -666,23 +682,77 @@ class AudioEngine {
   dispose(): void {
     this.stop();
 
+    // Transportを完全に停止
+    try {
+      Tone.getTransport().stop();
+      Tone.getTransport().cancel();
+    } catch (e) {
+      // ignore
+    }
+
     // 全てのバッファを破棄
     for (const buffer of this.audioBuffers.values()) {
-      buffer.dispose();
+      try {
+        buffer.dispose();
+      } catch (e) {
+        // ignore
+      }
     }
     this.audioBuffers.clear();
 
     // マスターエフェクトを破棄
-    this.masterGain?.dispose();
-    this.masterDistortion?.dispose();
-    this.masterCompressor?.dispose();
-    this.masterLimiter?.dispose();
-    this.analyser?.dispose();
+    try { this.masterGain?.dispose(); } catch (e) { /* ignore */ }
+    try { this.masterDistortion?.dispose(); } catch (e) { /* ignore */ }
+    try { this.masterCompressor?.dispose(); } catch (e) { /* ignore */ }
+    try { this.masterLimiter?.dispose(); } catch (e) { /* ignore */ }
+    try { this.analyser?.dispose(); } catch (e) { /* ignore */ }
+
+    this.masterGain = null;
+    this.masterDistortion = null;
+    this.masterCompressor = null;
+    this.masterLimiter = null;
+    this.analyser = null;
 
     this.stickerCounts.clear();
     this.stickerStates.clear();
     this.isInitialized = false;
+
+    // AudioContextを閉じる
+    try {
+      const ctx = Tone.getContext();
+      if (ctx.state !== 'closed') {
+        ctx.rawContext.close();
+      }
+    } catch (e) {
+      // ignore
+    }
+
     AudioEngine.instance = null;
+  }
+
+  /**
+   * AudioContextを強制的に停止（ページリロード時など）
+   */
+  static forceStop(): void {
+    try {
+      Tone.getTransport().stop();
+      Tone.getTransport().cancel();
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      const ctx = Tone.getContext();
+      if (ctx.state === 'running') {
+        ctx.rawContext.suspend();
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (AudioEngine.instance) {
+      AudioEngine.instance.stop();
+    }
   }
 }
 

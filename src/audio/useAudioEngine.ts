@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AudioEngine, { AudioEngineState, StickerState } from './AudioEngine';
 import { StickerType } from './audioAssets';
+import * as Tone from 'tone';
 
 interface UseAudioEngineReturn {
   // State
@@ -41,6 +42,21 @@ export function useAudioEngine(): UseAudioEngineReturn {
   const [state, setState] = useState<AudioEngineState>(() => engine.getState());
 
   useEffect(() => {
+    // マウント時に既存のAudioContextを停止（リロード対策）
+    try {
+      Tone.getTransport().stop();
+      Tone.getTransport().cancel();
+      const ctx = Tone.getContext();
+      if (ctx.state === 'running') {
+        ctx.rawContext.suspend();
+      }
+    } catch (e) {
+      // ignore - context might not exist yet
+    }
+
+    // マウント時にエンジンをリセット（前回の状態をクリア）
+    engine.reset();
+
     // 状態変更をリッスン
     const unsubscribe = engine.onStateChange((newState) => {
       setState(newState);
@@ -49,8 +65,33 @@ export function useAudioEngine(): UseAudioEngineReturn {
     // 初期状態を取得
     setState(engine.getState());
 
+    // ページリロード/タブ閉じ時に強制停止
+    const handleBeforeUnload = () => {
+      AudioEngine.forceStop();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // pagehide イベント（モバイルSafariでより確実に発火）
+    const handlePageHide = () => {
+      AudioEngine.forceStop();
+    };
+    window.addEventListener('pagehide', handlePageHide);
+
+    // visibilitychange でタブが非表示になったら停止（モバイルでの挙動改善）
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        engine.stop();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      // アンマウント時に停止
+      AudioEngine.forceStop();
       unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [engine]);
 

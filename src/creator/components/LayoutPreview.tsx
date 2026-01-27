@@ -12,6 +12,10 @@ interface LayoutPreviewProps {
   onLayoutsChanged?: () => void;
   onRegenerateThumbnail?: () => Promise<void>;
   isEditable?: boolean;
+  // 公開ボタン用
+  onPublish?: () => void;
+  canPublish?: boolean;
+  isPublished?: boolean;
 }
 
 interface LocalLayout extends StickerLayout {
@@ -35,6 +39,9 @@ export const LayoutPreview = ({
   onLayoutsChanged,
   onRegenerateThumbnail,
   isEditable = true,
+  onPublish,
+  canPublish = false,
+  isPublished = false,
 }: LayoutPreviewProps) => {
   const stickerAreaRefDesktop = useRef<HTMLDivElement>(null);
   const stickerAreaRefMobile = useRef<HTMLDivElement>(null);
@@ -250,6 +257,42 @@ export const LayoutPreview = ({
       finishSaving(true);
     } catch (error) {
       console.error('Failed to update rotation:', error);
+      finishSaving(false);
+    }
+  };
+
+  // X位置変更
+  const handleXChange = async (x: number) => {
+    if (!selectedLayout || !isEditable) return;
+
+    setLayouts(prev =>
+      prev.map(l => (l.id === selectedLayout.id ? { ...l, x } : l))
+    );
+
+    startSaving();
+    try {
+      await kitsApi.updateLayout(kitId, selectedLayout.sticker.id, selectedLayout.id, { x });
+      finishSaving(true);
+    } catch (error) {
+      console.error('Failed to update x:', error);
+      finishSaving(false);
+    }
+  };
+
+  // Y位置変更
+  const handleYChange = async (y: number) => {
+    if (!selectedLayout || !isEditable) return;
+
+    setLayouts(prev =>
+      prev.map(l => (l.id === selectedLayout.id ? { ...l, y } : l))
+    );
+
+    startSaving();
+    try {
+      await kitsApi.updateLayout(kitId, selectedLayout.sticker.id, selectedLayout.id, { y });
+      finishSaving(true);
+    } catch (error) {
+      console.error('Failed to update y:', error);
       finishSaving(false);
     }
   };
@@ -471,6 +514,38 @@ export const LayoutPreview = ({
                   </button>
                 </div>
 
+                {/* X位置 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-gray-600 font-medium">X位置</label>
+                    <span className="text-xs text-gray-500 font-mono">{Math.round(selectedLayout.x)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={selectedLayout.x}
+                    onChange={(e) => handleXChange(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                </div>
+
+                {/* Y位置 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-gray-600 font-medium">Y位置</label>
+                    <span className="text-xs text-gray-500 font-mono">{Math.round(selectedLayout.y)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={selectedLayout.y}
+                    onChange={(e) => handleYChange(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                </div>
+
                 {/* サイズ */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -580,6 +655,24 @@ export const LayoutPreview = ({
                   <span>配置を確定</span>
                 </>
               )}
+            </button>
+          )}
+
+          {/* 公開ボタン */}
+          {onPublish && !isPublished && (
+            <button
+              onClick={onPublish}
+              disabled={!canPublish}
+              className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 shadow-sm transition-all ${
+                canPublish
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>公開する</span>
             </button>
           )}
         </>

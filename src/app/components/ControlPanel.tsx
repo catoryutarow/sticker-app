@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Undo2, Redo2, RotateCcw, Download } from 'lucide-react';
 import { AudioControls } from './AudioControls';
 import { StickerType } from '../../audio';
@@ -184,9 +185,9 @@ export function ControlPanel({
         </div>
       </div>
 
-      {/* 初期化確認ダイアログ */}
-      {showResetDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+      {/* 初期化確認ダイアログ - Portalでbody直下にレンダリング */}
+      {showResetDialog && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-xl p-6 shadow-2xl max-w-sm mx-4">
             <h3 className="text-lg font-bold text-gray-900 mb-2">初期化の確認</h3>
             <p className="text-gray-600 mb-4">
@@ -210,7 +211,8 @@ export function ControlPanel({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
