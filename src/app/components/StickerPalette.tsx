@@ -11,6 +11,7 @@ import { KitFinderModal } from './KitFinderModal';
 interface StickerPaletteProps {
   onDragStart?: () => void;
   onStickerUsed?: (paletteId: string) => void;
+  initialKitNumber?: string;
 }
 
 // 外部からシールを削除するための関数をエクスポート
@@ -33,10 +34,11 @@ export function removeStickerByType(stickerId: string) {
   _removeStickerByType(stickerId);
 }
 
-export function StickerPalette({ onDragStart }: StickerPaletteProps) {
+export function StickerPalette({ onDragStart, initialKitNumber }: StickerPaletteProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFinderOpen, setIsFinderOpen] = useState(false);
-  const [selectedKitNumber, setSelectedKitNumber] = useState<string | null>(null);
+  // Initialize with initialKitNumber from URL parameter if provided
+  const [selectedKitNumber, setSelectedKitNumber] = useState<string | null>(initialKitNumber || null);
 
   const handleSelectKit = (kitNumber: string) => {
     // 選択したキットを直接表示

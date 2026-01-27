@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { StickerSheet } from '@/app/components/StickerSheet';
+import { Link, useSearchParams } from 'react-router-dom';
+import { StickerSheet, type AspectRatio } from '@/app/components/StickerSheet';
 import { StickerPalette, removeStickerFromPalette, addStickerToPalette, removeStickerByType, resetPalette } from '@/app/components/StickerPalette';
 import { ControlPanel } from '@/app/components/ControlPanel';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
+import { ShareDialog } from '@/app/components/ShareDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
 import { WelcomeModal, shouldShowWelcome } from '@/app/components/WelcomeModal';
 import { Menu, X, Sparkles } from 'lucide-react';
@@ -25,6 +26,9 @@ export interface Sticker {
 }
 
 export function StickerAlbum() {
+  const [searchParams] = useSearchParams();
+  const initialKitNumber = searchParams.get('kit') || undefined;
+
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [history, setHistory] = useState<Sticker[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -32,8 +36,20 @@ export function StickerAlbum() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [exportedVideoBlob, setExportedVideoBlob] = useState<Blob | null>(null);
   const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => shouldShowWelcome());
+
+  // Determine aspect ratio based on device (PC=1:1, Mobile=3:4)
+  const [aspectRatio] = useState<AspectRatio>(() => {
+    // Use window width at initial render to determine device type
+    // lg breakpoint is 1024px in Tailwind
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      return '1:1';
+    }
+    return '3:4';
+  });
 
   // Ref for StickerSheet DOM element
   const stickerSheetRef = useRef<HTMLDivElement>(null);
@@ -274,6 +290,16 @@ export function StickerAlbum() {
     setIsExportDialogOpen(false);
   }, []);
 
+  const handleShareRequest = useCallback((videoBlob: Blob) => {
+    setExportedVideoBlob(videoBlob);
+    setIsShareDialogOpen(true);
+  }, []);
+
+  const handleShareClose = useCallback(() => {
+    setIsShareDialogOpen(false);
+    setExportedVideoBlob(null);
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto">
       <header className="mb-4 lg:mb-8 text-center">
@@ -314,6 +340,8 @@ export function StickerAlbum() {
           // Export props
           onExport={handleExport}
           hasStickers={stickers.length > 0}
+          // Share props
+          onShare={() => setIsShareDialogOpen(true)}
           // Help props
           onShowHelp={() => setIsWelcomeOpen(true)}
         />
@@ -342,7 +370,7 @@ export function StickerAlbum() {
             </button>
           </div>
           <div className="p-4 lg:p-0 pb-safe space-y-4">
-            <StickerPalette onDragStart={handleDragStart} />
+            <StickerPalette onDragStart={handleDragStart} initialKitNumber={initialKitNumber} />
 
             {/* クリエイター導線 */}
             <div className="mt-6 pt-6 border-t border-gray-200 pb-8 lg:pb-0">
@@ -384,6 +412,7 @@ export function StickerAlbum() {
           <StickerSheet
             stickers={stickers}
             backgroundId={backgroundId}
+            aspectRatio={aspectRatio}
             onAddSticker={handleAddSticker}
             onSelectSticker={handleSelectSticker}
             onDeselectSticker={handleDeselectSticker}
@@ -416,6 +445,8 @@ export function StickerAlbum() {
           // Export props
           onExport={handleExport}
           hasStickers={stickers.length > 0}
+          // Share props
+          onShare={() => setIsShareDialogOpen(true)}
           // Help props
           onShowHelp={() => setIsWelcomeOpen(true)}
         />
@@ -431,6 +462,17 @@ export function StickerAlbum() {
         stickers={stickers}
         stickerSheetRef={stickerSheetRef}
         backgroundId={backgroundId}
+        onShareRequest={handleShareRequest}
+      />
+
+      {/* 共有ダイアログ */}
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onClose={handleShareClose}
+        stickers={stickers}
+        backgroundId={backgroundId}
+        aspectRatio={aspectRatio}
+        videoBlob={exportedVideoBlob}
       />
 
       {/* ウェルカムモーダル */}
