@@ -1,17 +1,48 @@
-import { Resend } from 'resend';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+const sesClient = new SESClient({ region: 'ap-northeast-1' });
 
-const EMAIL_FROM = process.env.EMAIL_FROM || 'シール帳 <noreply@example.com>';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'シール帳 <noreply@sirucho.com>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const APP_NAME = 'シール帳';
 
 /**
  * メール送信が有効かどうか
+ * SESはIAMロールで認証するため、常に有効
  */
-export const isEmailEnabled = () => !!resend;
+export const isEmailEnabled = () => true;
+
+/**
+ * SESでメールを送信
+ */
+async function sendEmail({ to, subject, html, text }) {
+  const command = new SendEmailCommand({
+    Source: EMAIL_FROM,
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Subject: {
+        Charset: 'UTF-8',
+        Data: subject,
+      },
+      Body: {
+        Html: {
+          Charset: 'UTF-8',
+          Data: html,
+        },
+        Text: {
+          Charset: 'UTF-8',
+          Data: text,
+        },
+      },
+    },
+  });
+
+  const result = await sesClient.send(command);
+  console.log(`[Email] SES MessageId: ${result.MessageId}`);
+  return result;
+}
 
 /**
  * メール認証メールを送信
@@ -19,17 +50,10 @@ export const isEmailEnabled = () => !!resend;
  * @param {string} token - 認証トークン
  */
 export async function sendVerificationEmail(email, token) {
-  if (!resend) {
-    console.log('[Email] Resend not configured, skipping verification email');
-    console.log(`[Email] Verification URL: ${FRONTEND_URL}/verify-email?token=${token}`);
-    return;
-  }
-
   const verifyUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
 
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendEmail({
       to: email,
       subject: `[${APP_NAME}] メールアドレスの確認`,
       html: `
@@ -103,17 +127,10 @@ ${verifyUrl}
  * @param {string} token - リセットトークン
  */
 export async function sendPasswordResetEmail(email, token) {
-  if (!resend) {
-    console.log('[Email] Resend not configured, skipping password reset email');
-    console.log(`[Email] Reset URL: ${FRONTEND_URL}/reset-password?token=${token}`);
-    return;
-  }
-
   const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
 
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendEmail({
       to: email,
       subject: `[${APP_NAME}] パスワードリセット`,
       html: `
@@ -196,14 +213,8 @@ ${resetUrl}
  * @param {string} email - 送信先メールアドレス
  */
 export async function sendAccountDeletedEmail(email) {
-  if (!resend) {
-    console.log('[Email] Resend not configured, skipping account deletion email');
-    return;
-  }
-
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendEmail({
       to: email,
       subject: `[${APP_NAME}] アカウント削除完了`,
       html: `
