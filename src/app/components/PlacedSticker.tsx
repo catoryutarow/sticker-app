@@ -4,13 +4,19 @@ import { useDrag } from 'react-dnd';
 import { useEffect } from 'react';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
+// スマホ編集画面を基準とする台紙幅（この幅でシールは80px * scale）
+export const BASE_SHEET_WIDTH = 358;
+
 interface PlacedStickerProps {
   sticker: Sticker;
+  sheetWidth?: number;  // 現在の台紙幅（スケール計算用）
   isSelected?: boolean;
   onSelect?: (id: string) => void;
 }
 
-export function PlacedSticker({ sticker, isSelected, onSelect }: PlacedStickerProps) {
+export function PlacedSticker({ sticker, sheetWidth = BASE_SHEET_WIDTH, isSelected, onSelect }: PlacedStickerProps) {
+  // 基準幅に対するスケール
+  const sizeScale = sheetWidth / BASE_SHEET_WIDTH;
   const [{ isDragging }, drag, preview] = useDrag(
     () => ({
       type: 'placed-sticker',
@@ -37,9 +43,11 @@ export function PlacedSticker({ sticker, isSelected, onSelect }: PlacedStickerPr
       ref={drag}
       className={`absolute cursor-move transition-all ${isSelected ? 'z-10' : 'z-0'} ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       style={{
-        left: `${sticker.x}px`,
-        top: `${sticker.y}px`,
-        transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
+        // パーセンテージ座標で配置（クロスデバイス互換）
+        left: `${sticker.x}%`,
+        top: `${sticker.y}%`,
+        // sizeScaleで台紙サイズに応じてシールサイズを調整
+        transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale * sizeScale})`,
         // リアルなシール影: 台紙に密着した柔らかい影
         filter: `
           drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15))

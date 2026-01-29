@@ -51,22 +51,37 @@ export function WorkPage() {
     toggle: toggleAudio,
     setSheetWidth,
     syncWithStickers,
+    preloadAudio,
   } = useAudioEngine();
 
-  // シールが読み込まれたときにオーディオエンジンと同期
+  // 音声ファイルのプリロード状態
+  const [audioLoaded, setAudioLoaded] = useState(false);
+
+  // シールが読み込まれたときに音声をプリロードしてからオーディオエンジンと同期
   useEffect(() => {
     if (!work) return;
 
-    const stickersForAudio = work.stickers.map(s => {
-      const kitId = s.type.split('-')[0] || '001';
-      const baseSemitone = isStickerPercussion(s.type) ? 0 : getKitBaseSemitone(kitId);
-      return {
-        ...s,
-        pitch: s.pitch - baseSemitone,
-      };
-    });
-    syncWithStickers(stickersForAudio);
-  }, [work, syncWithStickers]);
+    const loadAndSync = async () => {
+      // 音声ファイルをプリロード
+      const stickerTypes = work.stickers.map(s => s.type);
+      const uniqueTypes = [...new Set(stickerTypes)];
+      await preloadAudio(uniqueTypes);
+      setAudioLoaded(true);
+
+      // プリロード後にオーディオエンジンと同期
+      const stickersForAudio = work.stickers.map(s => {
+        const kitId = s.type.split('-')[0] || '001';
+        const baseSemitone = isStickerPercussion(s.type) ? 0 : getKitBaseSemitone(kitId);
+        return {
+          ...s,
+          pitch: s.pitch - baseSemitone,
+        };
+      });
+      syncWithStickers(stickersForAudio);
+    };
+
+    loadAndSync();
+  }, [work, syncWithStickers, preloadAudio]);
 
   // 台紙の幅をオーディオエンジンに設定
   // シールの座標は元のスケール（baseWidth=600）で保存されているため、
@@ -93,38 +108,46 @@ export function WorkPage() {
     return () => window.removeEventListener('resize', updateContainerSize);
   }, []);
 
+  // スマホ編集画面の台紙幅を基準（シールサイズの基準）
+  const BASE_SHEET_WIDTH = 358;
+
   // カードのサイズを計算（画面に収まるように縮小、PC版は控えめなサイズに）
   const cardDimensions = useMemo(() => {
     if (!work) {
-      return { width: 0, height: 0, scale: 1 };
+      return { width: 0, height: 0, sizeScale: 1 };
     }
-
-    const aspectRatioValue = work.aspectRatio === '1:1' ? 1 : 3 / 4;
-    const baseWidth = 600; // 基準となる幅
-    const baseHeight = baseWidth / aspectRatioValue;
 
     // containerSizeがまだ0の場合はウィンドウサイズからフォールバック値を計算
     const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
     const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 667;
     const isDesktop = windowWidth >= 1024;
 
+    // 利用可能な幅（パディング分を引く）
     const availableWidth = (containerSize.width > 0 ? containerSize.width : windowWidth) - 32;
-    // PC版は画面の50%程度に収める（ボタンにも目が行くように）
-    const availableHeight = isDesktop
-      ? Math.min(windowHeight * 0.55, 500)
-      : (containerSize.height > 0 ? containerSize.height : windowHeight - 200);
+    // 3:4のアスペクト比から高さを計算
+    const cardWidth = Math.min(availableWidth, isDesktop ? 400 : availableWidth);
+    const cardHeight = cardWidth * (4 / 3);
 
-    // 幅と高さの両方に基づいてスケールを計算
-    const scaleByWidth = availableWidth / baseWidth;
-    const scaleByHeight = availableHeight / baseHeight;
-    // PC版は最大0.7倍に制限
-    const maxScale = isDesktop ? 0.7 : 1;
-    const scale = Math.min(scaleByWidth, scaleByHeight, maxScale);
+    // 高さ制限をチェック
+    const maxHeight = isDesktop
+      ? Math.min(windowHeight * 0.6, 550)
+      : (containerSize.height > 0 ? containerSize.height : windowHeight - 250);
+
+    let finalWidth = cardWidth;
+    let finalHeight = cardHeight;
+
+    if (cardHeight > maxHeight) {
+      finalHeight = maxHeight;
+      finalWidth = finalHeight * (3 / 4);
+    }
+
+    // シールサイズのスケール = 表示台紙幅 / 基準台紙幅
+    const sizeScale = finalWidth / BASE_SHEET_WIDTH;
 
     return {
-      width: baseWidth * scale,
-      height: baseHeight * scale,
-      scale,
+      width: finalWidth,
+      height: finalHeight,
+      sizeScale,
     };
   }, [work, containerSize]);
 
@@ -259,7 +282,7 @@ export function WorkPage() {
                 style={{
                   width: cardDimensions.width > 0 ? `${cardDimensions.width}px` : 'auto',
                   height: cardDimensions.height > 0 ? `${cardDimensions.height}px` : 'auto',
-                  aspectRatio: work.aspectRatio === '1:1' ? '1 / 1' : '3 / 4',
+                  aspectRatio: '3 / 4',  // Fixed for cross-device compatibility
                   backdropFilter: 'blur(10px)',
                   boxShadow: `
                     0 8px 32px rgba(0, 0, 0, 0.1),
@@ -284,15 +307,15 @@ export function WorkPage() {
                   }}
                 />
 
-                {/* Stickers - scaled with the card */}
+                {/* Stickers - パーセンテージ座標で配置、サイズは基準幅比でスケール */}
                 {work.stickers.map((sticker) => (
                   <div
                     key={sticker.id}
                     className="absolute"
                     style={{
-                      left: `${sticker.x * cardDimensions.scale}px`,
-                      top: `${sticker.y * cardDimensions.scale}px`,
-                      transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale * cardDimensions.scale})`,
+                      left: `${sticker.x}%`,
+                      top: `${sticker.y}%`,
+                      transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale * cardDimensions.sizeScale})`,
                       filter: `
                         drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15))
                         drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1))

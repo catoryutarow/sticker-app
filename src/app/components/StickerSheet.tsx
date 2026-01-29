@@ -1,7 +1,7 @@
 import { useDrop } from 'react-dnd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Sticker } from '@/app/components/StickerAlbum';
-import { PlacedSticker } from '@/app/components/PlacedSticker';
+import { PlacedSticker, BASE_SHEET_WIDTH } from '@/app/components/PlacedSticker';
 import { StickerEditor } from '@/app/components/StickerEditor';
 import { getBackgroundImagePath, BACKGROUNDS } from '../../config/backgroundConfig';
 
@@ -35,6 +35,20 @@ export function StickerSheet({
   selectedStickerId,
 }: StickerSheetProps) {
   const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [sheetWidth, setSheetWidth] = useState(BASE_SHEET_WIDTH);
+
+  // 台紙幅を追跡（シールサイズ計算用）
+  useLayoutEffect(() => {
+    const updateWidth = () => {
+      if (sheetRef.current) {
+        setSheetWidth(sheetRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   // 全背景画像を初回マウント時にプリロード
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -54,12 +68,14 @@ export function StickerSheet({
       accept: ['sticker', 'placed-sticker'],
       drop: (item: { type: string; id?: string; size?: number; rotation?: number; paletteId?: string }, monitor) => {
         const offset = monitor.getClientOffset();
-        const dropTargetRef = document.getElementById('sticker-sheet');
+        // refを使って正しいsticker-sheetを取得（複数インスタンス対応）
+        const dropTarget = sheetRef.current;
 
-        if (offset && dropTargetRef) {
-          const rect = dropTargetRef.getBoundingClientRect();
-          const x = offset.x - rect.left;
-          const y = offset.y - rect.top;
+        if (offset && dropTarget) {
+          const rect = dropTarget.getBoundingClientRect();
+          // パーセンテージ座標に変換（0-100）- クロスデバイス互換
+          const x = ((offset.x - rect.left) / rect.width) * 100;
+          const y = ((offset.y - rect.top) / rect.height) * 100;
 
           // 振動フィードバック（ドロップ成功）
           if ('vibrate' in navigator) {
@@ -83,18 +99,23 @@ export function StickerSheet({
     [onAddSticker, onMoveSticker]
   );
 
+  // 複数のrefを組み合わせる（dropとsheetRef）
+  const setRefs = (element: HTMLDivElement | null) => {
+    drop(element);
+    (sheetRef as React.MutableRefObject<HTMLDivElement | null>).current = element;
+  };
+
   return (
     <div className="relative">
       {/* メインの台紙 */}
       <div
-        id="sticker-sheet"
-        ref={drop}
+        ref={setRefs}
         className={`relative rounded-lg overflow-hidden transition-all ${
           isOver ? 'ring-4 ring-blue-300 ring-opacity-50' : ''
         }`}
         style={{
-          aspectRatio: aspectRatio === '1:1' ? '1 / 1' : '3 / 4',
-          minHeight: aspectRatio === '1:1' ? '600px' : '800px',
+          aspectRatio: '3 / 4',  // Fixed for cross-device compatibility
+          width: '100%',         // Fill parent width, height determined by aspect ratio
           backdropFilter: 'blur(10px)',
           boxShadow: `
             0 8px 32px rgba(0, 0, 0, 0.1),
@@ -151,6 +172,7 @@ export function StickerSheet({
             <PlacedSticker
               key={sticker.id}
               sticker={sticker}
+              sheetWidth={sheetWidth}
               isSelected={sticker.id === selectedStickerId}
               onSelect={onSelectSticker}
             />

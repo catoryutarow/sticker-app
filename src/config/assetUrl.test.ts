@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getAssetBaseUrl,
   getAssetUrl,
@@ -7,6 +7,8 @@ import {
   getKitThumbnailUrl,
   getDefaultThumbnailUrl,
   getBackgroundUrl,
+  getImageFormat,
+  _resetWebpCache,
 } from './assetUrl';
 
 /**
@@ -15,8 +17,14 @@ import {
  * 注意: import.meta.env のモックは複雑なため、
  * ここではローカルパス（環境変数未設定）のケースのみテスト
  * CDN URL生成は実際のデプロイ環境で検証
+ *
+ * 画像フォーマットはテスト環境では canvas.toDataURL() が動作しないため png にフォールバック
  */
 describe('assetUrl (local paths)', () => {
+  // 各テスト前にWebPキャッシュをリセット
+  beforeEach(() => {
+    _resetWebpCache();
+  });
   describe('getAssetBaseUrl', () => {
     it('should return empty string when VITE_ASSET_BASE_URL is not set', () => {
       // テスト環境では環境変数が未設定なので空文字が返る
@@ -93,6 +101,13 @@ describe('assetUrl (local paths)', () => {
 
     it('should handle various filenames', () => {
       expect(getBackgroundUrl('AdobeStock_584852960.jpeg')).toBe('/backgrounds/AdobeStock_584852960.jpeg');
+    });
+  });
+
+  describe('getImageFormat', () => {
+    it('should return png when document is undefined (SSR/test environment)', () => {
+      // テスト環境では document が存在しないため png にフォールバック
+      expect(getImageFormat()).toBe('png');
     });
   });
 });

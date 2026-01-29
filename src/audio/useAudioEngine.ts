@@ -32,6 +32,9 @@ interface UseAudioEngineReturn {
   addSticker: (type: StickerType) => void;
   removeSticker: (type: StickerType) => void;
 
+  // Preload
+  preloadAudio: (stickerIds: string[]) => Promise<string[]>;
+
   // Engine reference
   engine: AudioEngine;
 }
@@ -163,6 +166,13 @@ export function useAudioEngine(): UseAudioEngineReturn {
     [engine]
   );
 
+  const preloadAudio = useCallback(
+    async (stickerIds: string[]): Promise<string[]> => {
+      return engine.preloadAudioBuffers(stickerIds);
+    },
+    [engine]
+  );
+
   return {
     // State
     isPlaying: state.isPlaying,
@@ -184,6 +194,9 @@ export function useAudioEngine(): UseAudioEngineReturn {
     syncWithStickers,
     addSticker,
     removeSticker,
+
+    // Preload
+    preloadAudio,
 
     // Engine reference
     engine,

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { StickerKitCard } from './StickerKitCard';
 import { KitDefinition } from '@/config/kitConfig';
 import { StickerLayoutItem } from '@/config/stickerLayout';
 import { useKitData } from '@/config/KitDataContext';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
+import AudioEngine from '@/audio/AudioEngine';
 
 interface KitCardStackProps {
   onDragStart?: () => void;
@@ -90,6 +91,55 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
   const STICKER_LAYOUT = useMemo(() => {
     return Object.values(initialLayoutByKit).flat();
   }, [initialLayoutByKit]);
+
+  // 音声プリロード済みキットを追跡
+  const preloadedKits = useRef<Set<string>>(new Set());
+
+  // アクティブなキットの音声を遅延プリロード
+  useEffect(() => {
+    if (KITS.length === 0) return;
+
+    const activeKit = KITS[activeKitIndex];
+    if (!activeKit) return;
+
+    // 既にプリロード済みならスキップ
+    if (preloadedKits.current.has(activeKit.id)) return;
+
+    // アクティブキットのシールIDリストを取得
+    const stickerIds = (initialLayoutByKit[activeKit.id] || [])
+      .map(item => item.stickerId)
+      .filter((id, index, arr) => arr.indexOf(id) === index); // 重複除去
+
+    if (stickerIds.length === 0) return;
+
+    // 非同期でプリロード実行（UIをブロックしない）
+    const engine = AudioEngine.getInstance();
+    engine.preloadAudioBuffers(stickerIds).then((loaded) => {
+      if (loaded.length > 0) {
+        preloadedKits.current.add(activeKit.id);
+      }
+    });
+
+    // 次のキットも先読み（オプショナル）
+    const nextIndex = (activeKitIndex + 1) % KITS.length;
+    const nextKit = KITS[nextIndex];
+    if (nextKit && !preloadedKits.current.has(nextKit.id)) {
+      const nextStickerIds = (initialLayoutByKit[nextKit.id] || [])
+        .map(item => item.stickerId)
+        .filter((id, index, arr) => arr.indexOf(id) === index);
+
+      if (nextStickerIds.length > 0) {
+        // 少し遅延させて優先度を下げる
+        setTimeout(() => {
+          engine.preloadAudioBuffers(nextStickerIds).then((loaded) => {
+            if (loaded.length > 0) {
+              preloadedKits.current.add(nextKit.id);
+            }
+          });
+        }, 500);
+      }
+    }
+  }, [activeKitIndex, KITS, initialLayoutByKit]);
 
   // グローバルコールバックを登録
   useEffect(() => {

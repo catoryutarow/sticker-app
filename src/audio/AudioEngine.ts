@@ -137,8 +137,8 @@ class AudioEngine {
         Tone.getDestination()
       );
 
-      // 全シールタイプの音源を事前ロード
-      await this.loadAllAudioBuffers();
+      // 音源は遅延ロード（シール追加時またはプリロード時にロード）
+      // 初期化時には全音源をロードしない（パフォーマンス最適化）
 
       this.isInitialized = true;
       this.notifyStateChange();
@@ -149,23 +149,33 @@ class AudioEngine {
   }
 
   /**
-   * 全シールタイプの音源をロード
+   * 指定したシールIDリストの音源を事前ロード
+   * @param stickerIds ロードするシールIDの配列
+   * @returns ロード成功したシールIDの配列
    */
-  private async loadAllAudioBuffers(): Promise<void> {
-    const types = getAllStickerTypes();
+  async preloadAudioBuffers(stickerIds: string[]): Promise<string[]> {
+    const loadedIds: string[] = [];
 
-    const loadPromises = types.map(async (type) => {
+    const loadPromises = stickerIds.map(async (id) => {
+      // 既にロード済みの場合はスキップ
+      if (this.audioBuffers.has(id)) {
+        loadedIds.push(id);
+        return;
+      }
+
       try {
-        const audioPath = getStickerAudioPath(type);
+        const audioPath = getStickerAudioPath(id);
         const buffer = new Tone.ToneAudioBuffer(audioPath);
         await buffer.load(audioPath);
-        this.audioBuffers.set(type, buffer);
+        this.audioBuffers.set(id, buffer);
+        loadedIds.push(id);
       } catch (error) {
-        console.warn(`Failed to load audio for ${type}:`, error);
+        console.warn(`Failed to preload audio for ${id}:`, error);
       }
     });
 
     await Promise.all(loadPromises);
+    return loadedIds;
   }
 
   /**

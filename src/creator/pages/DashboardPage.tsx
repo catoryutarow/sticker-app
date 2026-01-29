@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth';
 import { kitsApi, type Kit } from '@/api/kitsApi';
+import { authApi } from '@/api/authApi';
 import { KitCard } from '../components/KitCard';
 
 type SortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc' | 'popular';
@@ -15,10 +16,25 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 export const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [kits, setKits] = useState<Kit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('created_desc');
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleResendVerification = async () => {
+    setIsResendingEmail(true);
+    setResendMessage(null);
+    try {
+      await authApi.resendVerification();
+      setResendMessage({ type: 'success', text: '確認メールを送信しました。メールボックスをご確認ください。' });
+    } catch (err) {
+      setResendMessage({ type: 'error', text: err instanceof Error ? err.message : 'メール送信に失敗しました' });
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
 
   useEffect(() => {
     const loadKits = async () => {
@@ -80,6 +96,57 @@ export const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* メール未認証バナー */}
+      {user && !user.emailVerified && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-amber-800">
+                メールアドレスが未確認です
+              </h3>
+              <p className="mt-1 text-sm text-amber-700">
+                キットを公開するには、メールアドレスの確認が必要です。
+                登録時に送信した確認メールのリンクをクリックしてください。
+              </p>
+              {resendMessage && (
+                <p className={`mt-2 text-sm ${resendMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                  {resendMessage.text}
+                </p>
+              )}
+              <div className="mt-3">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResendingEmail}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-800 bg-amber-100 hover:bg-amber-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResendingEmail ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      送信中...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      確認メールを再送信
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ウェルカムセクション */}
       <div className="bg-white shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-gray-900">

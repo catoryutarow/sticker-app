@@ -1,5 +1,5 @@
-// API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://16.176.17.115/api';
+// API Base URL (set via .env.development or .env.production)
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Sticker as placed on the canvas (matches StickerAlbum.Sticker)

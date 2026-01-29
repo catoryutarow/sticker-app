@@ -3,12 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { StickerSheet, type AspectRatio } from '@/app/components/StickerSheet';
 import { StickerPalette, removeStickerFromPalette, addStickerToPalette, removeStickerByType, resetPalette } from '@/app/components/StickerPalette';
 import { ControlPanel } from '@/app/components/ControlPanel';
+import { AudioControls } from '@/app/components/AudioControls';
 import { CustomDragLayer } from '@/app/components/CustomDragLayer';
 import { ExportDialog } from '@/app/components/ExportDialog';
 import { ShareDialog } from '@/app/components/ShareDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
 import { WelcomeModal, shouldShowWelcome } from '@/app/components/WelcomeModal';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X, Sparkles, Undo2, Redo2, Download, Share2, RotateCcw, HelpCircle } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
 import { getKitBaseSemitone } from '../../config/kitConfig';
@@ -41,15 +42,9 @@ export function StickerAlbum() {
   const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => shouldShowWelcome());
 
-  // Determine aspect ratio based on device (PC=1:1, Mobile=3:4)
-  const [aspectRatio] = useState<AspectRatio>(() => {
-    // Use window width at initial render to determine device type
-    // lg breakpoint is 1024px in Tailwind
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      return '1:1';
-    }
-    return '3:4';
-  });
+  // Aspect ratio is fixed to 3:4 for cross-device compatibility
+  // This ensures works look the same when shared between PC and mobile
+  const aspectRatio: AspectRatio = '3:4';
 
   // Ref for StickerSheet DOM element
   const stickerSheetRef = useRef<HTMLDivElement>(null);
@@ -302,11 +297,12 @@ export function StickerAlbum() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <header className="mb-4 lg:mb-8 text-center">
-        <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-2">
+      {/* ヘッダー - PC/モバイル共通 */}
+      <header className="mb-4 lg:mb-6 text-center">
+        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-1 lg:mb-2">
           シール帳
         </h1>
-        <p className="text-sm lg:text-base text-gray-600">ドラッグ＆ドロップでシールを貼ろう</p>
+        <p className="text-sm text-gray-600">ドラッグ＆ドロップでシールを貼ろう</p>
       </header>
 
       {/* モバイル用トグルボタン */}
@@ -320,60 +316,195 @@ export function StickerAlbum() {
         </button>
       </div>
 
-      {/* コントロールパネル - デスクトップは常に表示、モバイルは下部固定 */}
-      <div className="hidden lg:block mb-6">
-        <ControlPanel
-          canUndo={historyIndex > 0}
-          canRedo={historyIndex < history.length - 1}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onSave={handleSave}
-          onLoad={handleLoad}
-          onClear={handleClear}
-          // Audio props
-          isPlaying={isPlaying}
-          isAudioInitialized={isAudioInitialized}
-          activeTracks={activeTracks}
-          saturationAmount={saturationAmount}
-          onAudioToggle={toggleAudio}
-          onAudioInitialize={initializeAudio}
-          // Export props
-          onExport={handleExport}
-          hasStickers={stickers.length > 0}
-          // Share props
-          onShare={() => setIsShareDialogOpen(true)}
-          // Help props
-          onShowHelp={() => setIsWelcomeOpen(true)}
-        />
-      </div>
-
       {/* オーバーレイ - モバイルのみ */}
       {isPaletteOpen && (
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30" onClick={() => setIsPaletteOpen(false)} />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
-        {/* シール選択エリア - デスクトップは常に表示、モバイルはドロワー */}
+      {/* ===== PC用 3カラムレイアウト ===== */}
+      <div className="hidden lg:grid lg:grid-cols-[280px_1fr_280px] gap-6 items-start">
+        {/* 左カラム: シールパレット */}
+        <div className="sticky top-4 w-[280px]">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-2xl">🎨</span> シール
+            </h2>
+            <StickerPalette onDragStart={handleDragStart} initialKitNumber={initialKitNumber} />
+          </div>
+
+          {/* クリエイター導線 */}
+          <div className="mt-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <p className="text-sm text-gray-800 font-semibold">
+                自分だけのキットを作ろう
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link
+                to="/creator/signup"
+                className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                登録
+              </Link>
+              <Link
+                to="/creator/login"
+                className="flex-1 flex items-center justify-center px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+              >
+                ログイン
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 中央カラム: 台紙（主役） */}
+        <div className="flex justify-center w-full" ref={stickerSheetRef}>
+          <div className="w-[448px]">
+            <BackgroundSwitcher
+              currentBackgroundId={backgroundId}
+              onBackgroundChange={setBackgroundId}
+            />
+            <StickerSheet
+              stickers={stickers}
+              backgroundId={backgroundId}
+              aspectRatio={aspectRatio}
+              onAddSticker={handleAddSticker}
+              onSelectSticker={handleSelectSticker}
+              onDeselectSticker={handleDeselectSticker}
+              onUpdateSticker={handleUpdateStickerPreview}
+              onUpdateStickerWithHistory={handleUpdateSticker}
+              selectedStickerId={selectedStickerId}
+              onMoveSticker={handleMoveSticker}
+              onDeleteSticker={handleDeleteSticker}
+            />
+          </div>
+        </div>
+
+        {/* 右カラム: コントロール群 */}
+        <div className="sticky top-4 space-y-4 w-[280px]">
+          {/* 再生コントロール */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
+            <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+              <span className="text-lg">🎵</span> 再生
+            </h3>
+            <AudioControls
+              isPlaying={isPlaying}
+              isInitialized={isAudioInitialized}
+              activeTracks={activeTracks}
+              saturationAmount={saturationAmount}
+              onToggle={toggleAudio}
+              onInitialize={initializeAudio}
+            />
+          </div>
+
+          {/* 編集コントロール */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
+            <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+              <span className="text-lg">✏️</span> 編集
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  historyIndex > 0
+                    ? 'bg-gray-800 hover:bg-gray-900 text-white'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Undo2 className="w-4 h-4" />
+                戻る
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  historyIndex < history.length - 1
+                    ? 'bg-gray-800 hover:bg-gray-900 text-white'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Redo2 className="w-4 h-4" />
+                進む
+              </button>
+            </div>
+          </div>
+
+          {/* 出力・共有 */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
+            <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+              <span className="text-lg">📤</span> 出力
+            </h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => setIsShareDialogOpen(true)}
+                disabled={stickers.length === 0}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  stickers.length > 0
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Share2 className="w-5 h-5" />
+                共有する
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={stickers.length === 0}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  stickers.length > 0
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                動画エクスポート
+              </button>
+            </div>
+          </div>
+
+          {/* その他 */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleClear}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              初期化
+            </button>
+            <button
+              onClick={() => setIsWelcomeOpen(true)}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              使い方
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== モバイル用レイアウト ===== */}
+      <div className="lg:hidden">
+        {/* シール選択エリア - ドロワー */}
         <div
           className={`
-          fixed lg:relative top-0 right-0 w-80 lg:w-auto h-full lg:h-auto
-          lg:col-span-1
-          bg-white lg:bg-transparent shadow-2xl lg:shadow-none
+          fixed top-0 right-0 w-80 h-full
+          bg-white shadow-2xl
           transform transition-transform duration-300 ease-in-out
-          z-40 lg:z-auto lg:transform-none overflow-y-auto
-          ${isPaletteOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          z-40 overflow-y-auto
+          ${isPaletteOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
         >
-          <div className="lg:hidden flex justify-start p-4">
+          <div className="flex justify-start p-4">
             <button onClick={() => setIsPaletteOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
               <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="p-4 lg:p-0 pb-safe space-y-4">
+          <div className="p-4 pb-safe space-y-4">
             <StickerPalette onDragStart={handleDragStart} initialKitNumber={initialKitNumber} />
 
             {/* クリエイター導線 */}
-            <div className="mt-6 pt-6 border-t border-gray-200 pb-8 lg:pb-0">
+            <div className="mt-6 pt-6 border-t border-gray-200 pb-8">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="w-5 h-5 text-blue-600" />
@@ -404,7 +535,7 @@ export function StickerAlbum() {
         </div>
 
         {/* 台紙エリア */}
-        <div className="lg:col-span-3" ref={stickerSheetRef}>
+        <div>
           <BackgroundSwitcher
             currentBackgroundId={backgroundId}
             onBackgroundChange={setBackgroundId}

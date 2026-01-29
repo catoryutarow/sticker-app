@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://16.176.17.115/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export interface Tag {
   id: string | null;
