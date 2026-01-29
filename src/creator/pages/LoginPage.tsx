@@ -94,9 +94,15 @@ export const LoginPage = () => {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="flex items-center justify-between">
+            <Link
+              to="/creator/forgot-password"
+              className="text-sm text-gray-600 hover:text-gray-500"
+            >
+              パスワードをお忘れですか？
+            </Link>
             <Link to="/creator/signup" className="text-sm text-blue-600 hover:text-blue-500">
-              アカウントをお持ちでない方は<span className="font-medium underline">新規登録</span>
+              <span className="font-medium underline">新規登録</span>
             </Link>
           </div>
         </form>

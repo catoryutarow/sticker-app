@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import { spawn } from 'child_process';
@@ -15,6 +17,25 @@ import tagRoutes from './routes/tags.js';
 import worksRoutes from './routes/works.js';
 
 const app = express();
+
+// セキュリティヘッダー設定
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "blob:"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // 外部リソース読み込みを許可
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // CORS対応
+}));
 
 // アップロード制限設定
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB

@@ -40,6 +40,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { user } = await authApi.getMe();
+      setUser(user);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   const value = {
     user,
     isLoading,
@@ -47,6 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     login,
     signup,
     logout,
+    refreshUser,
   };
 
   return (

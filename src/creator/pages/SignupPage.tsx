@@ -94,9 +94,28 @@ export const SignupPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="8文字以上"
+                placeholder="8文字以上、英字と数字を含む"
               />
-              <p className="mt-1 text-xs text-gray-500">8文字以上で入力してください</p>
+              <ul className="mt-2 text-xs text-gray-500 space-y-1">
+                <li className="flex items-center gap-1">
+                  <span className={password.length >= 8 ? 'text-green-500' : ''}>
+                    {password.length >= 8 ? '✓' : '○'}
+                  </span>
+                  8文字以上
+                </li>
+                <li className="flex items-center gap-1">
+                  <span className={/[a-zA-Z]/.test(password) ? 'text-green-500' : ''}>
+                    {/[a-zA-Z]/.test(password) ? '✓' : '○'}
+                  </span>
+                  英字を含む
+                </li>
+                <li className="flex items-center gap-1">
+                  <span className={/[0-9]/.test(password) ? 'text-green-500' : ''}>
+                    {/[0-9]/.test(password) ? '✓' : '○'}
+                  </span>
+                  数字を含む
+                </li>
+              </ul>
             </div>
           </div>
 

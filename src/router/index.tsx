@@ -2,7 +2,17 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import App from '@/app/App';
 import { WorkPage } from '@/app/pages/WorkPage';
 import { AuthGuard } from '@/auth';
-import { CreatorLayout, SignupPage, LoginPage, DashboardPage, NewKitPage, KitDetailPage } from '@/creator';
+import {
+  CreatorLayout,
+  SignupPage,
+  LoginPage,
+  DashboardPage,
+  NewKitPage,
+  KitDetailPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+} from '@/creator';
 import {
   AdminLayout,
   AdminGuard,
@@ -31,6 +41,18 @@ const router = createBrowserRouter([
   {
     path: '/creator/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/creator/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: '/verify-email',
+    element: <VerifyEmailPage />,
   },
   {
     path: '/creator',
