@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Undo2, Redo2, RotateCcw, Download, HelpCircle, Share2 } from 'lucide-react';
 import { AudioControls } from './AudioControls';
 import { StickerType } from '../../audio';
@@ -51,6 +52,7 @@ export function ControlPanel({
   // Help props
   onShowHelp,
 }: ControlPanelProps) {
+  const { t } = useTranslation();
   const [showResetDialog, setShowResetDialog] = useState(false);
 
   const handleResetClick = () => {
@@ -124,10 +126,10 @@ export function ControlPanel({
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
-                  title="元に戻す"
+                  title={t('control.undoTitle')}
                 >
                   <Undo2 className="w-5 h-5" />
-                  <span className="hidden sm:inline">戻る</span>
+                  <span className="hidden sm:inline">{t('control.undo')}</span>
                 </button>
 
                 <button
@@ -138,10 +140,10 @@ export function ControlPanel({
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
-                  title="やり直す"
+                  title={t('control.redoTitle')}
                 >
                   <Redo2 className="w-5 h-5" />
-                  <span className="hidden sm:inline">進む</span>
+                  <span className="hidden sm:inline">{t('control.redo')}</span>
                 </button>
               </div>
 
@@ -171,10 +173,10 @@ export function ControlPanel({
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
-                  title="動画エクスポート"
+                  title={t('control.exportTitle')}
                 >
                   <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline">動画</span>
+                  <span className="hidden sm:inline">{t('control.export')}</span>
                 </button>
 
                 {onShare && (
@@ -186,10 +188,10 @@ export function ControlPanel({
                         ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    title="共有"
+                    title={t('control.share')}
                   >
                     <Share2 className="w-5 h-5" />
-                    <span className="hidden sm:inline">共有</span>
+                    <span className="hidden sm:inline">{t('control.share')}</span>
                   </button>
                 )}
               </div>
@@ -201,10 +203,10 @@ export function ControlPanel({
               <button
                 onClick={handleResetClick}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
-                title="初期化"
+                title={t('control.reset')}
               >
                 <RotateCcw className="w-5 h-5" />
-                <span className="hidden sm:inline">初期化</span>
+                <span className="hidden sm:inline">{t('control.reset')}</span>
               </button>
 
               {/* ヘルプ */}
@@ -214,10 +216,10 @@ export function ControlPanel({
                   <button
                     onClick={onShowHelp}
                     className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
-                    title="使い方"
+                    title={t('control.help')}
                   >
                     <HelpCircle className="w-5 h-5" />
-                    <span className="hidden sm:inline">使い方</span>
+                    <span className="hidden sm:inline">{t('control.help')}</span>
                   </button>
                 </>
               )}
@@ -230,11 +232,11 @@ export function ControlPanel({
       {showResetDialog && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-xl p-6 shadow-2xl max-w-sm mx-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">初期化の確認</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{t('control.resetConfirmTitle')}</h3>
             <p className="text-gray-600 mb-4">
-              本当に初期化しますか？
+              {t('control.resetConfirmMessage')}
               <span className="block text-amber-600 text-sm mt-1">
-                ※台紙に貼られたシールがすべて削除されます
+                {t('control.resetConfirmWarning')}
               </span>
             </p>
             <div className="flex gap-3 justify-end">
@@ -242,13 +244,13 @@ export function ControlPanel({
                 onClick={() => setShowResetDialog(false)}
                 className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirmReset}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
               >
-                初期化する
+                {t('control.resetButton')}
               </button>
             </div>
           </div>

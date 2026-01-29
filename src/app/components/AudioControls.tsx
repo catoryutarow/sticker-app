@@ -2,6 +2,7 @@
  * AudioControls.tsx - 再生/一時停止UI
  */
 
+import { useTranslation } from 'react-i18next';
 import { Play, Pause } from 'lucide-react';
 import { StickerType } from '../../audio';
 
@@ -22,6 +23,7 @@ export function AudioControls({
   onToggle,
   onInitialize,
 }: AudioControlsProps) {
+  const { t } = useTranslation();
   // アクティブなシールタイプをカウント
   const activeCount = Array.from(activeTracks.values()).filter((count) => count > 0).length;
 
@@ -43,10 +45,10 @@ export function AudioControls({
             ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
-        title={isPlaying ? '停止' : '再生'}
+        title={isPlaying ? t('audio.stop') : t('audio.play')}
       >
         {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-        <span className="hidden sm:inline">{isPlaying ? '停止' : '再生'}</span>
+        <span className="hidden sm:inline">{isPlaying ? t('audio.stop') : t('audio.play')}</span>
       </button>
 
       {/* サチュレーション表示 */}
@@ -57,7 +59,7 @@ export function AudioControls({
             backgroundColor: `rgba(255, ${Math.round(100 - saturationAmount * 100)}, 0, ${0.2 + saturationAmount * 0.3})`,
             color: `rgb(${Math.round(180 + saturationAmount * 75)}, ${Math.round(80 - saturationAmount * 40)}, 0)`,
           }}
-          title={`サチュレーション: ${Math.round(saturationAmount * 100)}%`}
+          title={`${t('audio.saturation')}: ${Math.round(saturationAmount * 100)}%`}
         >
           <span className="animate-pulse">SAT</span>
           <span>{Math.round(saturationAmount * 100)}%</span>

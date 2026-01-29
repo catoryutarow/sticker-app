@@ -4,6 +4,7 @@ import { AuthProvider } from "./auth";
 import { KitDataProvider } from "./config/KitDataContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppRouter } from "./router";
+import "./i18n";
 import "./styles/index.css";
 
 createRoot(document.getElementById("root")!).render(
