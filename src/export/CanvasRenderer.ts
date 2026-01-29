@@ -2,11 +2,21 @@
  * CanvasRenderer.ts - シール→Canvas描画
  *
  * StickerSheetのシールをCanvasに描画する
+ *
+ * 座標システム（クロスデバイス対応）:
+ * - sticker.x, sticker.y: パーセンテージ座標（0-100）
+ * - sticker.scale: 基準幅（BASE_SHEET_WIDTH=358px）時の倍率
+ * - シール基本サイズ: 80px
+ * - 表示サイズ: 80 * scale * sizeScale （sizeScale = canvas幅 / 358）
  */
 
 import { Sticker } from '../app/components/StickerAlbum';
 import { getStickerImagePath, getStickerById } from '../config/stickerConfig';
 import { getBackgroundImagePath, DEFAULT_BACKGROUND_ID } from '../config/backgroundConfig';
+
+// PlacedStickerと同じ基準値を使用
+const BASE_SHEET_WIDTH = 358;
+const BASE_STICKER_SIZE = 80;
 
 export interface CanvasRendererOptions {
   width: number;
@@ -192,22 +202,35 @@ export class CanvasRenderer {
 
   /**
    * 単一シールを描画
+   *
+   * 座標はパーセンテージ（0-100）で、Canvas幅/高さに対してマッピングする
+   * サイズはBASE_SHEET_WIDTH基準でスケーリングする
    */
   private drawSticker(sticker: Sticker): void {
-    const { ctx } = this;
-    const size = 80 * sticker.scale;
+    const { ctx, canvas } = this;
+
+    // Canvas幅に対するスケール係数（BASE_SHEET_WIDTH基準）
+    const sizeScale = canvas.width / BASE_SHEET_WIDTH;
+
+    // シールサイズ: 基本80px × scale × sizeScale
+    const size = BASE_STICKER_SIZE * sticker.scale * sizeScale;
+
+    // パーセンテージ座標からピクセル座標に変換
+    const x = (sticker.x / 100) * canvas.width;
+    const y = (sticker.y / 100) * canvas.height;
 
     ctx.save();
 
     // 位置と回転を適用
-    ctx.translate(sticker.x, sticker.y);
+    ctx.translate(x, y);
     ctx.rotate((sticker.rotation * Math.PI) / 180);
 
-    // ドロップシャドウ
+    // ドロップシャドウ（スケールに応じて調整）
+    const shadowScale = sizeScale * 0.5;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 4;
+    ctx.shadowBlur = 6 * shadowScale;
+    ctx.shadowOffsetX = 2 * shadowScale;
+    ctx.shadowOffsetY = 4 * shadowScale;
 
     // シールIDから画像パスを取得して描画
     const imagePath = getStickerImagePath(sticker.type);

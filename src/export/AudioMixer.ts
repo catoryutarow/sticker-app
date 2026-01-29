@@ -23,20 +23,18 @@ const PITCH_SHIFT_OVERLAP = 0.5; // オーバーラップ率
 export interface AudioMixerOptions {
   duration: number; // 秒
   sampleRate?: number;
-  sheetWidth?: number; // パンニング計算用
+  // Note: sheetWidthは不要になりました（座標がパーセンテージ基準のため）
 }
 
 export class AudioMixer {
   private duration: number;
   private sampleRate: number;
-  private sheetWidth: number;
   private audioBufferCache: Map<string, AudioBuffer> = new Map();
   private pitchShiftedCache: Map<string, AudioBuffer> = new Map();
 
   constructor(options: AudioMixerOptions) {
     this.duration = options.duration;
     this.sampleRate = options.sampleRate || 44100;
-    this.sheetWidth = options.sheetWidth || 800;
   }
 
   /**
@@ -183,11 +181,17 @@ export class AudioMixer {
 
   /**
    * シールの位置に基づいてパン値を計算 (-1 ~ 1)
+   *
+   * 新座標システム:
+   * - sticker.x は 0-100 のパーセンテージ値（シール中心位置）
+   * - x=0 で左端、x=100 で右端
+   * - パン値 = (x / 50) - 1 で -1〜1 に変換
    */
   private calculatePanValue(sticker: Sticker): number {
-    const effectiveX = sticker.x - 48;
-    const normalizedX = effectiveX / (this.sheetWidth - 48);
-    return Math.max(-1, Math.min(1, normalizedX * 2 - 1));
+    // パーセンテージ座標から直接パン値を計算
+    // x=0 → pan=-1 (左), x=50 → pan=0 (中央), x=100 → pan=1 (右)
+    const panValue = (sticker.x / 50) - 1;
+    return Math.max(-1, Math.min(1, panValue));
   }
 
   /**

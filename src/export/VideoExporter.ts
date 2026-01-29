@@ -69,7 +69,6 @@ export class VideoExporter {
 
     this.audioMixer = new AudioMixer({
       duration: this.options.duration,
-      sheetWidth: this.options.width, // パンニング計算用
     });
   }
 

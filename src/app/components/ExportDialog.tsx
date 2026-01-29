@@ -2,7 +2,7 @@
  * ExportDialog.tsx - エクスポート設定モーダル
  */
 
-import { useState, useCallback, useRef, RefObject, useMemo } from 'react';
+import { useState, useCallback, useRef, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -22,14 +22,14 @@ interface ExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   stickers: Sticker[];
-  stickerSheetRef: RefObject<HTMLDivElement | null>;
+  stickerSheetRef?: RefObject<HTMLDivElement | null>; // 後方互換のため残すが未使用
   backgroundId?: string;
   onShareRequest?: (videoBlob: Blob) => void;
 }
 
 type ExportPhase = 'idle' | 'exporting' | 'complete' | 'error';
 
-export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backgroundId = 'default', onShareRequest }: ExportDialogProps) {
+export function ExportDialog({ isOpen, onClose, stickers, backgroundId = 'default', onShareRequest }: ExportDialogProps) {
   const { t } = useTranslation();
 
   // Export settings
@@ -56,14 +56,14 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
     setErrorMessage('');
 
     try {
-      // シートのサイズを取得
-      const sheetRect = stickerSheetRef.current?.getBoundingClientRect();
-      const width = sheetRect ? Math.round(sheetRect.width) : 720;
-      const height = sheetRect ? Math.round(sheetRect.height) : 960;
+      // エクスポートサイズ: 3:4比率を維持した固定サイズ
+      // シートのアスペクト比に合わせて720x960（HD相当）で出力
+      const exportWidth = 720;
+      const exportHeight = 960; // 3:4比率
 
       const exporter = new VideoExporter(stickers, {
-        width: Math.min(width, 1280),
-        height: Math.min(height, 1280),
+        width: exportWidth,
+        height: exportHeight,
         duration,
         fps: 30,
         greenScreen,
@@ -86,7 +86,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
       setExportPhase('error');
       setErrorMessage(error instanceof Error ? error.message : t('app.unknownError'));
     }
-  }, [stickers, stickerSheetRef, duration, greenScreen, includeAudio]);
+  }, [stickers, duration, greenScreen, includeAudio, backgroundId]);
 
   const [saveMethod, setSaveMethod] = useState<'shared' | 'downloaded' | 'ios-chrome' | null>(null);
 
