@@ -20,6 +20,10 @@ import worksRoutes from './routes/works.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// リバースプロキシ（Nginx）を信頼する設定
+// X-Forwarded-For ヘッダーからクライアントIPを取得
+app.set('trust proxy', 1);
+
 // セキュリティヘッダー設定
 app.use(helmet({
   contentSecurityPolicy: {
