@@ -5,6 +5,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { constants } from 'fs';
 import multer from 'multer';
+import sharp from 'sharp';
 import db from '../db/index.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { AUDIO_LIBRARY, libraryPath, getRandomMatchingSound } from './audioLibrary.js';
@@ -214,8 +215,11 @@ const upload = multer({
   },
 });
 
-// プロジェクトルートのパス
-const projectRoot = join(__dirname, '..', '..');
+// アップロードファイル保存先のルートパス
+// 環境変数 UPLOAD_DIR が設定されていればそれを使用、なければプロジェクトルート/public
+const projectRoot = process.env.UPLOAD_DIR
+  ? process.env.UPLOAD_DIR
+  : join(__dirname, '..', '..');
 
 /**
  * 次のキット番号を取得
@@ -1134,13 +1138,21 @@ router.post('/:kitId/stickers/:stickerId/image', authenticateToken, upload.singl
 
     const kit = db.prepare('SELECT kit_number FROM kits WHERE id = ?').get(kitId);
     const dirPath = join(projectRoot, 'public', 'assets', 'stickers', `kit-${kit.kit_number}`);
-    const filePath = join(dirPath, `${sticker.full_id}.png`);
+    const pngPath = join(dirPath, `${sticker.full_id}.png`);
+    const webpPath = join(dirPath, `${sticker.full_id}.webp`);
 
     // ディレクトリ作成
     await mkdir(dirPath, { recursive: true });
 
-    // ファイル保存
-    await writeFile(filePath, req.file.buffer);
+    // PNG形式で保存（サムネイル生成などで使用）
+    await sharp(req.file.buffer)
+      .png()
+      .toFile(pngPath);
+
+    // WebP形式でも保存（フロントエンド表示用、軽量）
+    await sharp(req.file.buffer)
+      .webp({ quality: 85 })
+      .toFile(webpPath);
 
     // データベース更新
     db.prepare('UPDATE stickers SET image_uploaded = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(stickerId);
@@ -1149,7 +1161,7 @@ router.post('/:kitId/stickers/:stickerId/image', authenticateToken, upload.singl
 
     res.json({
       sticker: updatedSticker,
-      imagePath: `/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.png`
+      imagePath: `/assets/stickers/kit-${kit.kit_number}/${sticker.full_id}.webp`
     });
   } catch (error) {
     console.error('Upload image error:', error);

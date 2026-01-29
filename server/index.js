@@ -6,7 +6,8 @@ import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import { spawn } from 'child_process';
 import { writeFile, unlink, readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import authRoutes from './routes/auth.js';
@@ -16,6 +17,7 @@ import adminRoutes from './routes/admin.js';
 import tagRoutes from './routes/tags.js';
 import worksRoutes from './routes/works.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // セキュリティヘッダー設定
@@ -105,6 +107,21 @@ app.use('/api/tags', tagRoutes);
 
 // 作品ルート
 app.use('/api/works', worksRoutes);
+
+// 静的ファイル配信（アップロードされた画像・音声）
+// UPLOAD_DIRが設定されていればそれを使用、なければ親ディレクトリ
+const publicDir = process.env.UPLOAD_DIR
+  ? join(process.env.UPLOAD_DIR, 'public')
+  : join(__dirname, '..', 'public');
+console.log('Static files directory:', publicDir);
+app.use('/assets', express.static(join(publicDir, 'assets'), {
+  maxAge: '1y',
+  immutable: true,
+}));
+app.use('/backgrounds', express.static(join(publicDir, 'backgrounds'), {
+  maxAge: '1y',
+  immutable: true,
+}));
 
 // ヘルスチェック
 app.get('/health', (req, res) => {

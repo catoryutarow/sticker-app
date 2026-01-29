@@ -7,8 +7,9 @@ import { constants, existsSync } from 'fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const router = Router();
 
-// プロジェクトルートのパス
-const projectRoot = join(__dirname, '..', '..');
+// アップロードファイル保存先のルートパス
+// 環境変数 UPLOAD_DIR が設定されていればそれを使用、なければプロジェクトルート
+const projectRoot = process.env.UPLOAD_DIR || join(__dirname, '..', '..');
 const libraryPath = join(projectRoot, 'public', 'assets', 'audio', 'library');
 
 // 全キーの定義（並行調フォーマット）
