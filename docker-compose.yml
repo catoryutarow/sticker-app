@@ -3,4 +3,10 @@ services:
     build: ./server
     ports:
       - "3001:3001"
+    volumes:
+      - ./server/data:/app/data
+    environment:
+      - NODE_ENV=production
+      - ALLOWED_ORIGINS=https://sirucho.com,https://www.sirucho.com
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     restart: unless-stopped
