@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { kitsApi, type Sticker, type StickerLayout } from '@/api/kitsApi';
 import { getStickerImageUrl } from '@/config/assetUrl';
 
@@ -31,6 +32,7 @@ export const LayoutEditor = ({
   onLayoutsChanged,
   onClose,
 }: LayoutEditorProps) => {
+  const { t } = useTranslation();
   const stickerAreaRef = useRef<HTMLDivElement>(null);
   const [layouts, setLayouts] = useState<LocalLayout[]>([]);
   const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null);
@@ -279,7 +281,7 @@ export const LayoutEditor = ({
         <div className="bg-white rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-600">読み込み中...</span>
+            <span className="text-gray-600">{t('layout.loading')}</span>
           </div>
         </div>
       </div>
@@ -294,19 +296,19 @@ export const LayoutEditor = ({
           className="px-6 py-4 flex items-center justify-between"
           style={{ background: kitColor }}
         >
-          <h3 className="text-lg font-semibold text-gray-900">シール配置エディタ</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('layout.editorTitle')}</h3>
           <div className="flex items-center gap-3">
             {isSaving && (
               <span className="text-sm text-gray-600 flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                保存中...
+                {t('layout.savingStatus')}
               </span>
             )}
             <button
               onClick={onClose}
               className="px-4 py-2 bg-white/80 hover:bg-white rounded-lg text-sm font-medium transition-colors"
             >
-              完了
+              {t('layout.done')}
             </button>
           </div>
         </div>
@@ -346,7 +348,7 @@ export const LayoutEditor = ({
                     color: '#333',
                   }}
                 >
-                  プレビュー
+                  {t('layout.preview')}
                 </span>
               </div>
 
@@ -414,14 +416,14 @@ export const LayoutEditor = ({
                       <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
-                      <p className="text-sm">右のパネルから<br />＋を押してシールを配置</p>
+                      <p className="text-sm whitespace-pre-line">{t('layout.emptyHint')}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
             <p className="text-xs text-gray-500 text-center mt-3">
-              シールをドラッグして配置を調整できます
+              {t('layout.dragHint')}
             </p>
           </div>
 
@@ -429,7 +431,7 @@ export const LayoutEditor = ({
           <div className="w-72 border-l bg-white p-4 overflow-y-auto">
             {selectedLayout && selectedSticker ? (
               <>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">選択中のシール</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('layout.selectedSticker')}</h4>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div
@@ -443,7 +445,7 @@ export const LayoutEditor = ({
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <span className="text-xs text-gray-400">No img</span>
+                        <span className="text-xs text-gray-400">{t('layout.noImage')}</span>
                       )}
                     </div>
                     <div className="flex-1">
@@ -453,7 +455,7 @@ export const LayoutEditor = ({
                     <button
                       onClick={() => handleDelete(selectedLayout.id)}
                       className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                      title="この配置を削除"
+                      title={t('layout.deleteLayout')}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -464,7 +466,7 @@ export const LayoutEditor = ({
                   {/* サイズ */}
                   <div>
                     <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>サイズ</span>
+                      <span>{t('layout.size')}</span>
                       <span className="font-mono text-gray-900">{selectedLayout.size}px</span>
                     </label>
                     <input
@@ -480,7 +482,7 @@ export const LayoutEditor = ({
                   {/* 回転 */}
                   <div>
                     <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>回転</span>
+                      <span>{t('layout.rotation')}</span>
                       <span className="font-mono text-gray-900">{selectedLayout.rotation}°</span>
                     </label>
                     <input
@@ -496,7 +498,7 @@ export const LayoutEditor = ({
                   {/* X座標 */}
                   <div>
                     <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>横位置（X）</span>
+                      <span>{t('layout.horizontalPosition')}</span>
                       <span className="font-mono text-gray-900">{selectedLayout.x.toFixed(0)}%</span>
                     </label>
                     <input
@@ -512,7 +514,7 @@ export const LayoutEditor = ({
                   {/* Y座標 */}
                   <div>
                     <label className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>縦位置（Y）</span>
+                      <span>{t('layout.verticalPosition')}</span>
                       <span className="font-mono text-gray-900">{selectedLayout.y.toFixed(0)}%</span>
                     </label>
                     <input
@@ -531,14 +533,14 @@ export const LayoutEditor = ({
                 <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                 </svg>
-                <p className="text-sm">シールをクリックして選択</p>
+                <p className="text-sm">{t('layout.clickToSelect')}</p>
               </div>
             )}
 
             {/* シール一覧（複製ボタン付き） */}
             <div className="mt-6 pt-4 border-t">
               <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                シール一覧
+                {t('layout.stickerList')}
               </h5>
               <div className="space-y-2">
                 {stickers.map((sticker) => {
@@ -567,13 +569,13 @@ export const LayoutEditor = ({
                           {sticker.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          配置: {count}個
+                          {t('layout.placementCount', { count })}
                         </div>
                       </div>
                       <button
                         onClick={() => handleDuplicate(sticker)}
                         className="w-7 h-7 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                        title="シールを追加"
+                        title={t('layout.addSticker')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

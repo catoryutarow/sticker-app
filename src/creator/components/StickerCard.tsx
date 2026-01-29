@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Sticker, Kit } from '@/api/kitsApi';
 import { FileUploader } from './FileUploader';
 import { AudioSelector } from './AudioSelector';
@@ -23,6 +24,7 @@ export const StickerCard = ({
   onEdit,
   onDelete,
 }: StickerCardProps) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const imagePath = sticker.image_uploaded
@@ -83,14 +85,14 @@ export const StickerCard = ({
                       <circle cx="12" cy="12" r="3" strokeWidth={2} />
                       <circle cx="12" cy="12" r="7" strokeWidth={2} />
                     </svg>
-                    ドラム
+                    {t('stickerCard.drum')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
                     </svg>
-                    メロディ
+                    {t('stickerCard.melody')}
                   </span>
                 )}
               </div>
@@ -101,11 +103,11 @@ export const StickerCard = ({
           <div className="flex items-center gap-2">
             <span
               className={`w-2 h-2 rounded-full ${sticker.image_uploaded ? 'bg-green-500' : 'bg-gray-300'}`}
-              title={sticker.image_uploaded ? '画像あり' : '画像なし'}
+              title={sticker.image_uploaded ? t('stickerCard.hasImage') : t('stickerCard.noImage')}
             />
             <span
               className={`w-2 h-2 rounded-full ${sticker.audio_uploaded ? 'bg-green-500' : 'bg-gray-300'}`}
-              title={sticker.audio_uploaded ? '音声あり' : '音声なし'}
+              title={sticker.audio_uploaded ? t('stickerCard.hasAudio') : t('stickerCard.noAudio')}
             />
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -129,7 +131,7 @@ export const StickerCard = ({
             {/* 画像・音声アップロード - モバイルは縦並び */}
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">画像</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('stickerCard.image')}</label>
                 <FileUploader
                   type="image"
                   currentPath={imagePath}
@@ -137,7 +139,7 @@ export const StickerCard = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">音声</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('stickerCard.audio')}</label>
                 {/* 音声タイプに応じたガイド */}
                 <p className="text-xs text-gray-500 mb-2">
                   {sticker.is_percussion === 1 ? (
@@ -147,9 +149,9 @@ export const StickerCard = ({
                           <circle cx="12" cy="12" r="3" strokeWidth={2} />
                           <circle cx="12" cy="12" r="7" strokeWidth={2} />
                         </svg>
-                        ドラム
+                        {t('stickerCard.drum')}
                       </span>
-                      {' '}− ドラムやパーカッションの音声を設定してください
+                      {' '}− {t('stickerCard.drumGuide')}
                     </>
                   ) : (
                     <>
@@ -157,9 +159,9 @@ export const StickerCard = ({
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
                         </svg>
-                        メロディ
+                        {t('stickerCard.melody')}
                       </span>
-                      {' '}− キットのキーに合った音源を選んでください
+                      {' '}− {t('stickerCard.melodyGuide')}
                     </>
                   )}
                 </p>
@@ -189,13 +191,13 @@ export const StickerCard = ({
                 onClick={() => onEdit(sticker)}
                 className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded"
               >
-                編集
+                {t('stickerCard.edit')}
               </button>
               <button
                 onClick={() => onDelete(sticker)}
                 className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded"
               >
-                削除
+                {t('stickerCard.delete')}
               </button>
             </div>
           </div>

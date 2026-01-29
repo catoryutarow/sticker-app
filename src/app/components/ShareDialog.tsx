@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ export function ShareDialog({
   videoBlob,
   thumbnailDataUrl,
 }: ShareDialogProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [phase, setPhase] = useState<SharePhase>('input');
   const [savedWork, setSavedWork] = useState<Work | null>(null);
@@ -101,9 +103,9 @@ export function ShareDialog({
     } catch (error) {
       console.error('Save work failed:', error);
       setPhase('error');
-      setErrorMessage(error instanceof Error ? error.message : '保存に失敗しました');
+      setErrorMessage(error instanceof Error ? error.message : t('share.saveFailed'));
     }
-  }, [stickers, backgroundId, title, thumbnailDataUrl]);
+  }, [stickers, backgroundId, title, thumbnailDataUrl, t]);
 
   const handleCopyUrl = useCallback(async () => {
     if (!shareUrl) return;
@@ -126,11 +128,11 @@ export function ShareDialog({
   }, [shareUrl]);
 
   const handleShareX = useCallback(() => {
-    const text = title ? `${title} を作りました！` : 'シールアルバムを作りました！';
-    const hashtags = 'シールアルバム';
+    const text = title ? `${title}` : t('app.title');
+    const hashtags = 'StickerAlbum';
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=${encodeURIComponent(hashtags)}`;
     window.open(url, '_blank', 'width=550,height=420');
-  }, [shareUrl, title]);
+  }, [shareUrl, title, t]);
 
   const handleShareLine = useCallback(() => {
     const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`;
@@ -148,7 +150,7 @@ export function ShareDialog({
       try {
         await navigator.share({
           files: [new File([videoBlob], filename, { type: 'video/mp4' })],
-          title: title || 'シールアルバム',
+          title: title || t('app.title'),
         });
         return;
       } catch {
@@ -165,7 +167,7 @@ export function ShareDialog({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [videoBlob, title]);
+  }, [videoBlob, title, t]);
 
   const handleClose = useCallback(() => {
     if (phase === 'saving') return;
@@ -183,31 +185,31 @@ export function ShareDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="w-5 h-5" />
-            作品を共有
+            {t('share.title')}
           </DialogTitle>
-          <DialogDescription>作品を保存してSNSで共有しよう</DialogDescription>
+          <DialogDescription>{t('share.description')}</DialogDescription>
         </DialogHeader>
 
         {/* Input Phase */}
         {phase === 'input' && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">タイトル（任意）</label>
+              <label className="text-sm font-medium">{t('share.workTitle')}</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="作品のタイトルを入力..."
+                placeholder={t('share.workTitlePlaceholder')}
                 maxLength={50}
                 className="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
-              <p className="text-xs text-gray-500">SNSでシェアするときのタイトルになります</p>
+              <p className="text-xs text-gray-500">{t('share.workTitleHint')}</p>
             </div>
 
             {/* Preview thumbnail if available */}
             {thumbnailDataUrl && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">プレビュー</label>
+                <label className="text-sm font-medium">{t('share.preview')}</label>
                 <div className="aspect-[3/4] max-h-32 mx-auto overflow-hidden rounded-lg border bg-gray-50">
                   <img
                     src={thumbnailDataUrl}
@@ -225,7 +227,7 @@ export function ShareDialog({
           <div className="space-y-4 py-8">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <p className="text-sm font-medium">保存中...</p>
+              <p className="text-sm font-medium">{t('share.saving')}</p>
             </div>
           </div>
         )}
@@ -236,12 +238,12 @@ export function ShareDialog({
             {/* Success message */}
             <div className="flex items-center gap-2 text-green-600">
               <Check className="w-5 h-5" />
-              <span className="text-sm font-medium">保存しました</span>
+              <span className="text-sm font-medium">{t('share.saved')}</span>
             </div>
 
             {/* Share URL */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">共有URL</label>
+              <label className="text-sm font-medium">{t('share.shareUrl')}</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -264,7 +266,7 @@ export function ShareDialog({
 
             {/* SNS Share Buttons */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">SNSで共有</label>
+              <label className="text-sm font-medium">{t('share.shareOnSns')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handleShareX}
@@ -286,17 +288,17 @@ export function ShareDialog({
             {/* Video download for Instagram/TikTok */}
             {videoBlob && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Instagram / TikTok</label>
+                <label className="text-sm font-medium">{t('share.instagramTiktok')}</label>
                 <div className="bg-gray-50 p-3 rounded-lg space-y-3">
                   <p className="text-xs text-gray-600">
-                    動画をダウンロードして投稿してね！
+                    {t('share.downloadForSns')}
                   </p>
                   <button
                     onClick={handleDownloadVideo}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity"
                   >
                     <Download className="w-4 h-4" />
-                    <span className="text-sm font-medium">動画をダウンロード</span>
+                    <span className="text-sm font-medium">{t('share.downloadVideo')}</span>
                   </button>
                   <div className="flex gap-2 justify-center">
                     <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -321,7 +323,7 @@ export function ShareDialog({
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                 <X className="w-6 h-6 text-red-600" />
               </div>
-              <p className="text-sm font-medium text-red-600">保存に失敗しました</p>
+              <p className="text-sm font-medium text-red-600">{t('share.saveFailed')}</p>
               <p className="text-xs text-gray-500">{errorMessage}</p>
             </div>
           </div>
@@ -334,7 +336,7 @@ export function ShareDialog({
                 onClick={handleClose}
                 className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSave}
@@ -342,7 +344,7 @@ export function ShareDialog({
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <Share2 className="w-4 h-4" />
-                保存して共有
+                {t('share.saveAndShare')}
               </button>
             </>
           )}
@@ -352,7 +354,7 @@ export function ShareDialog({
               onClick={handleClose}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
             >
-              完了
+              {t('share.done')}
             </button>
           )}
 
@@ -362,13 +364,13 @@ export function ShareDialog({
                 onClick={() => setPhase('input')}
                 className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                戻る
+                {t('common.back')}
               </button>
               <button
                 onClick={handleSave}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
               >
-                再試行
+                {t('common.retry')}
               </button>
             </>
           )}

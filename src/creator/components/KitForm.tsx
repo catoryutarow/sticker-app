@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Kit, CreateKitRequest, UpdateKitRequest } from '@/api/kitsApi';
 
 interface KitFormProps {
@@ -8,29 +9,13 @@ interface KitFormProps {
   isSubmitting?: boolean;
 }
 
-// 平行調をまとめたキー選択肢（メジャー/マイナー）
-const MUSICAL_KEYS = [
-  { value: 'random', label: 'おまかせ（ランダム）' },
-  { value: 'C/Am', label: 'C / Am' },
-  { value: 'G/Em', label: 'G / Em' },
-  { value: 'D/Bm', label: 'D / Bm' },
-  { value: 'A/F#m', label: 'A / F#m' },
-  { value: 'E/C#m', label: 'E / C#m' },
-  { value: 'B/G#m', label: 'B / G#m' },
-  { value: 'F#/D#m', label: 'F# / D#m' },
-  { value: 'F/Dm', label: 'F / Dm' },
-  { value: 'Bb/Gm', label: 'B♭ / Gm' },
-  { value: 'Eb/Cm', label: 'E♭ / Cm' },
-  { value: 'Ab/Fm', label: 'A♭ / Fm' },
-  { value: 'Db/Bbm', label: 'D♭ / B♭m' },
-];
-
 const PRESET_COLORS = [
   '#E0E0E0', '#FFB4B4', '#FFD9B4', '#FFFAB4', '#B4FFB4',
   '#B4FFFF', '#B4D9FF', '#D9B4FF', '#FFB4FF', '#8B4513'
 ];
 
 export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(kit?.name || '');
   const [nameJa, setNameJa] = useState(kit?.name_ja || '');
   const [description, setDescription] = useState(kit?.description || '');
@@ -39,12 +24,29 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
   const [status, setStatus] = useState<'draft' | 'published'>(kit?.status || 'draft');
   const [error, setError] = useState('');
 
+  // 翻訳されたキー選択肢
+  const MUSICAL_KEYS_TRANSLATED = [
+    { value: 'random', label: t('kitForm.autoRandom') },
+    { value: 'C/Am', label: 'C / Am' },
+    { value: 'G/Em', label: 'G / Em' },
+    { value: 'D/Bm', label: 'D / Bm' },
+    { value: 'A/F#m', label: 'A / F#m' },
+    { value: 'E/C#m', label: 'E / C#m' },
+    { value: 'B/G#m', label: 'B / G#m' },
+    { value: 'F#/D#m', label: 'F# / D#m' },
+    { value: 'F/Dm', label: 'F / Dm' },
+    { value: 'Bb/Gm', label: 'B♭ / Gm' },
+    { value: 'Eb/Cm', label: 'E♭ / Cm' },
+    { value: 'Ab/Fm', label: 'A♭ / Fm' },
+    { value: 'Db/Bbm', label: 'D♭ / B♭m' },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!name.trim()) {
-      setError('キット名は必須です');
+      setError(t('kitForm.nameRequired'));
       return;
     }
 
@@ -58,7 +60,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
         ...(kit && { status }),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
+      setError(err instanceof Error ? err.message : t('kitForm.errorOccurred'));
     }
   };
 
@@ -72,7 +74,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
 
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          キット名 <span className="text-red-500">*</span>
+          {t('kitForm.kitName')} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -86,7 +88,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
 
       <div>
         <label htmlFor="nameJa" className="block text-sm font-medium text-gray-700">
-          キット名（日本語）
+          {t('kitForm.kitNameJa')}
         </label>
         <input
           type="text"
@@ -100,7 +102,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          説明
+          {t('kitForm.description')}
         </label>
         <textarea
           id="description"
@@ -108,13 +110,13 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="このキットの説明..."
+          placeholder={t('kitForm.descriptionPlaceholder')}
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          カラー
+          {t('kitForm.color')}
         </label>
         <div className="flex items-center gap-2 flex-wrap">
           {PRESET_COLORS.map((presetColor) => (
@@ -139,7 +141,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
 
       <div>
         <label htmlFor="musicalKey" className="block text-sm font-medium text-gray-700">
-          キー（調）
+          {t('kitForm.musicalKey')}
         </label>
         <select
           id="musicalKey"
@@ -147,7 +149,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
           onChange={(e) => setMusicalKey(e.target.value)}
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         >
-          {MUSICAL_KEYS.map((key) => (
+          {MUSICAL_KEYS_TRANSLATED.map((key) => (
             <option key={key.value} value={key.value}>
               {key.label}
             </option>
@@ -156,10 +158,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
         <p className="mt-2 text-xs text-gray-500 leading-relaxed">
           {kit ? (
             // 編集時：確定済みのキーを表示
-            <>
-              このキットのキーは <strong className="text-gray-700">{kit.musical_key}</strong> です。<br />
-              音声ライブラリからは、このキーに合った音源のみ選択できます。
-            </>
+            <>{t('kitForm.keyConfirmed', { key: kit.musical_key })}</>
           ) : (
             // 新規作成時
             <>
@@ -169,16 +168,12 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    おまかせ
+                    {t('kitForm.autoLabel')}
                   </span>
-                  を選ぶと、キット作成時にランダムなキーが自動で決定されます。<br />
-                  決定後は、そのキーに合った音源のみがライブラリに表示されます。
+                  {t('kitForm.autoDesc')}
                 </>
               ) : (
-                <>
-                  選択したキーに合った音源がライブラリに表示されます。<br />
-                  自分で音源をアップロードする場合は、このキーに合った音源をご用意ください。
-                </>
+                <>{t('kitForm.selectedKeyDesc')}</>
               )}
             </>
           )}
@@ -188,7 +183,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
       {kit && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            ステータス
+            {t('kitForm.status')}
           </label>
           <div className="flex items-center gap-4">
             <label className="flex items-center">
@@ -200,7 +195,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
                 onChange={() => setStatus('draft')}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700">下書き</span>
+              <span className="text-sm text-gray-700">{t('kitForm.draft')}</span>
             </label>
             <label className="flex items-center">
               <input
@@ -211,7 +206,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
                 onChange={() => setStatus('published')}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700">公開</span>
+              <span className="text-sm text-gray-700">{t('kitForm.published')}</span>
             </label>
           </div>
         </div>
@@ -224,7 +219,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
-            キャンセル
+            {t('kitForm.cancel')}
           </button>
         )}
         <button
@@ -232,7 +227,7 @@ export const KitForm = ({ kit, onSubmit, onCancel, isSubmitting }: KitFormProps)
           disabled={isSubmitting}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? '保存中...' : kit ? '更新する' : '作成する'}
+          {isSubmitting ? t('kitForm.saving') : kit ? t('kitForm.update') : t('kitForm.create')}
         </button>
       </div>
     </form>

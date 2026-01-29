@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { worksApi, Work } from '../../api/worksApi';
 import { StickerShape } from '../components/StickerShape';
@@ -32,6 +33,7 @@ function LineIcon({ className }: { className?: string }) {
 }
 
 export function WorkPage() {
+  const { t, i18n } = useTranslation();
   const { shareId } = useParams<{ shareId: string }>();
   const [work, setWork] = useState<Work | null>(null);
   const [loading, setLoading] = useState(true);
@@ -169,7 +171,7 @@ export function WorkPage() {
         setWork(data);
       } catch (err) {
         console.error('Failed to fetch work:', err);
-        setError(err instanceof Error ? err.message : '作品が見つかりません');
+        setError(err instanceof Error ? err.message : t('error.notFound'));
       } finally {
         setLoading(false);
       }
@@ -196,11 +198,11 @@ export function WorkPage() {
   }, [shareUrl]);
 
   const handleShareX = useCallback(() => {
-    const text = work?.title ? `${work.title}` : 'シールアルバム作品';
-    const hashtags = 'シールアルバム';
+    const text = work?.title ? `${work.title}` : t('work.title');
+    const hashtags = 'StickerAlbum';
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=${encodeURIComponent(hashtags)}`;
     window.open(url, '_blank', 'width=550,height=420');
-  }, [shareUrl, work?.title]);
+  }, [shareUrl, work?.title, t]);
 
   const handleShareLine = useCallback(() => {
     const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`;
@@ -212,7 +214,7 @@ export function WorkPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-          <p className="text-gray-600">読み込み中...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -225,29 +227,29 @@ export function WorkPage() {
           <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
             <ExternalLink className="w-8 h-8 text-gray-400" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">作品が見つかりません</h1>
-          <p className="text-gray-600">{error || '指定された作品は存在しないか、削除された可能性があります。'}</p>
+          <h1 className="text-xl font-bold text-gray-900">{t('error.notFound')}</h1>
+          <p className="text-gray-600">{error || t('error.notFoundDesc')}</p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
           >
             <Home className="w-4 h-4" />
-            シール帳を作る
+            {t('error.createAlbum')}
           </Link>
         </div>
       </div>
     );
   }
 
-  const ogTitle = work.title || 'シールアルバム作品';
-  const ogDescription = `${work.stickers.length}個のシールで作られた作品`;
+  const ogTitle = work.title || t('work.title');
+  const ogDescription = t('work.ogDescription', { count: work.stickers.length });
   const ogImage = work.thumbnailUrl || '/og-default.png';
 
   return (
     <>
       {/* OGP Meta Tags */}
       <Helmet>
-        <title>{ogTitle} | シール帳</title>
+        <title>{ogTitle} | {t('work.defaultTitle')}</title>
         <meta property="og:title" content={ogTitle} />
         <meta property="og:description" content={ogDescription} />
         <meta property="og:image" content={ogImage} />
@@ -264,10 +266,10 @@ export function WorkPage() {
           {/* Header */}
           <header className="mb-6 text-center">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              {work.title || 'シールアルバム'}
+              {work.title || t('work.defaultTitle')}
             </h1>
             <p className="text-sm text-gray-500">
-              {work.stickers.length}個のシール • {work.viewCount.toLocaleString()}回閲覧
+              {t('work.stickerCount', { count: work.stickers.length })} • {t('work.viewCount', { count: work.viewCount.toLocaleString() })}
             </p>
           </header>
 
@@ -346,12 +348,12 @@ export function WorkPage() {
                     {isPlaying ? (
                       <>
                         <Pause className="w-5 h-5" />
-                        一時停止
+                        {t('work.pause')}
                       </>
                     ) : (
                       <>
                         <Volume2 className="w-5 h-5" />
-                        音楽を再生
+                        {t('work.playMusic')}
                       </>
                     )}
                   </span>
@@ -365,7 +367,7 @@ export function WorkPage() {
               >
                 <span className="flex items-center justify-center gap-2">
                   <Play className="w-5 h-5" />
-                  自分のシール帳を作る
+                  {t('work.createOwn')}
                 </span>
               </Link>
 
@@ -373,7 +375,7 @@ export function WorkPage() {
               <div className="bg-white rounded-xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
                   <Share2 className="w-4 h-4" />
-                  この作品を共有
+                  {t('work.shareThis')}
                 </div>
 
                 {/* Copy URL */}
@@ -422,14 +424,14 @@ export function WorkPage() {
                   download
                   className="block w-full py-3 px-4 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white font-medium text-center rounded-xl hover:opacity-90 transition-opacity"
                 >
-                  動画をダウンロード
+                  {t('work.downloadVideo')}
                 </a>
               )}
 
               {/* Footer */}
               <footer className="text-center text-sm text-gray-500 pt-2">
                 <p>
-                  作成日: {new Date(work.createdAt).toLocaleDateString('ja-JP')}
+                  {t('work.createdAt')} {new Date(work.createdAt).toLocaleDateString(i18n.language)}
                 </p>
               </footer>
             </div>

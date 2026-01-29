@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BACKGROUNDS, getBackgroundImagePath } from '../../config/backgroundConfig';
 
 interface BackgroundSwitcherProps {
@@ -12,6 +13,7 @@ export function BackgroundSwitcher({
   currentBackgroundId,
   onBackgroundChange,
 }: BackgroundSwitcherProps) {
+  const { t, i18n } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 選択中の台紙が見えるようにスクロール
@@ -26,9 +28,14 @@ export function BackgroundSwitcher({
     }
   }, [currentBackgroundId]);
 
+  // Get localized background name
+  const getLocalizedName = (bg: typeof BACKGROUNDS[0]) => {
+    return i18n.language === 'ja' ? bg.nameJa : bg.name;
+  };
+
   return (
     <div className="mb-4 flex items-center gap-2">
-      <span className="text-xs text-gray-500 flex-shrink-0">台紙:</span>
+      <span className="text-xs text-gray-500 flex-shrink-0">{t('background.label')}:</span>
       <div
         ref={scrollRef}
         className="flex gap-2 overflow-x-auto scrollbar-hide py-1 px-1 -mx-1"
@@ -49,11 +56,11 @@ export function BackgroundSwitcher({
                   : 'border-gray-300 hover:border-gray-500'
               }`}
               style={{ scrollSnapAlign: 'center' }}
-              title={bg.nameJa}
+              title={getLocalizedName(bg)}
             >
               <img
                 src={getBackgroundImagePath(bg.id)}
-                alt={bg.nameJa}
+                alt={getLocalizedName(bg)}
                 className="w-full h-full object-cover"
               />
               {isActive && (

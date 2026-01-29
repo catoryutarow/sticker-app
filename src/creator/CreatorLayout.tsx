@@ -1,8 +1,10 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/auth';
 
 // 自動保存バッジ（編集画面でのみ表示）
 const AutoSaveBadge = () => {
+  const { t } = useTranslation();
   const location = useLocation();
 
   // 編集画面でのみ表示
@@ -16,12 +18,13 @@ const AutoSaveBadge = () => {
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
       </svg>
-      <span>自動保存</span>
+      <span>{t('creator.autoSave')}</span>
     </div>
   );
 };
 
 export const CreatorLayout = () => {
+  const { t } = useTranslation();
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -40,24 +43,24 @@ export const CreatorLayout = () => {
             {/* 上段/左側: タイトルとナビゲーション */}
             <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
               <span className="text-base sm:text-xl font-bold text-gray-900 truncate">
-                クリエイター
+                {t('creator.title')}
               </span>
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                 <Link
                   to="/creator"
                   className="text-gray-500 hover:text-gray-700 whitespace-nowrap"
                 >
-                  ダッシュボード
+                  {t('nav.dashboard')}
                 </Link>
                 <span className="text-gray-300">|</span>
                 <Link to="/" className="text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                  シール帳に戻る
+                  {t('nav.backToAlbum')}
                 </Link>
                 {user?.role === 'admin' && (
                   <>
                     <span className="text-gray-300">|</span>
                     <Link to="/admin" className="text-red-600 hover:text-red-700 whitespace-nowrap font-medium">
-                      管理者ページ
+                      {t('creator.adminPage')}
                     </Link>
                   </>
                 )}
@@ -75,7 +78,7 @@ export const CreatorLayout = () => {
                   onClick={handleLogout}
                   className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap"
                 >
-                  ログアウト
+                  {t('nav.logout')}
                 </button>
               </div>
             )}

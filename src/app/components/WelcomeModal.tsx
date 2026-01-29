@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, X, Music, Move, Play, Download, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY = 'sticker-app-onboarding-seen';
@@ -10,50 +11,51 @@ interface WelcomeModalProps {
 }
 
 interface Step {
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
   icon: React.ReactNode;
   color: string;
 }
 
-const steps: Step[] = [
+const stepConfigs: Step[] = [
   {
-    title: 'シールを選ぼう',
-    description: '好きなシールを選んでください。キットを切り替えると、いろんなシールが見つかります。',
+    titleKey: 'welcome.step1Title',
+    descKey: 'welcome.step1Desc',
     icon: <Music className="w-12 h-12" />,
     color: 'from-pink-400 to-rose-500',
   },
   {
-    title: 'ドラッグ&ドロップ',
-    description: 'シールを台紙にドラッグ&ドロップで貼り付けます。位置や大きさ、傾きを自由に調整できます。',
+    titleKey: 'welcome.step2Title',
+    descKey: 'welcome.step2Desc',
     icon: <Move className="w-12 h-12" />,
     color: 'from-blue-400 to-indigo-500',
   },
   {
-    title: '再生してみよう',
-    description: '▶ボタンを押すと、貼ったシールが音楽になります。シールの配置で音が変わるので、いろいろ試してみてください！',
+    titleKey: 'welcome.step3Title',
+    descKey: 'welcome.step3Desc',
     icon: <Play className="w-12 h-12" />,
     color: 'from-emerald-400 to-teal-500',
   },
   {
-    title: '動画でシェア',
-    description: '作った作品は動画としてエクスポートできます。SNSでシェアしたり、友達に送ったりしてみましょう！',
+    titleKey: 'welcome.step4Title',
+    descKey: 'welcome.step4Desc',
     icon: <Download className="w-12 h-12" />,
     color: 'from-purple-400 to-violet-500',
   },
   {
-    title: 'クリエイターになろう',
-    description: '自分だけのシールキットを作って公開できます。オリジナルの音やイラストで、みんなに使ってもらおう！',
+    titleKey: 'welcome.step5Title',
+    descKey: 'welcome.step5Desc',
     icon: <Sparkles className="w-12 h-12" />,
     color: 'from-amber-400 to-orange-500',
   },
 ];
 
 export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < stepConfigs.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       handleComplete();
@@ -78,8 +80,8 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
 
   if (!isOpen) return null;
 
-  const step = steps[currentStep];
-  const isLastStep = currentStep === steps.length - 1;
+  const step = stepConfigs[currentStep];
+  const isLastStep = currentStep === stepConfigs.length - 1;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -88,7 +90,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         <button
           onClick={handleSkip}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-10"
-          aria-label="スキップ"
+          aria-label={t('welcome.skip')}
         >
           <X className="w-5 h-5" />
         </button>
@@ -101,19 +103,19 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
             </div>
           </div>
           <h2 className="text-2xl font-bold text-center">
-            {step.title}
+            {t(step.titleKey)}
           </h2>
         </div>
 
         {/* Content */}
         <div className="p-6">
           <p className="text-gray-600 text-center leading-relaxed mb-6">
-            {step.description}
+            {t(step.descKey)}
           </p>
 
           {/* Step indicators */}
           <div className="flex justify-center gap-2 mb-6">
-            {steps.map((_, index) => (
+            {stepConfigs.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentStep(index)}
@@ -122,7 +124,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                     ? 'w-6 bg-gray-800'
                     : 'bg-gray-300 hover:bg-gray-400'
                 }`}
-                aria-label={`ステップ ${index + 1}`}
+                aria-label={t('welcome.stepLabel', { step: index + 1 })}
               />
             ))}
           </div>
@@ -135,7 +137,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
-                戻る
+                {t('common.back')}
               </button>
             )}
             <button
@@ -146,7 +148,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                   : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'
               }`}
             >
-              {isLastStep ? 'はじめる' : '次へ'}
+              {isLastStep ? t('welcome.start') : t('common.next')}
               {!isLastStep && <ChevronRight className="w-5 h-5" />}
             </button>
           </div>

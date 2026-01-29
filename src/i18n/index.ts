@@ -6,12 +6,14 @@ import ja from './locales/ja.json';
 import en from './locales/en.json';
 import zh from './locales/zh.json';
 import es from './locales/es.json';
+import ko from './locales/ko.json';
 
 const resources = {
   ja: { translation: ja },
   en: { translation: en },
   zh: { translation: zh },
   es: { translation: es },
+  ko: { translation: ko },
 };
 
 i18n

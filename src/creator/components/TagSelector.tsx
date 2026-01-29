@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchTags, type Tag } from '@/api/tagsApi';
 
 interface TagSelectorProps {
@@ -14,6 +15,7 @@ export const TagSelector = ({
   maxTags = 5,
   disabled = false,
 }: TagSelectorProps) => {
+  const { t } = useTranslation();
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [customInput, setCustomInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +102,7 @@ export const TagSelector = ({
   return (
     <div ref={containerRef} className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        タグ（最大{maxTags}個）
+        {t('tagSelector.label', { max: maxTags })}
       </label>
 
       {/* 選択済みタグ + 入力フィールド */}
@@ -145,13 +147,13 @@ export const TagSelector = ({
             onChange={(e) => setCustomInput(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleInputKeyDown}
-            placeholder={selectedTags.length === 0 ? 'タグを追加...' : ''}
+            placeholder={selectedTags.length === 0 ? t('tagSelector.placeholder') : ''}
             className="flex-1 min-w-[100px] px-1 py-0.5 text-sm outline-none bg-transparent"
           />
         )}
 
         {!canAddMore && (
-          <span className="text-xs text-gray-400 px-1">最大数に達しました</span>
+          <span className="text-xs text-gray-400 px-1">{t('tagSelector.maxReached')}</span>
         )}
       </div>
 
@@ -167,7 +169,7 @@ export const TagSelector = ({
             >
               <span>#{suggestion.name}</span>
               {suggestion.usageCount > 0 && (
-                <span className="text-xs text-gray-400">{suggestion.usageCount}件</span>
+                <span className="text-xs text-gray-400">{t('tagSelector.usageCount', { count: suggestion.usageCount })}</span>
               )}
             </button>
           ))}
@@ -179,9 +181,9 @@ export const TagSelector = ({
               className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between border-t"
             >
               <span>
-                「{customInput.trim()}」を新しいタグとして追加
+                {t('tagSelector.addAsNew', { tag: customInput.trim() })}
               </span>
-              <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">新規</span>
+              <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{t('tagSelector.new')}</span>
             </button>
           )}
         </div>
@@ -214,7 +216,7 @@ export const TagSelector = ({
       )}
 
       <p className="mt-2 text-xs text-gray-500">
-        タグを選択または入力
+        {t('tagSelector.hint')}
       </p>
     </div>
   );

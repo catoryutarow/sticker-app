@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { StickerSheet, type AspectRatio } from '@/app/components/StickerSheet';
 import { StickerPalette, removeStickerFromPalette, addStickerToPalette, removeStickerByType, resetPalette } from '@/app/components/StickerPalette';
 import { ControlPanel } from '@/app/components/ControlPanel';
@@ -27,6 +28,7 @@ export interface Sticker {
 }
 
 export function StickerAlbum() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialKitNumber = searchParams.get('kit') || undefined;
 
@@ -171,12 +173,12 @@ export function StickerAlbum() {
   const handleSave = useCallback(() => {
     try {
       localStorage.setItem('stickerAlbum', JSON.stringify(stickers));
-      alert('台紙を保存しました！');
+      alert(t('app.savedSuccess'));
     } catch (error) {
-      console.error('保存に失敗しました:', error);
-      alert('保存に失敗しました');
+      console.error('Save failed:', error);
+      alert(t('app.saveFailed'));
     }
-  }, [stickers]);
+  }, [stickers, t]);
 
   const handleLoad = useCallback(() => {
     try {
@@ -188,15 +190,15 @@ export function StickerAlbum() {
         setHistory([loadedStickers]);
         setHistoryIndex(0);
 
-        alert('台紙を読み込みました！');
+        alert(t('app.loadedSuccess'));
       } else {
-        alert('保存されたデータがありません');
+        alert(t('app.noSavedData'));
       }
     } catch (error) {
-      console.error('読み込みに失敗しました:', error);
-      alert('読み込みに失敗しました');
+      console.error('Load failed:', error);
+      alert(t('app.loadFailed'));
     }
-  }, []);
+  }, [t]);
 
   const handleClear = useCallback(() => {
     // 確認ダイアログはControlPanelで表示
@@ -300,9 +302,9 @@ export function StickerAlbum() {
       {/* ヘッダー - PC/モバイル共通 */}
       <header className="mb-4 lg:mb-6 text-center">
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-1 lg:mb-2">
-          シール帳
+          {t('app.albumTitle')}
         </h1>
-        <p className="text-sm text-gray-600">ドラッグ＆ドロップでシールを貼ろう</p>
+        <p className="text-sm text-gray-600">{t('app.dragDropHint')}</p>
       </header>
 
       {/* モバイル用トグルボタン */}
@@ -310,7 +312,7 @@ export function StickerAlbum() {
         <button
           onClick={() => setIsPaletteOpen(!isPaletteOpen)}
           className="p-3 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg transition-all active:scale-95"
-          aria-label="シール"
+          aria-label={t('app.stickers')}
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -327,7 +329,7 @@ export function StickerAlbum() {
         <div className="sticky top-4 w-[280px]">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-2xl">🎨</span> シール
+              <span className="text-2xl">🎨</span> {t('app.stickers')}
             </h2>
             <StickerPalette onDragStart={handleDragStart} initialKitNumber={initialKitNumber} />
           </div>
@@ -337,7 +339,7 @@ export function StickerAlbum() {
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-blue-600" />
               <p className="text-sm text-gray-800 font-semibold">
-                自分だけのキットを作ろう
+                {t('app.createOwnKit')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -345,13 +347,13 @@ export function StickerAlbum() {
                 to="/creator/signup"
                 className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                登録
+                {t('nav.signup')}
               </Link>
               <Link
                 to="/creator/login"
                 className="flex-1 flex items-center justify-center px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
               >
-                ログイン
+                {t('nav.login')}
               </Link>
             </div>
           </div>
@@ -385,7 +387,7 @@ export function StickerAlbum() {
           {/* 再生コントロール */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
             <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-              <span className="text-lg">🎵</span> 再生
+              <span className="text-lg">🎵</span> {t('app.playSection')}
             </h3>
             <AudioControls
               isPlaying={isPlaying}
@@ -400,7 +402,7 @@ export function StickerAlbum() {
           {/* 編集コントロール */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
             <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-              <span className="text-lg">✏️</span> 編集
+              <span className="text-lg">✏️</span> {t('app.editSection')}
             </h3>
             <div className="flex gap-2">
               <button
@@ -413,7 +415,7 @@ export function StickerAlbum() {
                 }`}
               >
                 <Undo2 className="w-4 h-4" />
-                戻る
+                {t('control.undo')}
               </button>
               <button
                 onClick={handleRedo}
@@ -425,7 +427,7 @@ export function StickerAlbum() {
                 }`}
               >
                 <Redo2 className="w-4 h-4" />
-                進む
+                {t('control.redo')}
               </button>
             </div>
           </div>
@@ -433,7 +435,7 @@ export function StickerAlbum() {
           {/* 出力・共有 */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/50">
             <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-              <span className="text-lg">📤</span> 出力
+              <span className="text-lg">📤</span> {t('app.outputSection')}
             </h3>
             <div className="space-y-2">
               <button
@@ -446,7 +448,7 @@ export function StickerAlbum() {
                 }`}
               >
                 <Share2 className="w-5 h-5" />
-                共有する
+                {t('app.shareButton')}
               </button>
               <button
                 onClick={handleExport}
@@ -458,7 +460,7 @@ export function StickerAlbum() {
                 }`}
               >
                 <Download className="w-4 h-4" />
-                動画エクスポート
+                {t('app.videoExport')}
               </button>
             </div>
           </div>
@@ -470,14 +472,14 @@ export function StickerAlbum() {
               className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              初期化
+              {t('control.reset')}
             </button>
             <button
               onClick={() => setIsWelcomeOpen(true)}
               className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors"
             >
               <HelpCircle className="w-4 h-4" />
-              使い方
+              {t('control.help')}
             </button>
           </div>
         </div>
@@ -509,24 +511,24 @@ export function StickerAlbum() {
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="w-5 h-5 text-blue-600" />
                   <p className="text-sm text-gray-800 font-semibold">
-                    自分だけのシールキットを作ろう
+                    {t('app.createOwnKitLong')}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mb-4">
-                  クリエイターとして公開できます
+                  {t('app.publishAsCreator')}
                 </p>
                 <div className="flex gap-2">
                   <Link
                     to="/creator/signup"
                     className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors active:scale-[0.98] min-h-[48px]"
                   >
-                    登録
+                    {t('nav.signup')}
                   </Link>
                   <Link
                     to="/creator/login"
                     className="flex-1 flex items-center justify-center gap-1.5 px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.98] min-h-[48px]"
                   >
-                    ログイン
+                    {t('nav.login')}
                   </Link>
                 </div>
               </div>

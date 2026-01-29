@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback, useRef, RefObject, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -29,10 +30,12 @@ interface ExportDialogProps {
 type ExportPhase = 'idle' | 'exporting' | 'complete' | 'error';
 
 export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backgroundId = 'default', onShareRequest }: ExportDialogProps) {
+  const { t } = useTranslation();
+
   // Export settings
   const [greenScreen, setGreenScreen] = useState(false);
   const [includeAudio, setIncludeAudio] = useState(true);
-  const [duration, setDuration] = useState(32); // 32秒 (2ループ)
+  const [duration, setDuration] = useState(32);
 
   // Export state
   const [exportPhase, setExportPhase] = useState<ExportPhase>('idle');
@@ -81,7 +84,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
     } catch (error) {
       console.error('Export failed:', error);
       setExportPhase('error');
-      setErrorMessage(error instanceof Error ? error.message : '不明なエラーが発生しました');
+      setErrorMessage(error instanceof Error ? error.message : t('app.unknownError'));
     }
   }, [stickers, stickerSheetRef, duration, greenScreen, includeAudio]);
 
@@ -112,9 +115,9 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
   }, [onShareRequest, handleClose]);
 
   const durationOptions = [
-    { value: 16, label: '16秒 (1ループ)' },
-    { value: 32, label: '32秒 (2ループ)' },
-    { value: 48, label: '48秒 (3ループ)' },
+    { value: 16, label: t('export.duration16') },
+    { value: 32, label: t('export.duration32') },
+    { value: 48, label: t('export.duration48') },
   ];
 
   return (
@@ -123,16 +126,16 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Video className="w-5 h-5" />
-            動画エクスポート
+            {t('export.title')}
           </DialogTitle>
-          <DialogDescription>シールと音楽を動画にして保存</DialogDescription>
+          <DialogDescription>{t('export.description')}</DialogDescription>
         </DialogHeader>
 
         {exportPhase === 'idle' && (
           <div className="space-y-4 py-4">
             {/* 長さ設定 */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">動画の長さ</label>
+              <label className="text-sm font-medium">{t('export.duration')}</label>
               <select
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
@@ -152,7 +155,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 <div
                   className={`w-5 h-5 rounded border ${greenScreen ? 'bg-green-500 border-green-600' : 'bg-gray-100 border-gray-300'}`}
                 />
-                <span className="text-sm font-medium">背景を緑に（合成用）</span>
+                <span className="text-sm font-medium">{t('export.greenBackground')}</span>
               </div>
               <button
                 onClick={() => setGreenScreen(!greenScreen)}
@@ -177,7 +180,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               <span className="text-sm font-medium">{progress.message}</span>
             </div>
             <Progress value={progress.progress} className="h-2" />
-            <p className="text-center text-xs text-gray-500">{Math.round(progress.progress)}% 完了</p>
+            <p className="text-center text-xs text-gray-500">{t('export.progress', { percent: Math.round(progress.progress) })}</p>
           </div>
         )}
 
@@ -187,15 +190,15 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                 <Check className="w-6 h-6 text-green-600" />
               </div>
-              <p className="text-sm font-medium text-green-600">エクスポートが完了しました</p>
+              <p className="text-sm font-medium text-green-600">{t('export.completed')}</p>
               {saveMethod === 'shared' && (
                 <p className="text-xs text-gray-500 text-center">
-                  「ビデオを保存」でカメラロールに保存できます
+                  {t('export.saveToCamera')}
                 </p>
               )}
               {saveMethod === 'downloaded' && (
                 <p className="text-xs text-gray-500 text-center">
-                  ダウンロードフォルダに保存されました
+                  {t('export.savedToDownloads')}
                 </p>
               )}
               {saveMethod === 'ios-chrome' && (
@@ -204,27 +207,27 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                   <div className="bg-green-50 p-3 rounded-lg text-xs text-green-700 border border-green-200">
                     <p className="font-medium mb-2 flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" />
-                      Safariならカメラロールに直接保存できます
+                      {t('export.safariTip')}
                     </p>
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(window.location.href);
-                        alert('URLをコピーしました。Safariに貼り付けてください。');
+                        alert(t('app.urlCopied'));
                       }}
                       className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                       <Copy className="w-4 h-4" />
-                      URLをコピー
+                      {t('export.copyUrl')}
                     </button>
                   </div>
 
                   {/* Chrome用手順 */}
                   <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 text-left">
-                    <p className="font-medium mb-1">Chromeの場合:</p>
+                    <p className="font-medium mb-1">{t('export.chromeInstructions')}</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>下の「ファイルに保存」をタップ</li>
-                      <li>ファイルアプリで動画を開く</li>
-                      <li>共有 → 「ビデオを保存」</li>
+                      <li>{t('export.chromeStep1')}</li>
+                      <li>{t('export.chromeStep2')}</li>
+                      <li>{t('export.chromeStep3')}</li>
                     </ol>
                   </div>
                 </div>
@@ -239,7 +242,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                 <X className="w-6 h-6 text-red-600" />
               </div>
-              <p className="text-sm font-medium text-red-600">エクスポートに失敗しました</p>
+              <p className="text-sm font-medium text-red-600">{t('export.failed')}</p>
               <p className="text-xs text-gray-500">{errorMessage}</p>
             </div>
           </div>
@@ -252,7 +255,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 onClick={handleClose}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleExport}
@@ -260,7 +263,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <Video className="w-4 h-4" />
-                エクスポート開始
+                {t('export.start')}
               </button>
             </>
           )}
@@ -271,7 +274,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 onClick={handleClose}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                閉じる
+                {t('common.close')}
               </button>
               <div className="flex gap-2">
                 <button
@@ -279,7 +282,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
                 >
                   <Share className="w-4 h-4" />
-                  保存
+                  {t('common.save')}
                 </button>
                 {onShareRequest && (
                   <button
@@ -287,7 +290,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
                   >
                     <Share2 className="w-4 h-4" />
-                    共有
+                    {t('common.share')}
                   </button>
                 )}
               </div>
@@ -300,7 +303,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 onClick={handleClose}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                閉じる
+                {t('common.close')}
               </button>
               {onShareRequest && (
                 <button
@@ -308,7 +311,7 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
-                  共有
+                  {t('common.share')}
                 </button>
               )}
             </div>
@@ -320,13 +323,13 @@ export function ExportDialog({ isOpen, onClose, stickers, stickerSheetRef, backg
                 onClick={() => setExportPhase('idle')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                戻る
+                {t('common.back')}
               </button>
               <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
               >
-                再試行
+                {t('common.retry')}
               </button>
             </>
           )}

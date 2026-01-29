@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import {
   fetchTags,
   searchKits,
@@ -15,6 +16,7 @@ interface KitFinderModalProps {
 }
 
 export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -152,7 +154,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <h2 className="text-base font-semibold text-gray-900">キットを探す</h2>
+            <h2 className="text-base font-semibold text-gray-900">{t('kitFinder.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -171,7 +173,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="キット名やタグで検索..."
+              placeholder={t('kitFinder.searchPlaceholder')}
               className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white transition-colors"
               autoFocus={isOpen}
             />
@@ -200,13 +202,13 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
         {!isTagsLoading && allTags.length > 0 && (
           <div className="px-4 py-3 border-b bg-gray-50/50">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">タグで絞り込み</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('kitFinder.filterByTag')}</p>
               {selectedTags.length > 0 && (
                 <button
                   onClick={() => setSelectedTags([])}
                   className="text-xs text-blue-600 hover:text-blue-700"
                 >
-                  クリア
+                  {t('common.clear')}
                 </button>
               )}
             </div>
@@ -232,14 +234,14 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
         <div className="px-4 py-2 text-xs text-gray-500 bg-white border-b flex items-center justify-between">
           <span>
             {isLoading && kits.length === 0 ? (
-              '検索中...'
+              t('kitFinder.searching')
             ) : (
-              <>{total}件</>
+              <>{total} {t('common.results')}</>
             )}
           </span>
           {selectedTags.length > 0 && (
             <span className="text-blue-600">
-              {selectedTags.length}個のタグで絞り込み中
+              {t('kitFinder.filteringByTags', { count: selectedTags.length })}
             </span>
           )}
         </div>
@@ -250,7 +252,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
             <div className="flex items-center justify-center py-16">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-3" />
-                <p className="text-sm text-gray-500">読み込み中...</p>
+                <p className="text-sm text-gray-500">{t('common.loading')}</p>
               </div>
             </div>
           ) : kits.length === 0 ? (
@@ -261,8 +263,8 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <p className="text-gray-600 font-medium">キットが見つかりません</p>
-                <p className="text-sm text-gray-400 mt-1">検索条件を変更してください</p>
+                <p className="text-gray-600 font-medium">{t('kitFinder.noKitsFound')}</p>
+                <p className="text-sm text-gray-400 mt-1">{t('kitFinder.changeSearch')}</p>
               </div>
             </div>
           ) : (
@@ -332,7 +334,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
                   disabled={isLoading}
                   className="w-full py-3 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors disabled:opacity-50"
                 >
-                  {isLoading ? '読み込み中...' : 'もっと見る'}
+                  {isLoading ? t('common.loading') : t('kitFinder.loadMore')}
                 </button>
               )}
             </div>
@@ -342,7 +344,7 @@ export function KitFinderModal({ isOpen, onClose, onSelectKit }: KitFinderModalP
         {/* フッター（ヒント） */}
         <div className="px-4 py-3 border-t bg-gray-50 text-center">
           <p className="text-xs text-gray-400">
-            キットをタップして選択
+            {t('kitFinder.tapToSelect')}
           </p>
         </div>
       </div>

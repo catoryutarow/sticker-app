@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '@/api/authApi';
 
 export const ForgotPasswordPage = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -17,7 +19,7 @@ export const ForgotPasswordPage = () => {
       await authApi.forgotPassword(email);
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'リクエストに失敗しました');
+      setError(err instanceof Error ? err.message : t('common.retry'));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,12 +45,12 @@ export const ForgotPasswordPage = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">メールを確認してください</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('forgotPassword.successTitle')}</h2>
             <p className="mt-4 text-gray-600">
-              メールアドレスが登録されている場合、パスワードリセット用のリンクを送信しました。
+              {t('forgotPassword.successMessage')}
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              メールが届かない場合は、迷惑メールフォルダもご確認ください。
+              {t('forgotPassword.checkSpam')}
             </p>
           </div>
 
@@ -57,7 +59,7 @@ export const ForgotPasswordPage = () => {
               to="/creator/login"
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
-              ログインページに戻る
+              {t('forgotPassword.backToLoginPage')}
             </Link>
           </div>
         </div>
@@ -70,12 +72,10 @@ export const ForgotPasswordPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            パスワードをお忘れですか？
+            {t('forgotPassword.title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            登録したメールアドレスを入力してください。
-            <br />
-            パスワードリセット用のリンクをお送りします。
+            {t('forgotPassword.description')}
           </p>
         </div>
 
@@ -88,7 +88,7 @@ export const ForgotPasswordPage = () => {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              メールアドレス
+              {t('auth.email')}
             </label>
             <input
               id="email"
@@ -99,7 +99,7 @@ export const ForgotPasswordPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="email@example.com"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
 
@@ -109,20 +109,20 @@ export const ForgotPasswordPage = () => {
               disabled={isSubmitting}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSubmitting ? '送信中...' : 'リセットリンクを送信'}
+              {isSubmitting ? t('forgotPassword.sending') : t('forgotPassword.sendButton')}
             </button>
           </div>
 
           <div className="text-center">
             <Link to="/creator/login" className="text-sm text-blue-600 hover:text-blue-500">
-              ← ログインに戻る
+              ← {t('forgotPassword.backToLogin')}
             </Link>
           </div>
         </form>
 
         <div className="text-center">
           <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
-            ← シール帳に戻る
+            ← {t('nav.backToAlbum')}
           </Link>
         </div>
       </div>

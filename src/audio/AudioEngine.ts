@@ -226,11 +226,12 @@ class AudioEngine {
 
   /**
    * シールの位置に基づいてパン値を計算 (-1 ~ 1)
+   * x座標はパーセンテージ（0-100）で渡される
    */
   private calculatePanValue(sticker: StickerState): number {
-    // x座標を-1〜1の範囲にマッピング（左パディング48pxを考慮）
-    const effectiveX = sticker.x - 48; // 左パディングを除外
-    const normalizedX = effectiveX / (this.sheetWidth - 48);
+    // x座標（0-100%）を-1〜1の範囲にマッピング
+    // 0% = 左端 (-1), 50% = 中央 (0), 100% = 右端 (1)
+    const normalizedX = sticker.x / 100;
     return Math.max(-1, Math.min(1, normalizedX * 2 - 1));
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/auth';
 import { kitsApi, type Kit } from '@/api/kitsApi';
 import { authApi } from '@/api/authApi';
@@ -7,16 +8,17 @@ import { KitCard } from '../components/KitCard';
 
 type SortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc' | 'popular';
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: 'created_desc', label: '作成日（新しい順）' },
-  { value: 'created_asc', label: '作成日（古い順）' },
-  { value: 'name_asc', label: '名前（A→Z）' },
-  { value: 'name_desc', label: '名前（Z→A）' },
-  { value: 'popular', label: '人気順' },
-];
-
 export const DashboardPage = () => {
+  const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
+
+  const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+    { value: 'created_desc', label: t('dashboard.sortNewest') },
+    { value: 'created_asc', label: t('dashboard.sortOldest') },
+    { value: 'name_asc', label: t('dashboard.sortNameAZ') },
+    { value: 'name_desc', label: t('dashboard.sortNameZA') },
+    { value: 'popular', label: t('dashboard.sortPopular') },
+  ];
   const [kits, setKits] = useState<Kit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('created_desc');
@@ -28,9 +30,9 @@ export const DashboardPage = () => {
     setResendMessage(null);
     try {
       await authApi.resendVerification();
-      setResendMessage({ type: 'success', text: '確認メールを送信しました。メールボックスをご確認ください。' });
+      setResendMessage({ type: 'success', text: t('forgotPassword.successMessage') });
     } catch (err) {
-      setResendMessage({ type: 'error', text: err instanceof Error ? err.message : 'メール送信に失敗しました' });
+      setResendMessage({ type: 'error', text: err instanceof Error ? err.message : t('dashboard.resendFailed') });
     } finally {
       setIsResendingEmail(false);
     }
@@ -79,7 +81,7 @@ export const DashboardPage = () => {
   }, [kits, sortBy]);
 
   const handleDelete = async (kit: Kit) => {
-    if (!confirm(`「${kit.name}」を削除しますか？この操作は取り消せません。`)) {
+    if (!confirm(t('kits.deleteWarning', { name: kit.name }))) {
       return;
     }
     try {
@@ -87,7 +89,7 @@ export const DashboardPage = () => {
       setKits(prev => prev.filter(k => k.id !== kit.id));
     } catch (error) {
       console.error('Failed to delete kit:', error);
-      alert('削除に失敗しました');
+      alert(t('kits.deleteFailed'));
     }
   };
 
@@ -107,11 +109,10 @@ export const DashboardPage = () => {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-amber-800">
-                メールアドレスが未確認です
+                {t('dashboard.emailNotVerified')}
               </h3>
               <p className="mt-1 text-sm text-amber-700">
-                キットを公開するには、メールアドレスの確認が必要です。
-                登録時に送信した確認メールのリンクをクリックしてください。
+                {t('dashboard.emailNotVerifiedDesc')}
               </p>
               {resendMessage && (
                 <p className={`mt-2 text-sm ${resendMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
@@ -130,14 +131,14 @@ export const DashboardPage = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      送信中...
+                      {t('forgotPassword.sending')}
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      確認メールを再送信
+                      {t('dashboard.resendEmail')}
                     </>
                   )}
                 </button>
@@ -150,46 +151,46 @@ export const DashboardPage = () => {
       {/* ウェルカムセクション */}
       <div className="bg-white shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          ようこそ、{user?.displayName || user?.email}さん
+          {t('dashboard.welcome', { name: user?.displayName || user?.email })}
         </h1>
         <p className="mt-2 text-gray-600">
-          クリエイターダッシュボードへようこそ。ここからシールキットの作成・管理ができます。
+          {t('dashboard.description')}
         </p>
       </div>
 
       {/* スタッツカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="text-sm font-medium text-gray-500">作成したキット</div>
+          <div className="text-sm font-medium text-gray-500">{t('dashboard.stats.kitsCreated')}</div>
           <div className="mt-2 text-3xl font-bold text-gray-900">
             {isLoading ? '-' : kits.length}
           </div>
           <div className="mt-1 text-sm text-gray-500">
-            {publishedKits.length} 公開中
+            {publishedKits.length} {t('dashboard.stats.published')}
           </div>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="text-sm font-medium text-gray-500">シール数</div>
+          <div className="text-sm font-medium text-gray-500">{t('dashboard.stats.stickerCount')}</div>
           <div className="mt-2 text-3xl font-bold text-gray-900">
             {isLoading ? '-' : totalStickers}
           </div>
           <div className="mt-1 text-sm text-gray-500">
-            全キット合計
+            {t('dashboard.stats.totalStickers')}
           </div>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="text-sm font-medium text-gray-500">総ダウンロード数</div>
+          <div className="text-sm font-medium text-gray-500">{t('dashboard.stats.downloads')}</div>
           <div className="mt-2 text-3xl font-bold text-gray-900">0</div>
-          <div className="mt-1 text-sm text-gray-500">Coming soon</div>
+          <div className="mt-1 text-sm text-gray-500">{t('dashboard.stats.comingSoon')}</div>
         </div>
       </div>
 
       {/* キット一覧 */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h2 className="text-lg font-medium text-gray-900">キット一覧</h2>
+          <h2 className="text-lg font-medium text-gray-900">{t('dashboard.kitList')}</h2>
           <div className="flex items-center gap-3">
             {/* ソートセレクト */}
             <select
@@ -211,7 +212,7 @@ export const DashboardPage = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              新規作成
+              {t('dashboard.createNew')}
             </Link>
           </div>
         </div>
@@ -220,7 +221,7 @@ export const DashboardPage = () => {
           <div className="flex items-center justify-center h-48">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-gray-600">読み込み中...</span>
+              <span className="text-gray-600">{t('common.loading')}</span>
             </div>
           </div>
         ) : sortedKits.length === 0 ? (
@@ -228,7 +229,7 @@ export const DashboardPage = () => {
             <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <p className="text-gray-500 mb-4">まだキットがありません</p>
+            <p className="text-gray-500 mb-4">{t('dashboard.noKits')}</p>
             <Link
               to="/creator/kits/new"
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -236,7 +237,7 @@ export const DashboardPage = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              最初のキットを作成
+              {t('dashboard.createFirst')}
             </Link>
           </div>
         ) : (
@@ -257,7 +258,7 @@ export const DashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-blue-900">シールキットの作り方</h2>
+            <h2 className="text-lg font-bold text-blue-900">{t('guide.title')}</h2>
           </div>
 
           <div className="space-y-4">
@@ -267,9 +268,9 @@ export const DashboardPage = () => {
                 1
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">キットを作成</h3>
+                <h3 className="font-semibold text-gray-900">{t('guide.step1Title')}</h3>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  「新規作成」ボタンからキットを作ります。名前と背景色を決めるだけでOK！
+                  {t('guide.step1Desc')}
                 </p>
                 <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100">
                   <p className="text-xs text-blue-700 flex items-start gap-1.5">
@@ -277,9 +278,9 @@ export const DashboardPage = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
                     </svg>
                     <span>
-                      <strong>キー（調）って？</strong>
+                      <strong>{t('guide.keyInfo')}</strong>
                       <br />
-                      音楽の音の高さの基準です。分からなければ「おまかせ」を選べば自動で決まります。同じキーの音は一緒に鳴らすと心地よく響きます。
+                      {t('guide.keyInfoDesc')}
                     </span>
                   </p>
                 </div>
@@ -292,27 +293,27 @@ export const DashboardPage = () => {
                 2
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">シールを追加</h3>
+                <h3 className="font-semibold text-gray-900">{t('guide.step2Title')}</h3>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  キット詳細ページで「シールを追加」からシールを作成します。
+                  {t('guide.step2Desc')}
                 </p>
                 <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100 space-y-2">
                   <p className="text-xs text-gray-700">
-                    <strong>音声タイプを選ぼう：</strong>
+                    <strong>{t('guide.audioTypeLabel')}</strong>
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
                       </svg>
-                      メロディ = ピアノ、ギター、歌など
+                      {t('guide.melodyDesc')}
                     </span>
                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="3" strokeWidth={2} />
                         <circle cx="12" cy="12" r="7" strokeWidth={2} />
                       </svg>
-                      ドラム = 太鼓、手拍子、効果音など
+                      {t('guide.drumDesc')}
                     </span>
                   </div>
                 </div>
@@ -325,22 +326,22 @@ export const DashboardPage = () => {
                 3
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">画像と音声を設定</h3>
+                <h3 className="font-semibold text-gray-900">{t('guide.step3Title')}</h3>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  シールをタップして展開し、画像（PNG/JPG）と音声を設定します。
+                  {t('guide.step3Desc')}
                 </p>
                 <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100">
                   <p className="text-xs text-gray-700">
-                    <strong>音声の設定方法：</strong>
+                    <strong>{t('guide.audioSetupLabel')}</strong>
                   </p>
                   <ul className="mt-1 text-xs text-gray-600 space-y-0.5">
                     <li className="flex items-center gap-1">
                       <span className="text-green-500">✓</span>
-                      <strong>ライブラリから選ぶ</strong>（おすすめ！キーに合った音が揃っています）
+                      <strong>{t('guide.fromLibrary')}</strong> {t('guide.libraryHint')}
                     </li>
                     <li className="flex items-center gap-1">
                       <span className="text-green-500">✓</span>
-                      自分の音声ファイルをアップロード（MP3/WAV）
+                      {t('guide.uploadOwn')}
                     </li>
                   </ul>
                 </div>
@@ -353,9 +354,9 @@ export const DashboardPage = () => {
                 4
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">公開する</h3>
+                <h3 className="font-semibold text-gray-900">{t('guide.step4Title')}</h3>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  すべてのシールに画像と音声を設定したら、「公開」ボタンでみんなに公開できます！
+                  {t('guide.step4Desc')}
                 </p>
               </div>
             </div>
@@ -368,8 +369,7 @@ export const DashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span>
-                <strong>ヒント：</strong>
-                まずは3〜4枚のシールで小さなキットを作ってみましょう。慣れてきたら増やしていけばOK！
+                <strong>{t('guide.hint')}</strong> {t('guide.hintDesc')}
               </span>
             </p>
           </div>

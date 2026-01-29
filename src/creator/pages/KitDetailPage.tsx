@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { kitsApi, type Kit, type Sticker, type UpdateKitRequest, type FallbackAssignment } from '@/api/kitsApi';
 import { audioLibraryApi } from '@/api/audioLibraryApi';
 import { fetchKitTags, updateKitTags, type KitTag } from '@/api/tagsApi';
@@ -40,18 +41,19 @@ const LEGACY_KEY_MAP: Record<string, string> = {
   'Db': 'Db/Bbm',
 };
 
-// キー表示用のラベル変換（旧フォーマット互換）
-const formatMusicalKey = (key: string | undefined): string => {
-  if (!key || key === 'random') return 'おまかせ';
-  // 旧フォーマットの変換
-  const normalized = LEGACY_KEY_MAP[key] || key;
-  return normalized.replace('/', ' / ');
-};
-
 export const KitDetailPage = () => {
+  const { t } = useTranslation();
   const { kitId } = useParams<{ kitId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // キー表示用のラベル変換（旧フォーマット互換）
+  const formatMusicalKey = (key: string | undefined): string => {
+    if (!key || key === 'random') return t('kitForm.keyRandom');
+    // 旧フォーマットの変換
+    const normalized = LEGACY_KEY_MAP[key] || key;
+    return normalized.replace('/', ' / ');
+  };
 
   const [kit, setKit] = useState<Kit | null>(null);
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -102,7 +104,7 @@ export const KitDetailPage = () => {
       setKit(response.kit);
       setStickers(response.stickers);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'キットの読み込みに失敗しました');
+      setError(err instanceof Error ? err.message : t('kitDetail.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +140,7 @@ export const KitDetailPage = () => {
       const updatedTags = await updateKitTags(kitId, newTagNames);
       setTags(updatedTags);
     } catch (err) {
-      setTagError(err instanceof Error ? err.message : 'タグの更新に失敗しました');
+      setTagError(err instanceof Error ? err.message : t('kitDetail.tagUpdateFailed'));
     } finally {
       setIsTagsSaving(false);
     }
@@ -174,7 +176,7 @@ export const KitDetailPage = () => {
       setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
       setAddStickerStep(2); // 画像アップロードステップへ
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'シールの追加に失敗しました');
+      setError(err instanceof Error ? err.message : t('sticker.addFailed'));
     } finally {
       setIsStickerSubmitting(false);
     }
@@ -189,7 +191,7 @@ export const KitDetailPage = () => {
       setNewlyCreatedSticker(response.sticker);
       setNewStickerImageFile(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '画像のアップロードに失敗しました');
+      setError(err instanceof Error ? err.message : t('sticker.imageUploadFailed'));
     }
   };
 
@@ -231,7 +233,7 @@ export const KitDetailPage = () => {
       setEditingSticker(null);
       setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'シールの更新に失敗しました');
+      setError(err instanceof Error ? err.message : t('sticker.updateFailed'));
     } finally {
       setIsStickerSubmitting(false);
     }
@@ -246,7 +248,7 @@ export const KitDetailPage = () => {
       setStickers(stickers.filter(s => s.id !== deleteSticker.id));
       setDeleteSticker(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'シールの削除に失敗しました');
+      setError(err instanceof Error ? err.message : t('sticker.deleteFailed'));
     } finally {
       setIsStickerSubmitting(false);
     }
@@ -315,7 +317,7 @@ export const KitDetailPage = () => {
       }
     } catch (err) {
       // エラーをモーダル内に表示
-      setPublishError(err instanceof Error ? err.message : '公開に失敗しました');
+      setPublishError(err instanceof Error ? err.message : t('kits.publishFailed'));
     } finally {
       setIsPublishing(false);
     }
@@ -328,7 +330,7 @@ export const KitDetailPage = () => {
       await kitsApi.deleteKit(kitId);
       navigate('/creator/kits');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '削除に失敗しました');
+      setError(err instanceof Error ? err.message : t('kits.deleteFailed'));
     }
   };
 
@@ -348,9 +350,9 @@ export const KitDetailPage = () => {
   if (!kit) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">キットが見つかりません</p>
+        <p className="text-gray-500">{t('kitDetail.notFound')}</p>
         <Link to="/creator" className="mt-4 text-blue-600 hover:text-blue-700">
-          ダッシュボードに戻る
+          {t('nav.backToDashboard')}
         </Link>
       </div>
     );
@@ -365,7 +367,7 @@ export const KitDetailPage = () => {
     <div className="space-y-6">
       {/* パンくず */}
       <nav className="flex items-center gap-2 text-sm text-gray-500">
-        <Link to="/creator" className="hover:text-gray-700">ダッシュボード</Link>
+        <Link to="/creator" className="hover:text-gray-700">{t('nav.dashboard')}</Link>
         <span>/</span>
         <span className="text-gray-900">{kit.name}</span>
       </nav>
@@ -389,8 +391,8 @@ export const KitDetailPage = () => {
                 </svg>
               </div>
               <div>
-                <div className="font-semibold">公開中</div>
-                <div className="text-sm text-white/80">このキットはユーザーに公開されています</div>
+                <div className="font-semibold">{t('kitDetail.published')}</div>
+                <div className="text-sm text-white/80">{t('kitDetail.publishedDesc')}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -401,7 +403,7 @@ export const KitDetailPage = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
-                共有
+                {t('common.share')}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
@@ -410,7 +412,7 @@ export const KitDetailPage = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                削除
+                {t('common.delete')}
               </button>
             </div>
           </div>
@@ -421,7 +423,7 @@ export const KitDetailPage = () => {
       <div className="bg-white shadow rounded-lg overflow-hidden" style={{ borderTop: `4px solid ${kit.color}` }}>
         {isEditingKit && canEditKit ? (
           <div className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">キット情報を編集</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">{t('kitDetail.editKitInfo')}</h2>
             <KitForm
               kit={kit}
               onSubmit={handleUpdateKit}
@@ -437,7 +439,7 @@ export const KitDetailPage = () => {
                   <h1 className="text-2xl font-bold text-gray-900">{kit.name}</h1>
                   {isPublished && (
                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                      公開中
+                      {t('kitDetail.published')}
                     </span>
                   )}
                 </div>
@@ -445,8 +447,8 @@ export const KitDetailPage = () => {
                   <p className="mt-1 text-gray-500">{kit.name_ja}</p>
                 )}
                 <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
-                  <span>キー: {formatMusicalKey(kit.musical_key)}</span>
-                  <span>シール: {stickers.length}個</span>
+                  <span>{t('kitDetail.key')} {formatMusicalKey(kit.musical_key)}</span>
+                  <span>{t('kitDetail.stickerCount')} {stickers.length}</span>
                 </div>
                 {kit.description && (
                   <p className="mt-3 text-gray-600">{kit.description}</p>
@@ -476,7 +478,7 @@ export const KitDetailPage = () => {
                     onClick={() => setIsEditingKit(true)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
-                    編集
+                    {t('common.edit')}
                   </button>
                 </div>
               )}
@@ -494,11 +496,11 @@ export const KitDetailPage = () => {
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-amber-800 text-sm sm:text-base">下書き</div>
+                        <div className="font-semibold text-amber-800 text-sm sm:text-base">{t('kitDetail.draft')}</div>
                         <div className="text-xs sm:text-sm text-amber-600 truncate sm:whitespace-normal">
                           {canPublish
-                            ? '準備完了'
-                            : '画像を設定してください'}
+                            ? t('kitDetail.readyToPublish')
+                            : t('kitDetail.setImageRequired')}
                         </div>
                       </div>
                     </div>
@@ -511,7 +513,7 @@ export const KitDetailPage = () => {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                      {isCheckingLayouts ? '確認中...' : '公開'}
+                      {isCheckingLayouts ? t('kitDetail.checking') : t('kitDetail.publish')}
                     </button>
                   </div>
                 </div>
@@ -524,9 +526,9 @@ export const KitDetailPage = () => {
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">タグを編集</span>
+                <span className="text-sm font-medium text-gray-700">{t('kitDetail.editTags')}</span>
                 {isTagsSaving && (
-                  <span className="text-xs text-gray-400 animate-pulse">保存中...</span>
+                  <span className="text-xs text-gray-400 animate-pulse">{t('common.saving')}</span>
                 )}
               </div>
 
@@ -557,7 +559,7 @@ export const KitDetailPage = () => {
         <div className="lg:col-span-2 order-1 lg:order-2">
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">シール ({stickers.length})</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('sticker.title')} ({stickers.length})</h2>
               {!isPublished && (
                 <button
                   onClick={() => setShowAddSticker(true)}
@@ -566,7 +568,7 @@ export const KitDetailPage = () => {
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  シールを追加
+                  {t('sticker.addSticker')}
                 </button>
               )}
             </div>
@@ -618,7 +620,7 @@ export const KitDetailPage = () => {
                       <button
                         onClick={() => handleEditSticker(sticker)}
                         className="absolute top-1 right-1 p-1 bg-blue-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="編集"
+                        title={t('common.edit')}
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -675,7 +677,7 @@ export const KitDetailPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              プレビュー
+              {t('kitDetail.preview')}
             </h3>
             {kitId && stickers.length > 0 ? (
               <LayoutPreview
@@ -698,7 +700,7 @@ export const KitDetailPage = () => {
                   <svg className="w-10 h-10 lg:w-12 lg:h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-sm">シールを追加すると<br />プレビューが表示されます</p>
+                  <p className="text-sm">{t('kitDetail.previewEmpty')}</p>
                 </div>
               </div>
             )}
@@ -714,7 +716,7 @@ export const KitDetailPage = () => {
             onClick={() => setShowDeleteConfirm(true)}
             className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
-            このキットを削除
+            {t('kitDetail.deleteThisKit')}
           </button>
         </div>
       )}
@@ -724,7 +726,7 @@ export const KitDetailPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10">
-              <h3 className="text-base sm:text-lg font-semibold text-white">キットを公開しますか？</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-white">{t('kitDetail.publishConfirmTitle')}</h3>
             </div>
             <div className="p-4 sm:p-6">
               {/* モバイル: 縦並び、デスクトップ: 横並び */}
@@ -776,8 +778,8 @@ export const KitDetailPage = () => {
                       </svg>
                     </div>
                     <div className="text-xs sm:text-sm text-gray-600">
-                      <p className="font-semibold text-gray-900 mb-0.5 sm:mb-1">公開後は編集できません</p>
-                      <p>公開すると編集・変更ができなくなります。</p>
+                      <p className="font-semibold text-gray-900 mb-0.5 sm:mb-1">{t('kitDetail.publishWarning')}</p>
+                      <p>{t('kitDetail.publishWarningDesc')}</p>
                     </div>
                   </div>
 
@@ -790,12 +792,12 @@ export const KitDetailPage = () => {
                         </svg>
                       </div>
                       <div className="text-xs sm:text-sm min-w-0">
-                        <p className="font-semibold text-blue-800 mb-0.5 sm:mb-1">音声の自動割り当て</p>
+                        <p className="font-semibold text-blue-800 mb-0.5 sm:mb-1">{t('kitDetail.autoAssignTitle')}</p>
                         <p className="text-blue-700">
-                          音声未設定の{stickersWithoutAudio.length}個に自動割り当てされます。
+                          {t('kitDetail.autoAssignDesc', { count: stickersWithoutAudio.length })}
                         </p>
                         <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-blue-600 truncate">
-                          対象: {stickersWithoutAudio.map(s => s.name).join('、')}
+                          {t('kitDetail.target')} {stickersWithoutAudio.map(s => s.name).join(', ')}
                         </div>
                       </div>
                     </div>
@@ -810,14 +812,14 @@ export const KitDetailPage = () => {
                         </svg>
                       </div>
                       <div className="text-xs sm:text-sm min-w-0">
-                        <p className="font-semibold text-orange-800 mb-0.5 sm:mb-1">レイアウト未配置のシール</p>
+                        <p className="font-semibold text-orange-800 mb-0.5 sm:mb-1">{t('kitDetail.layoutWarningTitle')}</p>
                         <p className="text-orange-700">
-                          {stickersNotInLayout.length}個のシールがレイアウトに配置されていません。
+                          {t('kitDetail.layoutWarningDesc', { count: stickersNotInLayout.length })}
                           <br />
-                          <span className="text-[10px] sm:text-xs">配置されていないシールは公開後に表示されません。このまま続けますか？</span>
+                          <span className="text-[10px] sm:text-xs">{t('kitDetail.layoutWarningHint')}</span>
                         </p>
                         <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-orange-600 truncate">
-                          対象: {stickersNotInLayout.map(s => s.name).join('、')}
+                          {t('kitDetail.target')} {stickersNotInLayout.map(s => s.name).join(', ')}
                         </div>
                       </div>
                     </div>
@@ -825,7 +827,7 @@ export const KitDetailPage = () => {
 
                   <div className="bg-gray-50 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
                     <div className="text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">{kit.name}</div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">{stickers.length}個のシール</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">{t('kitDetail.stickersCount', { count: stickers.length })}</div>
                   </div>
                   <div className="flex items-center justify-center lg:justify-end gap-2 sm:gap-3">
                     <button
@@ -837,14 +839,14 @@ export const KitDetailPage = () => {
                       disabled={isPublishing}
                       className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap"
                     >
-                      キャンセル
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={handlePublish}
                       disabled={isPublishing}
                       className="px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg hover:from-emerald-600 hover:to-teal-600 shadow-md disabled:opacity-50 whitespace-nowrap"
                     >
-                      {isPublishing ? '公開中...' : '公開'}
+                      {isPublishing ? t('kitDetail.publishing') : t('kitDetail.publish')}
                     </button>
                   </div>
 
@@ -875,12 +877,12 @@ export const KitDetailPage = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                音声が自動割り当てされました
+                {t('kitDetail.autoAssignedTitle')}
               </h3>
             </div>
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-4">
-                以下のシールにライブラリから音声が割り当てられました:
+                {t('kitDetail.autoAssignedDesc')}
               </p>
               <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                 {fallbackAssignments.map((assignment) => (
@@ -900,7 +902,7 @@ export const KitDetailPage = () => {
                   onClick={() => setFallbackAssignments(null)}
                   className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md"
                 >
-                  確認しました
+                  {t('kitDetail.confirmed')}
                 </button>
               </div>
             </div>
@@ -913,24 +915,24 @@ export const KitDetailPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
             <div className="bg-red-500 px-6 py-4">
-              <h3 className="text-lg font-semibold text-white">キットを削除しますか？</h3>
+              <h3 className="text-lg font-semibold text-white">{t('kitDetail.deleteKitConfirm')}</h3>
             </div>
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-4">
-                「{kit.name}」を削除します。この操作は取り消せません。
+                {t('kitDetail.deleteKitDesc', { name: kit.name })}
               </p>
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  キャンセル
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleDeleteKit}
                   className="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700"
                 >
-                  削除する
+                  {t('kits.deleteButton')}
                 </button>
               </div>
             </div>
@@ -959,10 +961,10 @@ export const KitDetailPage = () => {
 
             {addStickerStep === 1 ? (
               <>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">シールを追加</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('sticker.addSticker')}</h3>
                 <form onSubmit={handleAddSticker} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">名前 *</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('sticker.name')} *</label>
                     <input
                       type="text"
                       value={stickerForm.name}
@@ -973,7 +975,7 @@ export const KitDetailPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">名前（日本語）</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('sticker.nameJa')}</label>
                     <input
                       type="text"
                       value={stickerForm.nameJa}
@@ -983,7 +985,7 @@ export const KitDetailPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">カラー</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.color')}</label>
                     <div className="flex items-center gap-2 flex-wrap">
                       {PRESET_COLORS.map((c) => (
                         <button
@@ -1002,9 +1004,9 @@ export const KitDetailPage = () => {
                       />
                     </div>
                   </div>
-                  {/* 音声タイプ選択 */}
+                  {/* {t('sticker.audioType')}選択 */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">音声タイプ</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.audioType')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
@@ -1018,7 +1020,7 @@ export const KitDetailPage = () => {
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                         </svg>
-                        <span className="text-xs font-medium">メロディ</span>
+                        <span className="text-xs font-medium">{t('sticker.melody')}</span>
                       </button>
                       <button
                         type="button"
@@ -1034,13 +1036,13 @@ export const KitDetailPage = () => {
                           <circle cx="12" cy="12" r="8" strokeWidth={1.5} />
                           <path strokeLinecap="round" strokeWidth={1.5} d="M12 4v2M12 18v2M4 12h2M18 12h2" />
                         </svg>
-                        <span className="text-xs font-medium">ドラム</span>
+                        <span className="text-xs font-medium">{t('sticker.drum')}</span>
                       </button>
                     </div>
                     <p className="mt-1.5 text-xs text-gray-500">
                       {stickerForm.isPercussion
-                        ? 'キーに関係なく同じ音が鳴ります'
-                        : 'キットのキーに合わせて音程が調整されます'}
+                        ? t('sticker.drumDesc')
+                        : t('sticker.melodyDesc')}
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-3 pt-4">
@@ -1049,21 +1051,21 @@ export const KitDetailPage = () => {
                       onClick={closeAddStickerModal}
                       className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
-                      キャンセル
+                      {t('common.cancel')}
                     </button>
                     <button
                       type="submit"
                       disabled={isStickerSubmitting}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {isStickerSubmitting ? '作成中...' : '次へ'}
+                      {isStickerSubmitting ? t('sticker.creating') : t('common.next')}
                     </button>
                   </div>
                 </form>
               </>
             ) : (
               <>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">画像をアップロード</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('sticker.uploadImage')}</h3>
                 {newlyCreatedSticker && kit && (
                   <div className="space-y-4">
                     {/* シール情報表示 */}
@@ -1093,21 +1095,21 @@ export const KitDetailPage = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          完了
+                          {t('sticker.complete')}
                         </div>
                       )}
                     </div>
 
                     {/* 画像アップロードエリア */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">シール画像 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.stickerImage')} *</label>
                       <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
                         <div className="flex flex-col items-center justify-center py-4">
                           <svg className="w-8 h-8 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
                           <p className="text-sm text-gray-500">
-                            <span className="font-semibold">クリックして画像を選択</span>
+                            <span className="font-semibold">{t('sticker.clickToSelect')}</span>
                           </p>
                           <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF</p>
                         </div>
@@ -1140,14 +1142,14 @@ export const KitDetailPage = () => {
                           }}
                           className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
                         >
-                          画像を変更
+                          {t('sticker.changeImage')}
                         </button>
                         <button
                           type="button"
                           onClick={closeAddStickerModal}
                           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                         >
-                          完了
+                          {t('sticker.complete')}
                         </button>
                       </div>
                     )}
@@ -1173,10 +1175,10 @@ export const KitDetailPage = () => {
       {editingSticker && canEditStickers && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">シールを編集</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('sticker.editSticker')}</h3>
             <form onSubmit={handleUpdateSticker} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">名前 *</label>
+                <label className="block text-sm font-medium text-gray-700">{t('sticker.name')} *</label>
                 <input
                   type="text"
                   value={stickerForm.name}
@@ -1186,7 +1188,7 @@ export const KitDetailPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">名前（日本語）</label>
+                <label className="block text-sm font-medium text-gray-700">{t('sticker.nameJa')}</label>
                 <input
                   type="text"
                   value={stickerForm.nameJa}
@@ -1195,7 +1197,7 @@ export const KitDetailPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">カラー</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.color')}</label>
                 <div className="flex items-center gap-2 flex-wrap">
                   {PRESET_COLORS.map((c) => (
                     <button
@@ -1214,9 +1216,9 @@ export const KitDetailPage = () => {
                   />
                 </div>
               </div>
-              {/* 音声タイプ選択 */}
+              {/* {t('sticker.audioType')}選択 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">音声タイプ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.audioType')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -1230,7 +1232,7 @@ export const KitDetailPage = () => {
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
-                    <span className="text-xs font-medium">メロディ</span>
+                    <span className="text-xs font-medium">{t('sticker.melody')}</span>
                   </button>
                   <button
                     type="button"
@@ -1246,13 +1248,13 @@ export const KitDetailPage = () => {
                       <circle cx="12" cy="12" r="8" strokeWidth={1.5} />
                       <path strokeLinecap="round" strokeWidth={1.5} d="M12 4v2M12 18v2M4 12h2M18 12h2" />
                     </svg>
-                    <span className="text-xs font-medium">ドラム</span>
+                    <span className="text-xs font-medium">{t('sticker.drum')}</span>
                   </button>
                 </div>
                 <p className="mt-1.5 text-xs text-gray-500">
                   {stickerForm.isPercussion
-                    ? 'キーに関係なく同じ音が鳴ります'
-                    : 'キットのキーに合わせて音程が調整されます'}
+                    ? t('sticker.drumDesc')
+                    : t('sticker.melodyDesc')}
                 </p>
               </div>
               <div className="flex items-center justify-end gap-3 pt-4">
@@ -1264,14 +1266,14 @@ export const KitDetailPage = () => {
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  キャンセル
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isStickerSubmitting}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isStickerSubmitting ? '更新中...' : '更新'}
+                  {isStickerSubmitting ? t('sticker.updating') : t('common.save')}
                 </button>
               </div>
             </form>
@@ -1283,9 +1285,9 @@ export const KitDetailPage = () => {
       {deleteSticker && !isPublished && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900">シールを削除</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t('sticker.deleteSticker')}</h3>
             <p className="mt-2 text-sm text-gray-500">
-              「{deleteSticker.name}」を削除してもよろしいですか？この操作は取り消せません。
+              {t('sticker.deleteStickerConfirm', { name: deleteSticker.name })}
             </p>
             <div className="mt-4 flex items-center justify-end gap-3">
               <button
@@ -1293,14 +1295,14 @@ export const KitDetailPage = () => {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 disabled={isStickerSubmitting}
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDeleteSticker}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 disabled={isStickerSubmitting}
               >
-                {isStickerSubmitting ? '削除中...' : '削除する'}
+                {isStickerSubmitting ? t('common.deleting') : t('kits.deleteButton')}
               </button>
             </div>
           </div>

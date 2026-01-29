@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ function LineIcon({ className }: { className?: string }) {
 }
 
 export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   // Generate share URL
@@ -69,10 +71,10 @@ export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps)
 
   const handleShareX = useCallback(() => {
     const kitName = kit.name_ja || kit.name;
-    const text = `「${kitName}」のシールキットで遊ぼう！`;
+    const text = t('kitShare.shareText', { name: kitName });
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(url, '_blank', 'width=550,height=420');
-  }, [shareUrl, kit.name, kit.name_ja]);
+  }, [shareUrl, kit.name, kit.name_ja, t]);
 
   const handleShareLine = useCallback(() => {
     const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`;
@@ -90,10 +92,10 @@ export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="w-5 h-5" />
-            キットを共有
+            {t('kitShare.title')}
           </DialogTitle>
           <DialogDescription>
-            このキットのURLを共有してみんなに遊んでもらおう
+            {t('kitShare.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -117,7 +119,7 @@ export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps)
 
           {/* Share URL */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">共有URL</label>
+            <label className="text-sm font-medium">{t('kitShare.shareUrl')}</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -137,13 +139,13 @@ export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps)
               </button>
             </div>
             {copied && (
-              <p className="text-xs text-green-600">URLをコピーしました</p>
+              <p className="text-xs text-green-600">{t('common.copied')}</p>
             )}
           </div>
 
           {/* SNS Share Buttons */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">SNSで共有</label>
+            <label className="text-sm font-medium">{t('kitShare.shareOnSns')}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleShareX}
@@ -168,7 +170,7 @@ export function KitShareDialog({ kit, open, onOpenChange }: KitShareDialogProps)
             onClick={handleClose}
             className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
           >
-            閉じる
+            {t('common.close')}
           </button>
         </DialogFooter>
       </DialogContent>

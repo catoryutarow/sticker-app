@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StickerKitCard } from './StickerKitCard';
 import { KitDefinition } from '@/config/kitConfig';
 import { StickerLayoutItem } from '@/config/stickerLayout';
@@ -42,6 +43,7 @@ export function removeStickerByType(stickerId: string) {
 }
 
 export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber = null }: KitCardStackProps) {
+  const { t } = useTranslation();
   const { kits: ALL_KITS, layoutByKit: initialLayoutByKit, isLoading, isLoadingMore, hasMore, loadMore, error, retry } = useKitData();
 
   // 検索でキットをフィルタリング（名前、説明、タグで検索）
@@ -256,7 +258,7 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
         <div className="flex items-center justify-center" style={{ height: '420px' }}>
           <div className="text-center text-gray-500">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-2" />
-            <p className="text-sm">キットを読み込み中...</p>
+            <p className="text-sm">{t('kitFinder.loadingKits')}</p>
           </div>
         </div>
       </div>
@@ -285,7 +287,7 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
             <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="text-sm">「{searchQuery}」に一致するキットがありません</p>
+            <p className="text-sm">{t('kitFinder.noMatchingKits', { query: searchQuery })}</p>
           </div>
         </div>
       </div>
@@ -332,16 +334,16 @@ export function KitCardStack({ onDragStart, searchQuery = '', selectedKitNumber 
       {/* ヘルプテキスト */}
       <div className="pt-16">
         <p className="text-xs text-gray-500 text-center">
-          シールをドラッグして台紙に貼り付けよう
+          {t('kitFinder.dragToPlace')}
         </p>
         <p className="text-xs text-gray-400 text-center mt-1.5">
-          タップで次のキットへ
+          {t('kitFinder.tapForNext')}
         </p>
         {/* 追加読み込み中インジケーター */}
         {isLoadingMore && (
           <div className="flex items-center justify-center gap-2 mt-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
-            <span className="text-xs text-gray-400">読み込み中...</span>
+            <span className="text-xs text-gray-400">{t('common.loading')}</span>
           </div>
         )}
       </div>

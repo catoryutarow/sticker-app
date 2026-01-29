@@ -34,6 +34,7 @@
 | キット共有機能なし | KitShareDialog、URL共有（/?kit=xxx）実装 | クリエイターの宣伝手段 |
 | 共有ビューがクロスデバイス非対応 | アスペクト比3:4統一、パーセンテージ座標、基準幅スケーリング | PC/スマホ間で同一表示 |
 | PCビューのレイアウトが粗い | 3カラムレイアウト（パレット/台紙/コントロール）、グラスモーフィズムUI | 洗練されたPC体験 |
+| 多言語対応なし | react-i18next導入、5言語対応 | グローバル展開可能 |
 
 ### 3. セキュリティ
 
@@ -76,8 +77,6 @@
 |--------|------|------|----------|
 | 中 | お気に入りキット | 機能なし | ユーザーごとのブックマーク |
 | 中 | 再生履歴・最近使用 | 機能なし | 直近使用キットの優先表示 |
-| ~~低~~ | ~~多言語対応~~ | ~~日本語のみ~~ | ~~i18n対応（英語等）~~ ✅ 対応済み（日英中西） |
-| 中 | 残りコンポーネントの翻訳適用 | 基盤完了、一部コンポーネント適用済み | 全コンポーネントへの翻訳適用 |
 | 低 | アクセシビリティ | 基本的なaria-labelのみ | WCAG 2.1準拠 |
 
 ### 3. スケーラビリティ
@@ -117,6 +116,11 @@
 3. ~~クロスデバイス座標システム~~ → パーセンテージ座標でPC/スマホ間統一表示
 4. ~~KitCardStack最適化~~ → 表示カード数を最大3枚に制限
 
+### ✅ Phase 2.7: 多言語対応（完了）
+1. ~~react-i18next導入~~ → 5言語対応（日本語/英語/中国語/スペイン語/韓国語）
+2. ~~全コンポーネント翻訳適用~~ → 30+ファイル、350+翻訳キー
+3. ~~言語切り替えUI~~ → LanguageSwitcher（ドロップダウン/ボタン）
+
 ---
 
 ## 推奨する次のステップ
@@ -146,7 +150,7 @@
 ### Phase 4: グロース（2-3ヶ月）
 1. お気に入り・履歴機能
 2. ログ・モニタリング強化
-3. 多言語対応
+3. ~~多言語対応~~ ✅ 完了
 
 ---
 
@@ -188,7 +192,63 @@
 | Auth | JWT + bcrypt + メール認証（Resend） |
 | Security | helmet, express-rate-limit, express-validator |
 | Testing | Vitest + React Testing Library |
-| i18n | react-i18next（日本語/英語/中国語/スペイン語） |
+| i18n | react-i18next（5言語: 日/英/中/西/韓） |
+
+---
+
+## i18n対応状況（完了）
+
+### 対応言語（5言語）
+| 言語 | コード | フラグ | ファイル |
+|------|--------|--------|----------|
+| 日本語 | ja | 🇯🇵 | ja.json (678行) |
+| English | en | 🇺🇸 | en.json (678行) |
+| 中文 | zh | 🇨🇳 | zh.json (678行) |
+| Español | es | 🇪🇸 | es.json (678行) |
+| 한국어 | ko | 🇰🇷 | ko.json (678行) |
+
+### 翻訳適用済みコンポーネント（30+ファイル）
+
+#### メインアプリ・公開ページ
+- ✅ StickerAlbum.tsx, StickerPalette.tsx
+- ✅ ExportDialog.tsx, ShareDialog.tsx, KitShareDialog.tsx
+- ✅ WorkPage.tsx, KitFinderModal.tsx, KitCardStack.tsx
+- ✅ WelcomeModal.tsx, BackgroundSwitcher.tsx
+
+#### クリエイタービュー
+- ✅ CreatorLayout.tsx, DashboardPage.tsx
+- ✅ KitsPage.tsx, NewKitPage.tsx, KitDetailPage.tsx
+- ✅ SignupPage.tsx, ForgotPasswordPage.tsx
+- ✅ ResetPasswordPage.tsx, VerifyEmailPage.tsx
+
+#### クリエイターコンポーネント
+- ✅ KitForm.tsx, KitCard.tsx
+- ✅ StickerCard.tsx, StickerGrid.tsx
+- ✅ AudioSelector.tsx, FileUploader.tsx
+- ✅ TagSelector.tsx, ImageCropper.tsx
+- ✅ LayoutEditor.tsx, LayoutPreview.tsx
+
+#### その他
+- ✅ AudioEngine.ts（音声エンジン）
+- ✅ LanguageSwitcher.tsx（言語切替UI）
+
+### 翻訳キーカテゴリ（約350キー）
+- `common.*` - 共通UI（保存、キャンセル、削除等）
+- `nav.*` - ナビゲーション
+- `app.*` - アプリ全般
+- `control.*` - コントロール操作
+- `audio.*` - 音声関連
+- `export.*` - エクスポート機能
+- `share.*`, `kitShare.*` - 共有機能
+- `welcome.*` - オンボーディング
+- `kitFinder.*` - キット検索
+- `auth.*`, `forgotPassword.*`, `resetPassword.*`, `verifyEmail.*` - 認証
+- `dashboard.*`, `guide.*` - ダッシュボード
+- `kits.*`, `kitForm.*`, `kitDetail.*`, `kitCard.*` - キット管理
+- `sticker.*`, `stickerCard.*`, `stickerGrid.*` - シール管理
+- `layout.*`, `imageCropper.*` - レイアウト・画像
+- `tagSelector.*`, `fileUploader.*` - その他コンポーネント
+- `admin.*`, `error.*`, `work.*`, `creator.*` - システム
 
 ---
 
@@ -196,6 +256,9 @@
 
 | 日付 | 機能 |
 |------|------|
+| 2026-01-29 | **韓国語対応追加（5言語目）** |
+| 2026-01-29 | **i18n全コンポーネント適用完了（Phase 2.7完了）** |
+| 2026-01-29 | i18n Phase A-1完了: CreatorLayout, KitDetailPage, AudioSelector |
 | 2026-01-29 | 多言語対応（react-i18next: 日英中西4言語） |
 | 2026-01-29 | コミット整理（セキュリティ、アセット最適化、UI改善を機能単位でコミット） |
 | 2026-01-29 | クロスデバイス座標システム（パーセンテージ座標でPC/スマホ間統一表示） |

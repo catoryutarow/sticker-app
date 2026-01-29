@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '@/api/authApi';
 import { useAuth } from '@/auth';
 
 export const VerifyEmailPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
@@ -17,7 +19,7 @@ export const VerifyEmailPage = () => {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setError('認証トークンがありません');
+      setError(t('verifyEmail.noToken'));
       return;
     }
 
@@ -29,7 +31,7 @@ export const VerifyEmailPage = () => {
         await refreshUser?.();
       } catch (err) {
         setStatus('error');
-        setError(err instanceof Error ? err.message : 'メール認証に失敗しました');
+        setError(err instanceof Error ? err.message : t('verifyEmail.failed'));
       }
     };
 
@@ -41,9 +43,9 @@ export const VerifyEmailPage = () => {
     setResendResult(null);
     try {
       await authApi.resendVerification();
-      setResendResult({ type: 'success', text: '確認メールを再送信しました。メールボックスをご確認ください。' });
+      setResendResult({ type: 'success', text: t('forgotPassword.successMessage') });
     } catch (err) {
-      setResendResult({ type: 'error', text: err instanceof Error ? err.message : 'メール送信に失敗しました' });
+      setResendResult({ type: 'error', text: err instanceof Error ? err.message : t('dashboard.resendFailed') });
     } finally {
       setIsResending(false);
     }
@@ -57,7 +59,7 @@ export const VerifyEmailPage = () => {
             <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
             <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
           </div>
-          <h2 className="text-xl font-medium text-gray-900">メールアドレスを確認中...</h2>
+          <h2 className="text-xl font-medium text-gray-900">{t('verifyEmail.verifying')}</h2>
         </div>
       </div>
     );
@@ -83,7 +85,7 @@ export const VerifyEmailPage = () => {
             </svg>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">認証に失敗しました</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('verifyEmail.errorTitle')}</h2>
             <p className="mt-2 text-gray-600">{error}</p>
           </div>
 
@@ -91,8 +93,7 @@ export const VerifyEmailPage = () => {
           {user ? (
             <div className="bg-gray-50 rounded-lg p-6 text-left">
               <p className="text-sm text-gray-600 mb-4">
-                認証リンクの有効期限が切れている可能性があります。
-                下のボタンから確認メールを再送信できます。
+                {t('verifyEmail.expiredHint')}
               </p>
               {resendResult && (
                 <p className={`mb-4 text-sm ${resendResult.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -110,14 +111,14 @@ export const VerifyEmailPage = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    送信中...
+                    {t('forgotPassword.sending')}
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    確認メールを再送信
+                    {t('dashboard.resendEmail')}
                   </>
                 )}
               </button>
@@ -126,7 +127,7 @@ export const VerifyEmailPage = () => {
                   to="/creator"
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  ダッシュボードに戻る
+                  {t('nav.backToDashboard')}
                 </Link>
               </div>
             </div>
@@ -134,15 +135,13 @@ export const VerifyEmailPage = () => {
             /* 未ログインの場合: ログインを促す */
             <div className="space-y-4">
               <p className="text-sm text-gray-500">
-                リンクが期限切れの可能性があります。
-                <br />
-                ログインして認証メールを再送信してください。
+                {t('verifyEmail.loginToResend')}
               </p>
               <Link
                 to="/creator/login"
                 className="inline-flex justify-center py-3 px-6 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
-                ログインページへ
+                {t('nav.toLoginPage')}
               </Link>
             </div>
           )}
@@ -169,18 +168,16 @@ export const VerifyEmailPage = () => {
             />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">メール認証完了！</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('verifyEmail.successTitle')}</h2>
         <p className="mt-2 text-gray-600">
-          メールアドレスの認証が完了しました。
-          <br />
-          すべての機能をご利用いただけます。
+          {t('verifyEmail.successMessage')}
         </p>
         <div className="mt-8">
           <button
             onClick={() => navigate('/creator')}
             className="inline-flex justify-center py-3 px-6 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
-            ダッシュボードへ
+            {t('nav.toDashboard')}
           </button>
         </div>
       </div>

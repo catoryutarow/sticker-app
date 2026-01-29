@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { audioLibraryApi, type AudioLibraryResponse } from '@/api/audioLibraryApi';
 
 interface AudioSelectorProps {
@@ -11,13 +12,6 @@ interface AudioSelectorProps {
   isPercussion?: boolean;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  drums: 'ドラム',
-  bass: 'ベース',
-  synth: 'シンセ',
-  instruments: '楽器',
-};
-
 export const AudioSelector = ({
   kitMusicalKey,
   currentPath,
@@ -25,6 +19,15 @@ export const AudioSelector = ({
   onSelectLibrary,
   isPercussion = false,
 }: AudioSelectorProps) => {
+  const { t } = useTranslation();
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    drums: t('audio.drums'),
+    bass: t('audio.bass'),
+    synth: t('audio.synth'),
+    instruments: t('audio.instruments'),
+  };
+
   const [library, setLibrary] = useState<AudioLibraryResponse | null>(null);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -170,7 +173,7 @@ export const AudioSelector = ({
                   <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                   </svg>
-                  <span className="text-sm font-semibold text-emerald-700">設定済み</span>
+                  <span className="text-sm font-semibold text-emerald-700">{t('audio.set')}</span>
                 </>
               ) : (
                 <>
@@ -179,7 +182,7 @@ export const AudioSelector = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
                   </svg>
-                  <span className="text-sm text-gray-400">未設定</span>
+                  <span className="text-sm text-gray-400">{t('audio.notSet')}</span>
                 </>
               )}
             </div>
@@ -199,14 +202,14 @@ export const AudioSelector = ({
                       <rect x="6" y="4" width="4" height="16" rx="1" />
                       <rect x="14" y="4" width="4" height="16" rx="1" />
                     </svg>
-                    停止
+                    {t('audio.stop')}
                   </>
                 ) : (
                   <>
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
-                    再生
+                    {t('audio.play')}
                   </>
                 )}
               </button>
@@ -218,7 +221,7 @@ export const AudioSelector = ({
       {/* ライブラリ選択セクション */}
       <div>
         <div className="text-xs font-medium text-gray-500 mb-2 tracking-wide">
-          {currentPath ? '音声を変更' : '音声を選択'}
+          {currentPath ? t('audio.changeAudio') : t('audio.selectAudio')}
         </div>
 
         {/* キットのキー表示 */}
@@ -228,7 +231,7 @@ export const AudioSelector = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
             </svg>
             <span className="text-xs text-indigo-700">
-              キット: <strong>{kitMusicalKey}</strong> の音源を表示中
+              {t('audio.kitKey')} <strong>{kitMusicalKey}</strong> {t('audio.showingForKey')}
             </span>
           </div>
         )}
@@ -237,7 +240,7 @@ export const AudioSelector = ({
           <div className="flex items-center justify-center py-6 border rounded-lg bg-gray-50">
             <div className="flex items-center gap-2 text-gray-500">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />
-              <span className="text-xs">読み込み中</span>
+              <span className="text-xs">{t('audio.loading')}</span>
             </div>
           </div>
         ) : library ? (
@@ -316,14 +319,14 @@ export const AudioSelector = ({
                                 <circle cx="12" cy="12" r="3" strokeWidth={2} />
                                 <circle cx="12" cy="12" r="6" strokeWidth={2} />
                               </svg>
-                              ドラム
+                              {t('sticker.drum')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded font-medium">
                               <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
                               </svg>
-                              メロディ
+                              {t('sticker.melody')}
                             </span>
                           )}
                         </label>
@@ -361,7 +364,7 @@ export const AudioSelector = ({
           </div>
         ) : (
           <div className="text-center py-4 text-sm text-gray-500 border rounded-lg bg-gray-50">
-            ライブラリを読み込めませんでした
+            {t('audio.libraryLoadFailed')}
           </div>
         )}
       </div>
@@ -377,10 +380,10 @@ export const AudioSelector = ({
           {isUploading ? (
             <span className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              適用中...
+              {t('audio.applying')}
             </span>
           ) : (
-            '選択した音声を使用'
+            t('audio.useSelected')
           )}
         </button>
         <button
@@ -388,7 +391,7 @@ export const AudioSelector = ({
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
           className="px-3 py-2.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 transition-all shadow-sm"
-          title="自分の音声ファイルをアップロード"
+          title={t('audio.uploadOwn')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />

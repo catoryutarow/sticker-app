@@ -6,6 +6,7 @@ const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'zh', name: '中文', flag: '🇨🇳' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' },
 ];
 
 interface LanguageSwitcherProps {

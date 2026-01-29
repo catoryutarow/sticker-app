@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ImageCropperProps {
   imageFile: File;
@@ -13,6 +14,7 @@ export const ImageCropper = ({
   onCancel,
   outputSize = 256,
 }: ImageCropperProps) => {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -306,10 +308,10 @@ export const ImageCropper = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white tracking-tight">
-                画像を調整
+                {t('imageCropper.title')}
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                {outputSize}×{outputSize}px で出力されます
+                {t('imageCropper.outputSize', { size: outputSize })}
               </p>
             </div>
             <button
@@ -358,19 +360,19 @@ export const ImageCropper = ({
                   className="block"
                 />
               </div>
-              <span className="text-[10px] text-gray-500">プレビュー</span>
+              <span className="text-[10px] text-gray-500">{t('imageCropper.preview')}</span>
             </div>
             <div className="text-xs text-gray-400 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">サイズ:</span>
+                <span className="text-gray-500">{t('imageCropper.sizeLabel')}</span>
                 <span className="font-mono text-[#00d4aa]">{Math.round(scale * 100)}%</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">回転:</span>
+                <span className="text-gray-500">{t('imageCropper.rotationLabel')}</span>
                 <span className="font-mono text-[#00d4aa]">{rotation}°</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">出力:</span>
+                <span className="text-gray-500">{t('imageCropper.outputLabel')}</span>
                 <span className="font-mono text-[#00d4aa]">{outputSize}px</span>
               </div>
             </div>
@@ -382,7 +384,7 @@ export const ImageCropper = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  拡大・縮小
+                  {t('imageCropper.scale')}
                 </label>
                 <span className="text-xs font-mono text-[#00d4aa]">
                   {Math.round(scale * 100)}%
@@ -414,7 +416,7 @@ export const ImageCropper = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  回転
+                  {t('imageCropper.rotation')}
                 </label>
                 <span className="text-xs font-mono text-[#00d4aa]">
                   {rotation}°
@@ -456,7 +458,7 @@ export const ImageCropper = ({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
-                90°左
+                {t('imageCropper.rotateLeft')}
               </button>
               <button
                 onClick={() => setRotation((r) => snapRotation(r + 90))}
@@ -465,7 +467,7 @@ export const ImageCropper = ({
                 <svg className="w-4 h-4 -scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
-                90°右
+                {t('imageCropper.rotateRight')}
               </button>
               <button
                 onClick={handleReset}
@@ -474,7 +476,7 @@ export const ImageCropper = ({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                リセット
+                {t('imageCropper.reset')}
               </button>
             </div>
           </div>
@@ -483,14 +485,14 @@ export const ImageCropper = ({
         {/* Footer */}
         <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between gap-3">
           <div className="text-xs text-gray-500">
-            ドラッグで移動 / スクロールでズーム
+            {t('imageCropper.dragHint')}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onCancel}
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
             >
-              キャンセル
+              {t('imageCropper.cancel')}
             </button>
             <button
               onClick={handleComplete}
@@ -500,10 +502,10 @@ export const ImageCropper = ({
               {isProcessing ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  処理中...
+                  {t('imageCropper.processing')}
                 </span>
               ) : (
-                '確定'
+                t('imageCropper.confirm')
               )}
             </button>
           </div>

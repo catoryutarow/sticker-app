@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { kitsApi, type Sticker, type StickerLayout } from '@/api/kitsApi';
 import { getStickerImageUrl } from '@/config/assetUrl';
 
@@ -44,6 +45,7 @@ export const LayoutPreview = ({
   canPublish = false,
   isPublished = false,
 }: LayoutPreviewProps) => {
+  const { t } = useTranslation();
   const stickerAreaRefDesktop = useRef<HTMLDivElement>(null);
   const stickerAreaRefMobile = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -305,7 +307,7 @@ export const LayoutPreview = ({
       <div className="flex items-center justify-center h-64">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-600">読み込み中...</span>
+          <span className="text-gray-600">{t('layout.loading')}</span>
         </div>
       </div>
     );
@@ -338,7 +340,7 @@ export const LayoutPreview = ({
         {saveStatus === 'saving' && (
           <div className="flex items-center gap-1.5 bg-white/90 px-2 py-1 rounded-full shadow-sm">
             <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-[10px] text-blue-600">保存中</span>
+            <span className="text-[10px] text-blue-600">{t('layout.saving')}</span>
           </div>
         )}
         {saveStatus === 'saved' && (
@@ -346,7 +348,7 @@ export const LayoutPreview = ({
             <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-[10px] text-green-600">保存しました</span>
+            <span className="text-[10px] text-green-600">{t('layout.saved')}</span>
           </div>
         )}
         {saveStatus === 'error' && (
@@ -354,7 +356,7 @@ export const LayoutPreview = ({
             <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            <span className="text-[10px] text-red-600">保存失敗</span>
+            <span className="text-[10px] text-red-600">{t('layout.saveFailed')}</span>
           </div>
         )}
       </div>
@@ -416,14 +418,14 @@ export const LayoutPreview = ({
                   <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <p className="text-sm">下の＋ボタンで<br />シールを配置</p>
+                  <p className="text-sm whitespace-pre-line">{t('layout.addStickerHint')}</p>
                 </>
               ) : (
                 <>
                   <svg className="w-10 h-10 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-sm">シールが<br />配置されていません</p>
+                  <p className="text-sm whitespace-pre-line">{t('layout.noStickersPlaced')}</p>
                 </>
               )}
             </div>
@@ -501,13 +503,13 @@ export const LayoutPreview = ({
                     </div>
                     <div>
                       <div className="text-sm font-medium">{selectedSticker.name}</div>
-                      <div className="text-[10px] text-gray-400">クリックで選択中</div>
+                      <div className="text-[10px] text-gray-400">{t('layout.selectedHint')}</div>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDelete(selectedLayout.id)}
                     className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                    title="この配置を削除"
+                    title={t('layout.deleteLayout')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -518,7 +520,7 @@ export const LayoutPreview = ({
                 {/* X位置 */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-gray-600 font-medium">X位置</label>
+                    <label className="text-xs text-gray-600 font-medium">{t('layout.xPosition')}</label>
                     <span className="text-xs text-gray-500 font-mono">{Math.round(selectedLayout.x)}%</span>
                   </div>
                   <input
@@ -534,7 +536,7 @@ export const LayoutPreview = ({
                 {/* Y位置 */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-gray-600 font-medium">Y位置</label>
+                    <label className="text-xs text-gray-600 font-medium">{t('layout.yPosition')}</label>
                     <span className="text-xs text-gray-500 font-mono">{Math.round(selectedLayout.y)}%</span>
                   </div>
                   <input
@@ -550,7 +552,7 @@ export const LayoutPreview = ({
                 {/* サイズ */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-gray-600 font-medium">サイズ</label>
+                    <label className="text-xs text-gray-600 font-medium">{t('layout.size')}</label>
                     <span className="text-xs text-gray-500 font-mono">{selectedLayout.size}px</span>
                   </div>
                   <input
@@ -566,7 +568,7 @@ export const LayoutPreview = ({
                 {/* 回転 */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-gray-600 font-medium">回転</label>
+                    <label className="text-xs text-gray-600 font-medium">{t('layout.rotation')}</label>
                     <span className="text-xs text-gray-500 font-mono">{selectedLayout.rotation}°</span>
                   </div>
                   <input
@@ -581,7 +583,7 @@ export const LayoutPreview = ({
               </div>
             ) : (
               <div className="text-center py-2 text-gray-400">
-                <p className="text-xs">シールをクリックして選択すると<br />サイズと回転を調整できます</p>
+                <p className="text-xs whitespace-pre-line">{t('layout.selectToAdjust')}</p>
               </div>
             )}
           </div>
@@ -589,7 +591,7 @@ export const LayoutPreview = ({
           {/* シール追加パネル */}
           <div className="bg-gray-50 rounded-lg p-3">
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              シールを配置
+              {t('layout.placeStickers')}
             </h4>
             <div className="flex flex-wrap gap-2">
               {stickers.map((sticker) => {
@@ -617,7 +619,7 @@ export const LayoutPreview = ({
                     <button
                       onClick={() => handleAdd(sticker)}
                       className="w-5 h-5 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      title="追加"
+                      title={t('layout.add')}
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -646,14 +648,14 @@ export const LayoutPreview = ({
               {isRegenerating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>更新中...</span>
+                  <span>{t('layout.updating')}</span>
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>配置を確定</span>
+                  <span>{t('layout.confirmLayout')}</span>
                 </>
               )}
             </button>
@@ -673,7 +675,7 @@ export const LayoutPreview = ({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>公開する</span>
+              <span>{t('layout.publishButton')}</span>
             </button>
           )}
         </>

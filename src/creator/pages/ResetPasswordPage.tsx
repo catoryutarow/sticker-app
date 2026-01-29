@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/authApi';
 
 export const ResetPasswordPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
@@ -33,18 +35,16 @@ export const ResetPasswordPage = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">無効なリンク</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('resetPassword.invalidLink')}</h2>
           <p className="mt-2 text-gray-600">
-            パスワードリセットのリンクが無効です。
-            <br />
-            もう一度リクエストしてください。
+            {t('resetPassword.invalidLinkDesc')}
           </p>
           <div className="mt-8">
             <Link
               to="/creator/forgot-password"
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
-              パスワードリセットをリクエスト
+              {t('resetPassword.requestReset')}
             </Link>
           </div>
         </div>
@@ -58,18 +58,18 @@ export const ResetPasswordPage = () => {
 
     // パスワード確認
     if (password !== confirmPassword) {
-      setError('パスワードが一致しません');
+      setError(t('resetPassword.passwordMismatch'));
       return;
     }
 
     // パスワード要件チェック
     if (password.length < 8) {
-      setError('パスワードは8文字以上で入力してください');
+      setError(t('resetPassword.passwordTooShort'));
       return;
     }
 
     if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) {
-      setError('パスワードは英字と数字を両方含む必要があります');
+      setError(t('resetPassword.passwordRequirements'));
       return;
     }
 
@@ -79,7 +79,7 @@ export const ResetPasswordPage = () => {
       await authApi.resetPassword(token, password);
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'パスワードリセットに失敗しました');
+      setError(err instanceof Error ? err.message : t('resetPassword.resetFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -104,16 +104,16 @@ export const ResetPasswordPage = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">パスワードを変更しました</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('resetPassword.successTitle')}</h2>
           <p className="mt-2 text-gray-600">
-            新しいパスワードでログインしてください。
+            {t('resetPassword.successDesc')}
           </p>
           <div className="mt-8">
             <button
               onClick={() => navigate('/creator/login')}
               className="inline-flex justify-center py-3 px-6 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
-              ログインページへ
+              {t('resetPassword.goToLogin')}
             </button>
           </div>
         </div>
@@ -126,10 +126,10 @@ export const ResetPasswordPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            新しいパスワードを設定
+            {t('resetPassword.setNewPassword')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            新しいパスワードを入力してください
+            {t('resetPassword.enterNewPassword')}
           </p>
         </div>
 
@@ -143,7 +143,7 @@ export const ResetPasswordPage = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                新しいパスワード
+                {t('resetPassword.newPassword')}
               </label>
               <input
                 id="password"
@@ -154,16 +154,16 @@ export const ResetPasswordPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="8文字以上、英字と数字を含む"
+                placeholder={t('resetPassword.passwordHint')}
               />
               <p className="mt-1 text-xs text-gray-500">
-                8文字以上で、英字と数字を両方含めてください
+                {t('resetPassword.passwordHintDesc')}
               </p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                パスワード（確認）
+                {t('resetPassword.confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -174,7 +174,7 @@ export const ResetPasswordPage = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="パスワードを再入力"
+                placeholder={t('resetPassword.confirmPlaceholder')}
               />
             </div>
           </div>
@@ -185,14 +185,14 @@ export const ResetPasswordPage = () => {
               disabled={isSubmitting}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSubmitting ? '変更中...' : 'パスワードを変更'}
+              {isSubmitting ? t('resetPassword.changing') : t('resetPassword.changePassword')}
             </button>
           </div>
         </form>
 
         <div className="text-center">
           <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
-            ← シール帳に戻る
+            {t('resetPassword.backToAlbum')}
           </Link>
         </div>
       </div>

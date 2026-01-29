@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { kitsApi, type Kit } from '@/api/kitsApi';
 import { KitCard } from '../components/KitCard';
 
@@ -7,6 +8,7 @@ type StatusFilter = 'all' | 'published' | 'draft';
 type SortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc';
 
 export const KitsPage = () => {
+  const { t } = useTranslation();
   const [kits, setKits] = useState<Kit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,7 +27,7 @@ export const KitsPage = () => {
       const response = await kitsApi.getKits();
       setKits(response.kits);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'キットの読み込みに失敗しました');
+      setError(err instanceof Error ? err.message : t('kits.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +50,7 @@ export const KitsPage = () => {
       setKits(kits.filter(k => k.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '削除に失敗しました');
+      setError(err instanceof Error ? err.message : t('kits.deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -99,9 +101,9 @@ export const KitsPage = () => {
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">キット一覧</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('kits.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            作成したシールキットを管理します
+            {t('kits.description')}
           </p>
         </div>
         <Link
@@ -111,7 +113,7 @@ export const KitsPage = () => {
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          新しいキットを作成
+          {t('kits.createNew')}
         </Link>
       </div>
 
@@ -133,7 +135,7 @@ export const KitsPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="キット名で検索..."
+                placeholder={t('kits.searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
               <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,12 +156,12 @@ export const KitsPage = () => {
 
           {/* ステータスフィルター */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">ステータス:</span>
+            <span className="text-sm text-gray-500">{t('kits.status')}:</span>
             <div className="flex rounded-lg border border-gray-300 overflow-hidden">
               {[
-                { value: 'all', label: 'すべて' },
-                { value: 'published', label: '公開' },
-                { value: 'draft', label: '下書き' },
+                { value: 'all', label: t('kits.statusAll') },
+                { value: 'published', label: t('kits.statusPublished') },
+                { value: 'draft', label: t('kits.statusDraft') },
               ].map(({ value, label }) => (
                 <button
                   key={value}
@@ -178,22 +180,22 @@ export const KitsPage = () => {
 
           {/* ソート */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">並び替え:</span>
+            <span className="text-sm text-gray-500">{t('kits.sortBy')}:</span>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="created_desc">作成日（新しい順）</option>
-              <option value="created_asc">作成日（古い順）</option>
-              <option value="name_asc">名前（A→Z）</option>
-              <option value="name_desc">名前（Z→A）</option>
+              <option value="created_desc">{t('dashboard.sortNewest')}</option>
+              <option value="created_asc">{t('dashboard.sortOldest')}</option>
+              <option value="name_asc">{t('dashboard.sortNameAZ')}</option>
+              <option value="name_desc">{t('dashboard.sortNameZA')}</option>
             </select>
           </div>
 
           {/* 結果カウント */}
           <div className="text-sm text-gray-500">
-            {filteredKits.length} / {kits.length} 件
+            {filteredKits.length} / {kits.length} {t('common.items')}
           </div>
         </div>
       )}
@@ -204,9 +206,9 @@ export const KitsPage = () => {
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">キットがありません</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">{t('kits.noKits')}</h3>
           <p className="mt-1 text-sm text-gray-500">
-            新しいキットを作成してシールを追加しましょう
+            {t('kits.noKitsDesc')}
           </p>
           <div className="mt-6">
             <Link
@@ -216,7 +218,7 @@ export const KitsPage = () => {
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              最初のキットを作成
+              {t('dashboard.createFirst')}
             </Link>
           </div>
         </div>
@@ -225,9 +227,9 @@ export const KitsPage = () => {
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">検索結果がありません</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">{t('kits.noResults')}</h3>
           <p className="mt-1 text-sm text-gray-500">
-            検索条件を変更してください
+            {t('kitFinder.changeSearch')}
           </p>
           <button
             onClick={() => {
@@ -236,7 +238,7 @@ export const KitsPage = () => {
             }}
             className="mt-4 text-sm text-blue-600 hover:text-blue-700"
           >
-            フィルターをリセット
+            {t('kits.resetFilter')}
           </button>
         </div>
       ) : (
@@ -255,10 +257,9 @@ export const KitsPage = () => {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900">キットを削除</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t('kits.deleteTitle')}</h3>
             <p className="mt-2 text-sm text-gray-500">
-              「{deleteConfirm.name}」を削除してもよろしいですか？
-              この操作は取り消せません。関連するすべてのシールも削除されます。
+              {t('kits.deleteConfirm', { name: deleteConfirm.name })}
             </p>
             <div className="mt-4 flex items-center justify-end gap-3">
               <button
@@ -266,14 +267,14 @@ export const KitsPage = () => {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 disabled={isDeleting}
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 disabled={isDeleting}
               >
-                {isDeleting ? '削除中...' : '削除する'}
+                {isDeleting ? t('kits.deleting') : t('kits.delete')}
               </button>
             </div>
           </div>

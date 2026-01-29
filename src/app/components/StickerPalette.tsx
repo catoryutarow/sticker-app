@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   KitCardStack,
   removeStickerFromPalette as _removeStickerFromPalette,
@@ -35,6 +36,7 @@ export function removeStickerByType(stickerId: string) {
 }
 
 export function StickerPalette({ onDragStart, initialKitNumber }: StickerPaletteProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   // Initialize with initialKitNumber from URL parameter if provided
@@ -58,7 +60,7 @@ export function StickerPalette({ onDragStart, initialKitNumber }: StickerPalette
               setSearchQuery(e.target.value);
               setSelectedKitNumber(null); // 検索時は選択をクリア
             }}
-            placeholder="キット名で検索..."
+            placeholder={t('palette.searchPlaceholder')}
             className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
           />
           <svg
@@ -85,12 +87,12 @@ export function StickerPalette({ onDragStart, initialKitNumber }: StickerPalette
         <button
           onClick={() => setIsFinderOpen(true)}
           className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-1.5"
-          title="タグで絞り込み"
+          title={t('palette.filterByTag')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          <span className="hidden sm:inline">探す</span>
+          <span className="hidden sm:inline">{t('palette.find')}</span>
         </button>
       </div>
 

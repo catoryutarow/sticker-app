@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { Kit, LayoutPreviewItem } from '@/api/kitsApi';
 import { getStickerImageUrl, getKitThumbnailUrl, getDefaultThumbnailUrl } from '@/config/assetUrl';
@@ -11,7 +12,7 @@ interface KitCardProps {
 
 // ミニプレビューコンポーネント（下書きキット用の動的レンダリング）
 // サムネイル生成（280x420px）と同じ座標系を使用し、0.5倍でレンダリング
-const MiniPreview = ({ kit, layouts }: { kit: Kit; layouts: LayoutPreviewItem[] }) => {
+const MiniPreview = ({ kit, layouts, noStickersLabel }: { kit: Kit; layouts: LayoutPreviewItem[]; noStickersLabel: string }) => {
   // サムネイル生成と同じ基準サイズ
   const THUMBNAIL_WIDTH = 280;
   const THUMBNAIL_HEIGHT = 420;
@@ -76,7 +77,7 @@ const MiniPreview = ({ kit, layouts }: { kit: Kit; layouts: LayoutPreviewItem[] 
       {/* レイアウトがない場合 */}
       {layouts.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xs">
-          シールなし
+          {noStickersLabel}
         </div>
       )}
     </div>
@@ -139,14 +140,15 @@ const LEGACY_KEY_MAP: Record<string, string> = {
 };
 
 // キー表示用のラベル変換（旧フォーマット互換）
-const formatMusicalKey = (key: string | undefined): string => {
-  if (!key || key === 'random') return 'おまかせ';
+const formatMusicalKey = (key: string | undefined, autoLabel: string): string => {
+  if (!key || key === 'random') return autoLabel;
   // 旧フォーマットの変換
   const normalized = LEGACY_KEY_MAP[key] || key;
   return normalized.replace('/', ' / ');
 };
 
 export const KitCard = ({ kit, onDelete }: KitCardProps) => {
+  const { t } = useTranslation();
   const isPublished = kit.status === 'published';
   const layouts = kit.layouts || [];
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -163,7 +165,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
           {isPublished ? (
             <ThumbnailImage kit={kit} />
           ) : (
-            <MiniPreview kit={kit} layouts={layouts} />
+            <MiniPreview kit={kit} layouts={layouts} noStickersLabel={t('kitCard.noStickers')} />
           )}
 
           {/* 情報エリア */}
@@ -181,7 +183,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
                 <div className={`w-1.5 h-1.5 rounded-full ${
                   isPublished ? 'bg-emerald-500' : 'bg-amber-500'
                 }`} />
-                {isPublished ? '公開中' : '下書き'}
+                {isPublished ? t('kitCard.published') : t('kitCard.draft')}
               </div>
             </div>
             {kit.name_ja && (
@@ -200,7 +202,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                {formatMusicalKey(kit.musical_key)}
+                {formatMusicalKey(kit.musical_key, t('kitCard.autoKey'))}
               </span>
             </div>
 
@@ -217,7 +219,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
                     : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
                 }`}
               >
-                {isPublished ? '詳細' : '編集'}
+                {isPublished ? t('kitCard.details') : t('kitCard.edit')}
               </Link>
 
               {/* 共有ボタン（公開済みのみ） */}
@@ -225,7 +227,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
                 <button
                   onClick={() => setIsShareOpen(true)}
                   className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="共有"
+                  title={t('kitCard.share')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -237,7 +239,7 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
                 <button
                   onClick={() => onDelete(kit)}
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="削除"
+                  title={t('kitCard.delete')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

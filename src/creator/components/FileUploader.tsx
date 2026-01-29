@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ImageCropper } from './ImageCropper';
 
 interface FileUploaderProps {
@@ -9,6 +10,7 @@ interface FileUploaderProps {
 }
 
 export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUploaderProps) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -21,13 +23,13 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
 
   const validateFile = (file: File): string | null => {
     if (file.size > maxSize) {
-      return 'ファイルサイズは10MB以下にしてください';
+      return t('fileUploader.fileTooLarge');
     }
     if (type === 'image' && !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      return '画像形式はPNG、JPEG、WebPのみ対応しています';
+      return t('fileUploader.invalidImageFormat');
     }
     if (type === 'audio' && !['audio/mpeg', 'audio/mp3'].includes(file.type)) {
-      return '音声形式はMP3のみ対応しています';
+      return t('fileUploader.invalidAudioFormat');
     }
     return null;
   };
@@ -49,12 +51,12 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
       try {
         await onUpload(file);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
+        setError(err instanceof Error ? err.message : t('fileUploader.uploadFailed'));
       } finally {
         setIsUploading(false);
       }
     }
-  }, [onUpload, type]);
+  }, [onUpload, type, t]);
 
   const handleCropComplete = async (blob: Blob) => {
     setCropperImage(null);
@@ -64,7 +66,7 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
       const file = new File([blob], 'sticker.png', { type: 'image/png' });
       await onUpload(file);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
+      setError(err instanceof Error ? err.message : t('fileUploader.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -140,7 +142,7 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
           {isUploading ? (
             <div className="flex flex-col items-center py-2">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
-              <span className="mt-2 text-sm text-gray-500">アップロード中...</span>
+              <span className="mt-2 text-sm text-gray-500">{t('fileUploader.uploading')}</span>
             </div>
           ) : currentPath ? (
             <div className="flex flex-col items-center py-2">
@@ -155,10 +157,10 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                   </svg>
-                  <span className="text-sm">音声ファイルあり</span>
+                  <span className="text-sm">{t('fileUploader.audioFileSet')}</span>
                 </div>
               )}
-              <span className="mt-2 text-xs text-gray-400">クリックで差し替え</span>
+              <span className="mt-2 text-xs text-gray-400">{t('fileUploader.clickToReplace')}</span>
             </div>
           ) : (
             <div className="flex flex-col items-center py-2">
@@ -172,10 +174,10 @@ export const FileUploader = ({ type, onUpload, currentPath, disabled }: FileUplo
                 </svg>
               )}
               <span className="mt-2 text-sm text-gray-500">
-                ドラッグ&ドロップ または クリック
+                {t('fileUploader.dragDropOrClick')}
               </span>
               <span className="text-xs text-gray-400">
-                {acceptLabel} / 最大10MB
+                {t('fileUploader.maxSize', { format: acceptLabel })}
               </span>
             </div>
           )}
