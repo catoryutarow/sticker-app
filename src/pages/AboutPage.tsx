@@ -77,11 +77,11 @@ export function AboutPage() {
               </section>
 
               <section className="mt-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">名前の由来</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">コンセプト</h2>
                 <p>
-                  「シール帳」は「シール帳」を略した愛称です。
-                  子どもの頃にシール帳にシールを貼って遊んだような、
-                  わくわくする体験を音楽でも味わってほしいという想いを込めています。
+                  子どもの頃、お気に入りのシールを集めてシール帳に貼って遊んだ経験はありませんか？
+                  「シール帳」は、そんなわくわくする体験を音楽でも味わってほしいという想いから生まれました。
+                  シールを貼る感覚で、誰でも気軽に音楽を作れるサービスです。
                 </p>
               </section>
 
