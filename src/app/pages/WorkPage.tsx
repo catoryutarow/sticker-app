@@ -241,20 +241,28 @@ export function WorkPage() {
     );
   }
 
+  const SITE_URL = 'https://sirucho.com';
   const ogTitle = work.title || t('work.title');
   const ogDescription = t('work.ogDescription', { count: work.stickers.length });
-  const ogImage = work.thumbnailUrl || '/og-default.png';
+  const ogImageRaw = work.thumbnailUrl || '/og-default.png';
+  // Ensure absolute URL for OGP image
+  const ogImage = ogImageRaw.startsWith('http') ? ogImageRaw : `${SITE_URL}${ogImageRaw}`;
+  const canonicalUrl = `${SITE_URL}/w/${shareId}`;
 
   return (
     <>
       {/* OGP Meta Tags */}
       <Helmet>
         <title>{ogTitle} | {t('work.defaultTitle')}</title>
+        <meta name="description" content={ogDescription} />
+        <link rel="canonical" href={canonicalUrl} />
         <meta property="og:title" content={ogTitle} />
         <meta property="og:description" content={ogDescription} />
         <meta property="og:image" content={ogImage} />
-        <meta property="og:url" content={shareUrl} />
+        <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
+        <meta property="og:locale" content="ja_JP" />
+        <meta property="og:site_name" content="シルチョ" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={ogTitle} />
         <meta name="twitter:description" content={ogDescription} />
