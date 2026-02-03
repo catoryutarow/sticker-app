@@ -674,5 +674,12 @@
     "invalidImageFormat": "이미지 형식은 PNG, JPEG, WebP만 지원됩니다",
     "invalidAudioFormat": "음성 형식은 MP3만 지원됩니다",
     "uploadFailed": "업로드에 실패했습니다"
+  },
+  "footer": {
+    "about": "소개",
+    "terms": "이용약관",
+    "privacy": "개인정보처리방침",
+    "contact": "문의하기",
+    "company": "모테코로 주식회사"
   }
 }

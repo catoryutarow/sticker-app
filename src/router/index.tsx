@@ -24,6 +24,13 @@ import {
   AdminNewKitPage,
   TagsPage,
 } from '@/admin';
+import {
+  PrivacyPage,
+  TermsPage,
+  ContactPage,
+  AboutPage,
+  NotFoundPage,
+} from '@/pages';
 
 const router = createBrowserRouter([
   {
@@ -33,6 +40,23 @@ const router = createBrowserRouter([
   {
     path: '/w/:shareId',
     element: <WorkPage />,
+  },
+  // Legal & Info pages
+  {
+    path: '/privacy',
+    element: <PrivacyPage />,
+  },
+  {
+    path: '/terms',
+    element: <TermsPage />,
+  },
+  {
+    path: '/contact',
+    element: <ContactPage />,
+  },
+  {
+    path: '/about',
+    element: <AboutPage />,
   },
   {
     path: '/creator/signup',
@@ -122,6 +146,11 @@ const router = createBrowserRouter([
         element: <TagsPage />,
       },
     ],
+  },
+  // 404 fallback
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ]);
 

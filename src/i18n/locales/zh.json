@@ -674,5 +674,12 @@
     "invalidImageFormat": "仅支持PNG、JPEG、WebP格式的图片",
     "invalidAudioFormat": "仅支持MP3格式的音频",
     "uploadFailed": "上传失败"
+  },
+  "footer": {
+    "about": "关于我们",
+    "terms": "使用条款",
+    "privacy": "隐私政策",
+    "contact": "联系我们",
+    "company": "Motechoro株式会社"
   }
 }

@@ -674,5 +674,12 @@
     "invalidImageFormat": "Only PNG, JPEG, and WebP images are supported",
     "invalidAudioFormat": "Only MP3 audio is supported",
     "uploadFailed": "Upload failed"
+  },
+  "footer": {
+    "about": "About",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contact": "Contact",
+    "company": "Motechoro Inc."
   }
 }

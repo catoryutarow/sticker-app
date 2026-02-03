@@ -674,5 +674,12 @@
     "invalidImageFormat": "画像形式はPNG、JPEG、WebPのみ対応しています",
     "invalidAudioFormat": "音声形式はMP3のみ対応しています",
     "uploadFailed": "アップロードに失敗しました"
+  },
+  "footer": {
+    "about": "シルチョについて",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "contact": "お問い合わせ",
+    "company": "株式会社モテコロ"
   }
 }

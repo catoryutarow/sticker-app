@@ -1,10 +1,76 @@
 
   <!DOCTYPE html>
-  <html lang="en">
+  <html lang="ja">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>シール帳アプリ作成</title>
+      <title>シルチョ - 音楽シールで楽曲を作ろう</title>
+      <meta name="description" content="シルチョは音楽シールを台紙に貼り付けて、誰でも簡単に楽曲が作れる無料Webアプリです。タップするだけで音が鳴り、オリジナルの作品を作って共有できます。" />
+      <meta name="keywords" content="音楽アプリ,シール,楽曲作成,作曲,無料,Web Audio" />
+      <meta name="author" content="シルチョ運営" />
+      <link rel="canonical" href="https://sirucho.com/" />
+
+      <!-- Open Graph -->
+      <meta property="og:type" content="website" />
+      <meta property="og:locale" content="ja_JP" />
+      <meta property="og:url" content="https://sirucho.com/" />
+      <meta property="og:site_name" content="シルチョ" />
+      <meta property="og:title" content="シルチョ - 音楽シールで楽曲を作ろう" />
+      <meta property="og:description" content="音楽シールを台紙に貼り付けて、誰でも簡単に楽曲が作れる無料Webアプリ。タップするだけで音が鳴り、オリジナルの作品を共有できます。" />
+      <meta property="og:image" content="https://sirucho.com/ogp.png" />
+
+      <!-- Twitter Card -->
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="シルチョ - 音楽シールで楽曲を作ろう" />
+      <meta name="twitter:description" content="音楽シールを台紙に貼り付けて、誰でも簡単に楽曲が作れる無料Webアプリ。" />
+      <meta name="twitter:image" content="https://sirucho.com/ogp.png" />
+
+      <!-- Robots -->
+      <meta name="robots" content="index, follow" />
+
+      <!-- JSON-LD Structured Data -->
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "@id": "https://sirucho.com/#webapp",
+            "name": "シルチョ",
+            "description": "音楽シールを台紙に貼り付けて、誰でも簡単に楽曲が作れる無料Webアプリです。",
+            "url": "https://sirucho.com",
+            "applicationCategory": "MusicApplication",
+            "operatingSystem": "Web Browser",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "JPY"
+            },
+            "inLanguage": "ja",
+            "browserRequirements": "Requires JavaScript. Requires HTML5.",
+            "softwareVersion": "1.0"
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://sirucho.com/#organization",
+            "name": "シルチョ運営",
+            "url": "https://sirucho.com",
+            "logo": "https://sirucho.com/logo.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://sirucho.com/#website",
+            "url": "https://sirucho.com",
+            "name": "シルチョ",
+            "publisher": {
+              "@id": "https://sirucho.com/#organization"
+            },
+            "inLanguage": "ja"
+          }
+        ]
+      }
+      </script>
+
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=WDXL+Lubrifont+JP+N&display=swap" rel="stylesheet">

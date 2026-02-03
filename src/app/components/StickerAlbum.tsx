@@ -357,6 +357,27 @@ export function StickerAlbum() {
               </Link>
             </div>
           </div>
+
+          {/* フッターリンク */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <nav className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+              <Link to="/about" className="hover:text-gray-700 hover:underline">
+                {t('footer.about')}
+              </Link>
+              <Link to="/terms" className="hover:text-gray-700 hover:underline">
+                {t('footer.terms')}
+              </Link>
+              <Link to="/privacy" className="hover:text-gray-700 hover:underline">
+                {t('footer.privacy')}
+              </Link>
+              <Link to="/contact" className="hover:text-gray-700 hover:underline">
+                {t('footer.contact')}
+              </Link>
+            </nav>
+            <p className="mt-2 text-xs text-gray-400">
+              © 2026 {t('footer.company')}
+            </p>
+          </div>
         </div>
 
         {/* 中央カラム: 台紙（主役） */}
