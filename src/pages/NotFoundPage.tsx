@@ -6,7 +6,7 @@ export function NotFoundPage() {
   return (
     <>
       <Helmet>
-        <title>ページが見つかりません | シルチョ</title>
+        <title>ページが見つかりません | シール帳</title>
         <meta name="robots" content="noindex" />
       </Helmet>
 

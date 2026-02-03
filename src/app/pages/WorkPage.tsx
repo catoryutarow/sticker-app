@@ -262,7 +262,7 @@ export function WorkPage() {
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ja_JP" />
-        <meta property="og:site_name" content="シルチョ" />
+        <meta property="og:site_name" content="シール帳" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={ogTitle} />
         <meta name="twitter:description" content={ogDescription} />

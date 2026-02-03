@@ -6,8 +6,8 @@ export function AboutPage() {
   return (
     <>
       <Helmet>
-        <title>シルチョについて | シルチョ</title>
-        <meta name="description" content="シルチョは株式会社モテコロが運営する、音楽シールで楽曲を作れる無料Webアプリです。誰でも簡単に音楽体験を楽しめます。" />
+        <title>シール帳について | シール帳</title>
+        <meta name="description" content="シール帳は株式会社モテコロが運営する、音楽シールで楽曲を作れる無料Webアプリです。誰でも簡単に音楽体験を楽しめます。" />
         <link rel="canonical" href="https://sirucho.com/about" />
       </Helmet>
 
@@ -23,14 +23,14 @@ export function AboutPage() {
 
           <article className="bg-white rounded-2xl shadow-lg p-6 md:p-10">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
-              シルチョについて
+              シール帳について
             </h1>
 
             <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
               <section>
                 <h2 className="text-xl font-bold text-gray-900 mb-4">サービス概要</h2>
                 <p>
-                  「シルチョ」は、音楽シールを台紙に貼り付けて楽曲を作成できる無料のWebアプリケーションです。
+                  「シール帳」は、音楽シールを台紙に貼り付けて楽曲を作成できる無料のWebアプリケーションです。
                   専門的な音楽知識がなくても、誰でも簡単に音楽を楽しむことができます。
                 </p>
               </section>
@@ -79,7 +79,7 @@ export function AboutPage() {
               <section className="mt-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">名前の由来</h2>
                 <p>
-                  「シルチョ」は「シール帳」を略した愛称です。
+                  「シール帳」は「シール帳」を略した愛称です。
                   子どもの頃にシール帳にシールを貼って遊んだような、
                   わくわくする体験を音楽でも味わってほしいという想いを込めています。
                 </p>

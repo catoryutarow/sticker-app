@@ -6,8 +6,8 @@ export function PrivacyPage() {
   return (
     <>
       <Helmet>
-        <title>プライバシーポリシー | シルチョ</title>
-        <meta name="description" content="シルチョのプライバシーポリシー。個人情報の取り扱い、Cookie、広告について説明します。" />
+        <title>プライバシーポリシー | シール帳</title>
+        <meta name="description" content="シール帳のプライバシーポリシー。個人情報の取り扱い、Cookie、広告について説明します。" />
         <link rel="canonical" href="https://sirucho.com/privacy" />
       </Helmet>
 
@@ -28,7 +28,7 @@ export function PrivacyPage() {
 
             <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
               <p>
-                株式会社モテコロ（以下「当社」）は、本ウェブサイト「シルチョ」（以下「本サービス」）において、
+                株式会社モテコロ（以下「当社」）は、本ウェブサイト「シール帳」（以下「本サービス」）において、
                 ユーザーの個人情報を適切に取り扱うことを重要な責務と認識し、以下のプライバシーポリシーを定めます。
               </p>
 

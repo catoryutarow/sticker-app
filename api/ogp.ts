@@ -35,7 +35,7 @@ function generateOgpHtml(work: Work, shareId: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} | シルチョ</title>
+  <title>${title} | シール帳</title>
   <meta name="description" content="${description}">
   <link rel="canonical" href="${url}">
 
@@ -43,7 +43,7 @@ function generateOgpHtml(work: Work, shareId: string): string {
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:url" content="${url}">
-  <meta property="og:site_name" content="シルチョ">
+  <meta property="og:site_name" content="シール帳">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${absoluteImage}">
@@ -69,7 +69,7 @@ function generateOgpHtml(work: Work, shareId: string): string {
     "image": "${absoluteImage}",
     "author": {
       "@type": "Organization",
-      "name": "シルチョ"
+      "name": "シール帳"
     }
   }
   </script>
@@ -88,7 +88,7 @@ function generate404Html(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ページが見つかりません | シルチョ</title>
+  <title>ページが見つかりません | シール帳</title>
   <meta name="robots" content="noindex">
   <style>
     body {

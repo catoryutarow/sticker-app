@@ -6,8 +6,8 @@ export function TermsPage() {
   return (
     <>
       <Helmet>
-        <title>利用規約 | シルチョ</title>
-        <meta name="description" content="シルチョの利用規約。サービスのご利用条件、禁止事項、免責事項について説明します。" />
+        <title>利用規約 | シール帳</title>
+        <meta name="description" content="シール帳の利用規約。サービスのご利用条件、禁止事項、免責事項について説明します。" />
         <link rel="canonical" href="https://sirucho.com/terms" />
       </Helmet>
 
@@ -29,7 +29,7 @@ export function TermsPage() {
             <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
               <p>
                 この利用規約（以下「本規約」）は、株式会社モテコロ（以下「当社」）が提供する
-                「シルチョ」（以下「本サービス」）の利用条件を定めるものです。
+                「シール帳」（以下「本サービス」）の利用条件を定めるものです。
                 ユーザーの皆様には、本規約に従って本サービスをご利用いただきます。
               </p>
 

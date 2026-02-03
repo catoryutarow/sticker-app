@@ -6,8 +6,8 @@ export function ContactPage() {
   return (
     <>
       <Helmet>
-        <title>お問い合わせ | シルチョ</title>
-        <meta name="description" content="シルチョへのお問い合わせ。ご質問、ご要望、不具合報告などお気軽にご連絡ください。" />
+        <title>お問い合わせ | シール帳</title>
+        <meta name="description" content="シール帳へのお問い合わせ。ご質問、ご要望、不具合報告などお気軽にご連絡ください。" />
         <link rel="canonical" href="https://sirucho.com/contact" />
       </Helmet>
 
@@ -28,7 +28,7 @@ export function ContactPage() {
 
             <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
               <p>
-                シルチョに関するご質問、ご要望、不具合報告など、お気軽にお問い合わせください。
+                シール帳に関するご質問、ご要望、不具合報告など、お気軽にお問い合わせください。
               </p>
 
               <section className="mt-8">

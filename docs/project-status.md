@@ -67,7 +67,7 @@
 
 | 優先度 | 課題 | 現状 | 推奨対応 |
 |--------|------|------|----------|
-| 高 | 本番メール認証設定 | AWS SES移行完了、サンドボックス解除待ち | 審査通過後に本番運用開始 |
+| ~~高~~ | ~~本番メール認証設定~~ | ✅ AWS SES本番稼働中 | サンドボックス解除完了 |
 | 中 | ログ・モニタリング | PM2ログのみ | Sentry, CloudWatch等導入 |
 | 低 | API ドキュメント | 未整備 | OpenAPI/Swagger導入 |
 
@@ -199,13 +199,24 @@
 | 動画エクスポート台紙フォーマット不整合 | ✅ 解決 | パーセンテージ座標対応 + 固定出力サイズ(720x960) |
 | クリエイター: 画像プレビュー表示されない | ✅ 解決 | サーバー静的配信追加 + WebP変換 + VITE_ASSET_BASE_URL設定 |
 | クリエイター: 音声ライブラリが空 | ✅ 解決 | UPLOAD_DIR環境変数対応 + publicディレクトリマウント |
-| 認証: メール送信されない | ⏳ 進行中 | AWS SES移行完了、サンドボックス解除審査中 |
+| 認証: メール送信されない | ✅ 解決 | AWS SES移行完了、サンドボックス解除完了 |
 
-### Phase 3E: 運用準備
+### ✅ Phase 3E: AdSense審査対応（完了）
+1. [x] メタデータ強化（OGP, Twitter Card, JSON-LD）
+2. [x] 法定ページ作成（プライバシーポリシー、利用規約、お問い合わせ、運営者情報）
+3. [x] 技術ファイル（robots.txt, sitemap.xml, ads.txt）
+4. [x] 動的OGP生成（Edge Middleware + API）
+5. [x] 404ページ作成
+6. [x] OGP画像配置（ogp.png, og-default.png, logo.png）
+
+### 🔄 Phase 3F: アナリティクス設定（進行中）
+1. [ ] Google Analytics 4 (GA4) 導入
+2. [ ] Google Search Console (GSC) 登録・サイトマップ送信
+3. [ ] AdSense申請（ads.txtのpub-ID設定）
+
+### Phase 3G: 運用準備（今後）
 1. [ ] モニタリング設定（Sentry）
 2. [ ] DBバックアップ自動化
-3. [x] JWT_SECRET本番値設定 ✅ 設定済み
-4. [x] メール送信設定 ✅ AWS SES移行完了（サンドボックス解除審査中）
 
 ### Phase 4: グロース（今後）
 1. お気に入り・履歴機能
@@ -322,6 +333,8 @@
 
 | 日付 | 機能 |
 |------|------|
+| 2026-02-03 | **AdSense審査対応完了**（メタデータ、法定ページ、動的OGP、技術ファイル） |
+| 2026-02-03 | **動的OGP生成**（Edge Middleware + Serverless API でクローラ向けOGP返却） |
 | 2026-01-30 | **AWS SES移行完了**（Resendから移行、IAMロール認証、ドメイン認証完了） |
 | 2026-01-30 | JWT_SECRET本番値設定、trust proxy設定 |
 | 2026-01-29 | **エクスポート座標システム修正（パーセンテージ基準統一）** |
@@ -348,7 +361,78 @@
 
 ---
 
-*最終更新: 2026-01-30（Phase 3E: AWS SES移行完了、サンドボックス解除審査中）*
+*最終更新: 2026-02-03（Phase 3E: AdSense審査対応完了、Phase 3F: アナリティクス設定進行中）*
+
+---
+
+## GA4・GSC 登録手順
+
+### Google Analytics 4 (GA4) 導入手順
+
+1. [analytics.google.com](https://analytics.google.com/) にアクセス
+2. 「管理」→「プロパティを作成」
+3. プロパティ名: `シルチョ`、タイムゾーン: 日本、通貨: JPY
+4. 「ウェブ」を選択、URL: `https://sirucho.com`
+5. **Measurement ID** (`G-XXXXXXXXXX`) をコピー
+6. `index.html` の `<head>` 内に以下を追加:
+```html
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+```
+
+### Google Search Console (GSC) 登録手順
+
+1. [search.google.com/search-console](https://search.google.com/search-console) にアクセス
+2. 「プロパティを追加」→「URLプレフィックス」→ `https://sirucho.com`
+3. **所有権の確認**（以下のいずれか）:
+   - **HTMLファイル**: Googleからダウンロード → `public/` に配置
+   - **HTMLタグ**: `<meta name="google-site-verification" content="xxx">` を `index.html` に追加
+   - **DNS**: TXTレコードをDNSに追加
+4. 確認完了後:
+   - 「サイトマップ」→ `https://sirucho.com/sitemap.xml` を送信
+   - 「URL検査」→ トップページをリクエスト
+
+### AdSense 申請手順
+
+1. [adsense.google.com](https://adsense.google.com/) でアカウント作成
+2. サイトURL: `https://sirucho.com` を登録
+3. **pub-ID** を取得後、`public/ads.txt` を更新:
+```
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+```
+4. AdSenseコードを `index.html` に追加（審査後）
+
+---
+
+## 残推奨タスク
+
+### 高優先度
+| タスク | 現状 | 対応 |
+|--------|------|------|
+| GA4導入 | 未実施 | Measurement ID取得後にindex.html更新 |
+| GSC登録 | 未実施 | 所有権確認 → サイトマップ送信 |
+| ~~AWS SESサンドボックス解除~~ | ✅ 完了 | 本番メール送信可能 |
+| DBバックアップ自動化 | 手動のみ | cronスクリプト作成 |
+
+### 中優先度
+| タスク | 現状 | 対応 |
+|--------|------|------|
+| AdSense申請 | 未実施 | GA4/GSC設定後に申請 |
+| Sentry導入 | 未実施 | エラー監視設定 |
+| 本番手動テスト | 一部未確認 | 認証・クリエイター機能の確認 |
+
+### 低優先度
+| タスク | 現状 | 対応 |
+|--------|------|------|
+| sitemap動的生成 | 静的ファイル | /w/:shareId を含む自動生成 |
+| hreflang対応 | 未実施 | 多言語SEO強化 |
+| お気に入り機能 | 未実施 | ユーザー機能拡張 |
 
 ---
 
