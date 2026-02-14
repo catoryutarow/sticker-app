@@ -21,97 +21,12 @@ const projectRoot = process.env.UPLOAD_DIR
   : join(__dirname, '..', '..');
 
 // ================================
-// 公開API（認証不要）
-// ================================
-
-/**
- * GET /api/articles
- * 公開記事一覧（status=published のみ）
- */
-router.get('/', (req, res) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 12));
-    const offset = (page - 1) * limit;
-
-    const countResult = db.prepare(
-      "SELECT COUNT(*) as total FROM articles WHERE status = 'published'"
-    ).get();
-
-    const articles = db.prepare(`
-      SELECT id, slug, title, description, thumbnail, published_at, created_at
-      FROM articles
-      WHERE status = 'published'
-      ORDER BY published_at DESC
-      LIMIT ? OFFSET ?
-    `).all(limit, offset);
-
-    const total = countResult.total;
-    const totalPages = Math.ceil(total / limit);
-
-    res.json({
-      articles,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-    });
-  } catch (error) {
-    console.error('Get public articles error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-/**
- * GET /api/articles/:slug
- * 記事詳細取得（slug指定、published のみ）
- */
-router.get('/:slug', (req, res) => {
-  try {
-    const { slug } = req.params;
-
-    const article = db.prepare(
-      "SELECT * FROM articles WHERE slug = ? AND status = 'published'"
-    ).get(slug);
-
-    if (!article) {
-      return res.status(404).json({ error: 'Article not found' });
-    }
-
-    // 前後の記事を取得
-    const prevArticle = db.prepare(`
-      SELECT slug, title FROM articles
-      WHERE status = 'published' AND published_at < ?
-      ORDER BY published_at DESC LIMIT 1
-    `).get(article.published_at);
-
-    const nextArticle = db.prepare(`
-      SELECT slug, title FROM articles
-      WHERE status = 'published' AND published_at > ?
-      ORDER BY published_at ASC LIMIT 1
-    `).get(article.published_at);
-
-    res.json({
-      article,
-      prevArticle: prevArticle || null,
-      nextArticle: nextArticle || null,
-    });
-  } catch (error) {
-    console.error('Get article error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ================================
 // 管理API（admin認証必須）
+// ※ /:slug より先に定義しないとキャッチされてしまう
 // ================================
 
 /**
- * GET /api/admin/articles
+ * GET /api/articles/admin/list
  * 全記事一覧（draft含む）
  */
 router.get('/admin/list', authenticateToken, requireAdmin, (req, res) => {
@@ -168,7 +83,40 @@ router.get('/admin/list', authenticateToken, requireAdmin, (req, res) => {
 });
 
 /**
- * GET /api/admin/articles/:id
+ * POST /api/articles/admin/upload-image
+ * 記事用画像アップロード（WebP変換）
+ */
+router.post('/admin/upload-image', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '画像ファイルが必要です' });
+    }
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: '対応形式: PNG, JPEG, WebP, GIF' });
+    }
+
+    const dirPath = join(projectRoot, 'public', 'assets', 'articles');
+    await mkdir(dirPath, { recursive: true });
+
+    const filename = `${Date.now()}-${uuidv4().slice(0, 8)}.webp`;
+    const filePath = join(dirPath, filename);
+
+    await sharp(req.file.buffer)
+      .webp({ quality: 85 })
+      .toFile(filePath);
+
+    const imagePath = `/assets/articles/${filename}`;
+    res.json({ imagePath });
+  } catch (error) {
+    console.error('Upload article image error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/articles/admin/:id
  * 記事詳細取得（admin用、ID指定）
  */
 router.get('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
@@ -185,7 +133,7 @@ router.get('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
 });
 
 /**
- * POST /api/admin/articles
+ * POST /api/articles/admin
  * 記事作成
  */
 router.post('/admin', authenticateToken, requireAdmin, (req, res) => {
@@ -223,7 +171,7 @@ router.post('/admin', authenticateToken, requireAdmin, (req, res) => {
 });
 
 /**
- * PUT /api/admin/articles/:id
+ * PUT /api/articles/admin/:id
  * 記事更新
  */
 router.put('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
@@ -276,7 +224,7 @@ router.put('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
 });
 
 /**
- * DELETE /api/admin/articles/:id
+ * DELETE /api/articles/admin/:id
  * 記事削除
  */
 router.delete('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
@@ -292,35 +240,89 @@ router.delete('/admin/:id', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
+// ================================
+// 公開API（認証不要）
+// ================================
+
 /**
- * POST /api/admin/articles/upload-image
- * 記事用画像アップロード（WebP変換）
+ * GET /api/articles
+ * 公開記事一覧（status=published のみ）
  */
-router.post('/admin/upload-image', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: '画像ファイルが必要です' });
-    }
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 12));
+    const offset = (page - 1) * limit;
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: '対応形式: PNG, JPEG, WebP, GIF' });
-    }
+    const countResult = db.prepare(
+      "SELECT COUNT(*) as total FROM articles WHERE status = 'published'"
+    ).get();
 
-    const dirPath = join(projectRoot, 'public', 'assets', 'articles');
-    await mkdir(dirPath, { recursive: true });
+    const articles = db.prepare(`
+      SELECT id, slug, title, description, thumbnail, published_at, created_at
+      FROM articles
+      WHERE status = 'published'
+      ORDER BY published_at DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
 
-    const filename = `${Date.now()}-${uuidv4().slice(0, 8)}.webp`;
-    const filePath = join(dirPath, filename);
+    const total = countResult.total;
+    const totalPages = Math.ceil(total / limit);
 
-    await sharp(req.file.buffer)
-      .webp({ quality: 85 })
-      .toFile(filePath);
-
-    const imagePath = `/assets/articles/${filename}`;
-    res.json({ imagePath });
+    res.json({
+      articles,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
   } catch (error) {
-    console.error('Upload article image error:', error);
+    console.error('Get public articles error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/articles/:slug
+ * 記事詳細取得（slug指定、published のみ）
+ * ※ 必ず /admin/* ルートの後に定義すること
+ */
+router.get('/:slug', (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const article = db.prepare(
+      "SELECT * FROM articles WHERE slug = ? AND status = 'published'"
+    ).get(slug);
+
+    if (!article) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
+
+    // 前後の記事を取得
+    const prevArticle = db.prepare(`
+      SELECT slug, title FROM articles
+      WHERE status = 'published' AND published_at < ?
+      ORDER BY published_at DESC LIMIT 1
+    `).get(article.published_at);
+
+    const nextArticle = db.prepare(`
+      SELECT slug, title FROM articles
+      WHERE status = 'published' AND published_at > ?
+      ORDER BY published_at ASC LIMIT 1
+    `).get(article.published_at);
+
+    res.json({
+      article,
+      prevArticle: prevArticle || null,
+      nextArticle: nextArticle || null,
+    });
+  } catch (error) {
+    console.error('Get article error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
