@@ -23,12 +23,16 @@ import {
   AdminKitsPage,
   AdminNewKitPage,
   TagsPage,
+  AdminArticlesPage,
+  ArticleEditPage,
 } from '@/admin';
 import {
   PrivacyPage,
   TermsPage,
   ContactPage,
   AboutPage,
+  ArticlesPage,
+  ArticlePage,
   NotFoundPage,
 } from '@/pages';
 
@@ -57,6 +61,15 @@ const router = createBrowserRouter([
   {
     path: '/about',
     element: <AboutPage />,
+  },
+  // Blog pages
+  {
+    path: '/articles',
+    element: <ArticlesPage />,
+  },
+  {
+    path: '/articles/:slug',
+    element: <ArticlePage />,
   },
   {
     path: '/creator/signup',
@@ -144,6 +157,18 @@ const router = createBrowserRouter([
       {
         path: 'tags',
         element: <TagsPage />,
+      },
+      {
+        path: 'articles',
+        element: <AdminArticlesPage />,
+      },
+      {
+        path: 'articles/new',
+        element: <ArticleEditPage />,
+      },
+      {
+        path: 'articles/:articleId',
+        element: <ArticleEditPage />,
       },
     ],
   },
