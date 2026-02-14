@@ -35,6 +35,19 @@ export interface AdminKit {
   updated_at: string;
 }
 
+export interface AdminArticle {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  content: string;
+  thumbnail: string | null;
+  status: 'draft' | 'published';
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Pagination {
   page: number;
   limit: number;
@@ -144,6 +157,109 @@ export const adminApi = {
       credentials: 'include',
     });
     return handleResponse<{ message: string }>(response);
+  },
+
+  // ================================
+  // 記事管理
+  // ================================
+
+  /**
+   * 記事一覧取得
+   */
+  getArticles: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }): Promise<{ articles: AdminArticle[]; pagination: Pagination }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.status) searchParams.set('status', params.status);
+
+    const response = await fetch(`${API_BASE_URL}/articles/admin/list?${searchParams}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    return handleResponse<{ articles: AdminArticle[]; pagination: Pagination }>(response);
+  },
+
+  /**
+   * 記事詳細取得
+   */
+  getArticle: async (id: string): Promise<{ article: AdminArticle }> => {
+    const response = await fetch(`${API_BASE_URL}/articles/admin/${id}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    return handleResponse<{ article: AdminArticle }>(response);
+  },
+
+  /**
+   * 記事作成
+   */
+  createArticle: async (data: {
+    slug: string;
+    title: string;
+    description?: string;
+    content: string;
+    thumbnail?: string;
+    status?: string;
+  }): Promise<{ article: AdminArticle }> => {
+    const response = await fetch(`${API_BASE_URL}/articles/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ article: AdminArticle }>(response);
+  },
+
+  /**
+   * 記事更新
+   */
+  updateArticle: async (id: string, data: {
+    slug?: string;
+    title?: string;
+    description?: string;
+    content?: string;
+    thumbnail?: string;
+    status?: string;
+  }): Promise<{ article: AdminArticle }> => {
+    const response = await fetch(`${API_BASE_URL}/articles/admin/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ article: AdminArticle }>(response);
+  },
+
+  /**
+   * 記事削除
+   */
+  deleteArticle: async (id: string): Promise<{ message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/articles/admin/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return handleResponse<{ message: string }>(response);
+  },
+
+  /**
+   * 記事画像アップロード
+   */
+  uploadArticleImage: async (file: File): Promise<{ imagePath: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_BASE_URL}/articles/admin/upload-image`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    return handleResponse<{ imagePath: string }>(response);
   },
 };
 

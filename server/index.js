@@ -16,6 +16,7 @@ import audioLibraryRoutes from './routes/audioLibrary.js';
 import adminRoutes from './routes/admin.js';
 import tagRoutes from './routes/tags.js';
 import worksRoutes from './routes/works.js';
+import articlesRoutes from './routes/articles.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -111,6 +112,9 @@ app.use('/api/tags', tagRoutes);
 
 // 作品ルート
 app.use('/api/works', worksRoutes);
+
+// 記事ルート
+app.use('/api/articles', articlesRoutes);
 
 // 静的ファイル配信（アップロードされた画像・音声）
 // UPLOAD_DIRが設定されていればそれを使用、なければ親ディレクトリ

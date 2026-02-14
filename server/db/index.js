@@ -104,6 +104,31 @@ const runMigrations = () => {
       `);
       console.log('Migration complete: password reset tokens table created');
     }
+
+    // articles テーブルがあるか確認
+    const hasArticlesTable = tables.some(t => t.name === 'articles');
+
+    if (!hasArticlesTable) {
+      console.log('Running migration: Create articles table...');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS articles (
+          id TEXT PRIMARY KEY,
+          slug TEXT UNIQUE NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
+          content TEXT NOT NULL,
+          thumbnail TEXT,
+          status TEXT DEFAULT 'draft',
+          published_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
+        CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
+        CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
+      `);
+      console.log('Migration complete: articles table created');
+    }
   } catch (error) {
     console.error('Migration error:', error);
   }
