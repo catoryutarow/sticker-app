@@ -37,6 +37,74 @@ function normalizeMusicalKey(key) {
   return SINGLE_KEY_TO_PARALLEL[key] || 'C/Am';
 }
 
+function attachKitDetails(kits) {
+  if (kits.length === 0) return [];
+
+  const kitIds = kits.map(kit => kit.id);
+  const kitIdPlaceholders = kitIds.map(() => '?').join(',');
+
+  const tagRows = db.prepare(`
+    SELECT kit_id, tag_name, is_custom
+    FROM kit_tags
+    WHERE kit_id IN (${kitIdPlaceholders})
+    ORDER BY created_at ASC
+  `).all(...kitIds);
+
+  const tagsByKitId = new Map();
+  for (const row of tagRows) {
+    const list = tagsByKitId.get(row.kit_id) || [];
+    list.push({ name: row.tag_name, isCustom: !!row.is_custom });
+    tagsByKitId.set(row.kit_id, list);
+  }
+
+  const stickerRows = db.prepare(`
+    SELECT *
+    FROM stickers
+    WHERE kit_id IN (${kitIdPlaceholders})
+    ORDER BY kit_id ASC, sort_order ASC, sticker_number ASC
+  `).all(...kitIds);
+
+  const stickerIds = stickerRows.map(sticker => sticker.id);
+  const layoutsByStickerId = new Map();
+
+  if (stickerIds.length > 0) {
+    const stickerIdPlaceholders = stickerIds.map(() => '?').join(',');
+    const layoutRows = db.prepare(`
+      SELECT *
+      FROM sticker_layouts
+      WHERE sticker_id IN (${stickerIdPlaceholders})
+      ORDER BY sticker_id ASC, sort_order ASC
+    `).all(...stickerIds);
+
+    for (const row of layoutRows) {
+      const list = layoutsByStickerId.get(row.sticker_id) || [];
+      list.push(row);
+      layoutsByStickerId.set(row.sticker_id, list);
+    }
+  }
+
+  const stickersByKitId = new Map();
+  for (const sticker of stickerRows) {
+    const list = stickersByKitId.get(sticker.kit_id) || [];
+    list.push({ ...sticker, layouts: layoutsByStickerId.get(sticker.id) || [] });
+    stickersByKitId.set(sticker.kit_id, list);
+  }
+
+  return kits.map(kit => {
+    const stickers = (stickersByKitId.get(kit.id) || []).map(sticker => ({
+      ...sticker,
+      full_id: `${kit.kit_number}-${sticker.sticker_number}`,
+    }));
+
+    return {
+      ...kit,
+      musical_key: normalizeMusicalKey(kit.musical_key),
+      tags: tagsByKitId.get(kit.id) || [],
+      stickers,
+    };
+  });
+}
+
 // ================================
 // 公開API（認証不要）
 // ================================
@@ -93,36 +161,8 @@ router.get('/public', (req, res) => {
       LIMIT ? OFFSET ?
     `).all(...params, limit, offset);
 
-    // 各キットのタグとシール情報を取得し、musical_keyを正規化
-    const kitsWithDetails = kits.map(kit => {
-      const kitTags = db.prepare(`
-        SELECT tag_name, is_custom FROM kit_tags WHERE kit_id = ? ORDER BY created_at ASC
-      `).all(kit.id);
-
-      // シール情報を取得
-      const stickers = db.prepare(`
-        SELECT * FROM stickers WHERE kit_id = ? ORDER BY sort_order ASC
-      `).all(kit.id);
-
-      // 各シールのレイアウト情報を取得
-      const stickersWithLayouts = stickers.map(sticker => {
-        const layouts = db.prepare(`
-          SELECT * FROM sticker_layouts WHERE sticker_id = ? ORDER BY sort_order ASC
-        `).all(sticker.id);
-        return {
-          ...sticker,
-          full_id: `${kit.kit_number}-${sticker.sticker_number}`,
-          layouts,
-        };
-      });
-
-      return {
-        ...kit,
-        musical_key: normalizeMusicalKey(kit.musical_key),
-        tags: kitTags.map(t => ({ name: t.tag_name, isCustom: !!t.is_custom })),
-        stickers: stickersWithLayouts,
-      };
-    });
+    // 各キットのタグとシール情報を一括取得し、musical_keyを正規化
+    const kitsWithDetails = attachKitDetails(kits);
 
     const total = countResult.total;
     const totalPages = Math.ceil(total / limit);
@@ -179,26 +219,7 @@ router.get('/public/all', (req, res) => {
       SELECT * FROM kits WHERE status = 'published' ORDER BY kit_number ASC
     `).all();
 
-    const result = kits.map(kit => {
-      const stickers = db.prepare(`
-        SELECT * FROM stickers WHERE kit_id = ? ORDER BY sort_order, sticker_number
-      `).all(kit.id);
-
-      // 各シールにレイアウト情報を追加
-      const stickersWithLayouts = stickers.map(sticker => {
-        const layouts = db.prepare(`
-          SELECT * FROM sticker_layouts WHERE sticker_id = ? ORDER BY sort_order
-        `).all(sticker.id);
-        return { ...sticker, layouts };
-      });
-
-      // キットのタグを取得
-      const tags = db.prepare(`
-        SELECT tag_name, is_custom FROM kit_tags WHERE kit_id = ? ORDER BY created_at ASC
-      `).all(kit.id).map(t => ({ name: t.tag_name, isCustom: !!t.is_custom }));
-
-      return { ...kit, musical_key: normalizeMusicalKey(kit.musical_key), stickers: stickersWithLayouts, tags };
-    });
+    const result = attachKitDetails(kits);
 
     res.json({ kits: result });
   } catch (error) {
