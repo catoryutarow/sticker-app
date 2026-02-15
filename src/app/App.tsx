@@ -3,6 +3,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { StickerAlbum } from '@/app/components/StickerAlbum';
 import { ThreeBackground } from '@/app/components/ThreeBackground';
+import { LatestArticles } from '@/app/components/LatestArticles';
 
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -32,6 +33,11 @@ export default function App() {
         style={{ zIndex: 10 }}
       >
         <StickerAlbum />
+      </div>
+
+      {/* ブログセクション（SEO用・スクロール下部） */}
+      <div className="relative" style={{ zIndex: 10 }}>
+        <LatestArticles />
       </div>
     </DndProvider>
   );
