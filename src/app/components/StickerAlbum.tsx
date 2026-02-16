@@ -10,7 +10,7 @@ import { ExportDialog } from '@/app/components/ExportDialog';
 import { ShareDialog } from '@/app/components/ShareDialog';
 import { BackgroundSwitcher } from '@/app/components/BackgroundSwitcher';
 import { WelcomeModal, shouldShowWelcome } from '@/app/components/WelcomeModal';
-import { Menu, X, Sparkles, Undo2, Redo2, Download, Share2, RotateCcw, HelpCircle } from 'lucide-react';
+import { X, Sparkles, Undo2, Redo2, Download, Share2, RotateCcw, HelpCircle } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
 import { getKitBaseSemitone } from '../../config/kitConfig';
@@ -307,14 +307,15 @@ export function StickerAlbum() {
         <p className="text-sm text-gray-600">{t('app.dragDropHint')}</p>
       </header>
 
-      {/* モバイル用トグルボタン */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
+      {/* モバイル用シールパレットボタン（FAB） */}
+      <div className={`lg:hidden fixed top-4 right-4 z-50 transition-all duration-300 ${isPaletteOpen ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'}`}>
         <button
-          onClick={() => setIsPaletteOpen(!isPaletteOpen)}
-          className="p-3 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg transition-all active:scale-95"
+          onClick={() => setIsPaletteOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 animate-[fab-pulse_2s_ease-in-out_3]"
           aria-label={t('app.stickers')}
         >
-          <Menu className="w-6 h-6" />
+          <span className="text-lg">🎨</span>
+          <span className="text-sm font-bold">{t('app.stickers')}</span>
         </button>
       </div>
 

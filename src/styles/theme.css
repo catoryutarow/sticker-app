@@ -130,6 +130,12 @@
   }
 }
 
+/* シールパレットFABのパルスアニメーション */
+@keyframes fab-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3); }
+  50% { transform: scale(1.08); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5); }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
