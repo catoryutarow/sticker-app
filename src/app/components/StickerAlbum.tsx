@@ -307,14 +307,13 @@ export function StickerAlbum() {
         <p className="text-sm text-gray-600">{t('app.dragDropHint')}</p>
       </header>
 
-      {/* モバイル用シールボタン（画面中腹に追尾） */}
-      <div className={`lg:hidden fixed right-3 top-1/2 -translate-y-1/2 z-50 transition-all duration-300 ${isPaletteOpen ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'}`}>
+      {/* モバイル用シールボタン（右上に追尾） */}
+      <div className={`lg:hidden fixed right-3 top-4 z-50 transition-all duration-300 ${isPaletteOpen ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'}`}>
         <button
           onClick={() => setIsPaletteOpen(true)}
           className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg transition-all active:scale-95 animate-[fab-pulse_2s_ease-in-out_3]"
           aria-label={t('app.stickers')}
         >
-          <span className="text-base">🎨</span>
           <span className="text-xs font-bold tracking-wide">シール</span>
         </button>
       </div>
