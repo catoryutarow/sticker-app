@@ -49,6 +49,9 @@ export const AdminLayout = () => {
                 <Link to="/admin/tags" className={navLinkClass('/admin/tags')}>
                   タグ
                 </Link>
+                <Link to="/admin/backgrounds" className={navLinkClass('/admin/backgrounds')}>
+                  台紙
+                </Link>
                 <Link to="/admin/articles" className={navLinkClass('/admin/articles')}>
                   記事
                 </Link>
