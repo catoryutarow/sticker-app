@@ -14,6 +14,7 @@ import { X, Sparkles, Undo2, Redo2, Download, Share2, RotateCcw, HelpCircle } fr
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
 import { useBackgroundData } from '@/config/BackgroundDataContext';
+import { useKitData } from '@/config/KitDataContext';
 import { getKitBaseSemitone } from '../../config/kitConfig';
 import { isStickerPercussion } from '../../config/stickerConfig';
 
@@ -91,6 +92,28 @@ export function StickerAlbum() {
       setCurrentBackgroundKit(null);
     }
   }, [backgroundId, backgrounds, setCurrentBackgroundKit]);
+
+  // スペシャル台紙中に、紐付かないキットのシールが置かれたら通常台紙に自動で戻す
+  const { kits } = useKitData();
+  useEffect(() => {
+    const bg = backgrounds.find((b) => b.id === backgroundId);
+    if (!bg?.isSpecial || !bg.specialKitId) return;
+
+    // スペシャル台紙の紐付くキット UUID から kit_number を解決
+    const linkedKit = kits.find((k) => k.kitUuid === bg.specialKitId);
+    if (!linkedKit) return;
+    const linkedKitNumber = linkedKit.id; // KitDefinition.id は kit_number
+
+    // 紐付かないキットのシールが1枚でもあれば通常台紙に戻す
+    const hasForeignSticker = stickers.some((s) => {
+      const kitNumber = s.type.split('-')[0] || '';
+      return kitNumber !== linkedKitNumber;
+    });
+
+    if (hasForeignSticker) {
+      setBackgroundId(DEFAULT_BACKGROUND_ID);
+    }
+  }, [stickers, backgroundId, backgrounds, kits]);
 
   // 台紙の幅をオーディオエンジンに設定（パンニング計算用）
   useLayoutEffect(() => {
