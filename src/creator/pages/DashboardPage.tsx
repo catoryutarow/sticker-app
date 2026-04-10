@@ -292,12 +292,12 @@ export const DashboardPage = () => {
                 <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100">
                   <p className="text-xs text-blue-700 flex items-start gap-1.5">
                     <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>
-                      <strong>{t('guide.keyInfo')}</strong>
+                      <strong>{t('guide.step1Info')}</strong>
                       <br />
-                      {t('guide.keyInfoDesc')}
+                      {t('guide.step1InfoDesc')}
                     </span>
                   </p>
                 </div>
@@ -314,25 +314,20 @@ export const DashboardPage = () => {
                 <p className="text-sm text-gray-600 mt-0.5">
                   {t('guide.step2Desc')}
                 </p>
-                <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100 space-y-2">
+                <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100">
                   <p className="text-xs text-gray-700">
-                    <strong>{t('guide.audioTypeLabel')}</strong>
+                    <strong>{t('guide.step2Info')}</strong>
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-                      </svg>
-                      {t('guide.melodyDesc')}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                        <circle cx="12" cy="12" r="7" strokeWidth={2} />
-                      </svg>
-                      {t('guide.drumDesc')}
-                    </span>
-                  </div>
+                  <ul className="mt-1 text-xs text-gray-600 space-y-0.5">
+                    <li className="flex items-center gap-1">
+                      <span className="text-green-500">✓</span>
+                      {t('guide.step2Info1')}
+                    </li>
+                    <li className="flex items-center gap-1">
+                      <span className="text-green-500">✓</span>
+                      {t('guide.step2Info2')}
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -347,20 +342,25 @@ export const DashboardPage = () => {
                 <p className="text-sm text-gray-600 mt-0.5">
                   {t('guide.step3Desc')}
                 </p>
-                <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100">
+                <div className="mt-2 p-3 bg-white/60 rounded-lg border border-blue-100 space-y-2">
                   <p className="text-xs text-gray-700">
-                    <strong>{t('guide.audioSetupLabel')}</strong>
+                    <strong>{t('guide.step3Info')}</strong>
                   </p>
-                  <ul className="mt-1 text-xs text-gray-600 space-y-0.5">
-                    <li className="flex items-center gap-1">
-                      <span className="text-green-500">✓</span>
-                      <strong>{t('guide.fromLibrary')}</strong> {t('guide.libraryHint')}
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <span className="text-green-500">✓</span>
-                      {t('guide.uploadOwn')}
-                    </li>
-                  </ul>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                      </svg>
+                      {t('guide.melodyBadge')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                        <circle cx="12" cy="12" r="7" strokeWidth={2} />
+                      </svg>
+                      {t('guide.drumBadge')}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
