@@ -10,15 +10,22 @@
 
 import * as Tone from 'tone';
 import { getAllStickerTypes, isStickerType } from './audioAssets';
-import { getStickerAudioPath, isValidStickerId } from '../config/stickerConfig';
+import { getStickerAudioPath, getStickerSpecialAudioPath, isValidStickerId } from '../config/stickerConfig';
 
 // Constants
-const BPM = 120;
+const DEFAULT_BPM = 120;
 const BEATS_PER_MEASURE = 4;
 const MEASURES_PER_LOOP = 8;
-const SECONDS_PER_BEAT = 60 / BPM; // 0.5秒
-const SECONDS_PER_MEASURE = SECONDS_PER_BEAT * BEATS_PER_MEASURE; // 2秒
-const LOOP_DURATION = SECONDS_PER_MEASURE * MEASURES_PER_LOOP; // 16秒
+
+function calcLoopParams(bpm: number) {
+  const secondsPerBeat = 60 / bpm;
+  const secondsPerMeasure = secondsPerBeat * BEATS_PER_MEASURE;
+  const loopDuration = secondsPerMeasure * MEASURES_PER_LOOP;
+  return { secondsPerBeat, secondsPerMeasure, loopDuration };
+}
+
+// Keep backward-compatible exports
+const { secondsPerMeasure: SECONDS_PER_MEASURE, loopDuration: LOOP_DURATION } = calcLoopParams(DEFAULT_BPM);
 
 // Audio processing constants
 const BASE_VOLUME = 0.3; // 基本音量
@@ -51,6 +58,8 @@ export interface AudioEngineState {
   activeTracks: Map<string, number>; // type -> count
   totalVolume: number; // 合計音量（サチュレーション計算用）
   saturationAmount: number; // 現在のサチュレーション量
+  isSpecialMode: boolean;
+  specialBpm: number;
 }
 
 type StateChangeCallback = (state: AudioEngineState) => void;
@@ -76,6 +85,13 @@ class AudioEngine {
   private totalVolume: number = 0;
   private sheetWidth: number = 800; // デフォルト台紙幅（後で更新可能）
 
+  // Special mode state
+  private currentBpm: number = DEFAULT_BPM;
+  private isSpecialMode: boolean = false;
+  private specialKitNumber: string | null = null;
+  private specialAudioBuffers: Map<string, Tone.ToneAudioBuffer> = new Map();
+  private kitSpecialInfo: Map<string, { isSpecial: boolean; specialBpm: number }> = new Map();
+
   private stateChangeCallbacks: Set<StateChangeCallback> = new Set();
 
   private constructor() {}
@@ -99,6 +115,9 @@ class AudioEngine {
     this.stickerStates.clear();
     this.stickerCounts.clear();
     this.totalVolume = 0;
+    this.isSpecialMode = false;
+    this.specialKitNumber = null;
+    this.currentBpm = DEFAULT_BPM;
 
     this.notifyStateChange();
   }
@@ -114,7 +133,7 @@ class AudioEngine {
       await Tone.start();
 
       // BPMを設定
-      Tone.getTransport().bpm.value = BPM;
+      Tone.getTransport().bpm.value = this.currentBpm;
 
       // マスターエフェクトチェーンを構築
       this.masterGain = new Tone.Gain(this.masterVolume);
@@ -178,6 +197,35 @@ class AudioEngine {
     return loadedIds;
   }
 
+  registerKitSpecialInfo(kitNumber: string, isSpecial: boolean, specialBpm: number): void {
+    this.kitSpecialInfo.set(kitNumber, { isSpecial, specialBpm });
+  }
+
+  clearKitSpecialInfo(): void {
+    this.kitSpecialInfo.clear();
+  }
+
+  async preloadSpecialAudioBuffers(stickerIds: string[]): Promise<string[]> {
+    const loadedIds: string[] = [];
+    const loadPromises = stickerIds.map(async (id) => {
+      if (this.specialAudioBuffers.has(id)) {
+        loadedIds.push(id);
+        return;
+      }
+      try {
+        const audioPath = getStickerSpecialAudioPath(id);
+        const buffer = new Tone.ToneAudioBuffer(audioPath);
+        await buffer.load(audioPath);
+        this.specialAudioBuffers.set(id, buffer);
+        loadedIds.push(id);
+      } catch (error) {
+        console.warn(`Failed to preload special audio for ${id}:`, error);
+      }
+    });
+    await Promise.all(loadPromises);
+    return loadedIds;
+  }
+
   /**
    * オンデマンドで音声バッファをロード（動的シール用）
    * 既にロード済みの場合は何もしない
@@ -206,14 +254,94 @@ class AudioEngine {
     }
   }
 
+  private detectSpecialMode(stickers: StickerState[]): { isSpecial: boolean; kitNumber: string | null; bpm: number } {
+    if (stickers.length < 2) {
+      return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
+    }
+
+    const kitNumbers = new Set<string>();
+    for (const sticker of stickers) {
+      const kitNumber = sticker.type.split('-')[0] || '001';
+      kitNumbers.add(kitNumber);
+    }
+
+    if (kitNumbers.size !== 1) {
+      return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
+    }
+
+    const kitNumber = kitNumbers.values().next().value;
+    const kitInfo = this.kitSpecialInfo.get(kitNumber);
+
+    if (!kitInfo || !kitInfo.isSpecial) {
+      return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
+    }
+
+    return { isSpecial: true, kitNumber, bpm: kitInfo.specialBpm };
+  }
+
+  private async handleModeTransition(
+    modeResult: { isSpecial: boolean; kitNumber: string | null; bpm: number },
+    stickers: StickerState[]
+  ): Promise<void> {
+    const wasPlaying = this.isPlaying;
+
+    // 1. Stop all tracks
+    for (const trackNode of this.trackNodes.values()) {
+      this.disposeTrackNode(trackNode);
+    }
+    this.trackNodes.clear();
+
+    // 2. Update mode state
+    this.isSpecialMode = modeResult.isSpecial;
+    this.specialKitNumber = modeResult.kitNumber;
+    this.currentBpm = modeResult.bpm;
+
+    // 3. Change BPM
+    Tone.getTransport().bpm.value = this.currentBpm;
+
+    // 4. Update sticker states
+    this.stickerStates.clear();
+    this.stickerCounts.clear();
+
+    const newCounts = new Map<string, number>();
+    for (const sticker of stickers) {
+      if (!isStickerType(sticker.type) && !isValidStickerId(sticker.type)) continue;
+      this.stickerStates.set(sticker.id, sticker);
+      const count = newCounts.get(sticker.type) || 0;
+      newCounts.set(sticker.type, count + 1);
+    }
+    this.stickerCounts = newCounts;
+
+    // 5. Preload special audio if entering special mode
+    if (modeResult.isSpecial) {
+      const stickerTypes = [...new Set(stickers.map(s => s.type))];
+      await this.preloadSpecialAudioBuffers(stickerTypes);
+    }
+
+    // 6. Restart playback if was playing
+    if (wasPlaying) {
+      Tone.getTransport().stop();
+      Tone.getTransport().start();
+
+      const referenceTime = Tone.now();
+      for (const sticker of this.stickerStates.values()) {
+        this.startTrack(sticker, true, referenceTime);
+      }
+    }
+
+    this.updateMasterEffects();
+    this.notifyStateChange();
+  }
+
   /**
    * 次の小節境界までの時間を取得
    */
   private getTimeToNextMeasure(): number {
     if (!this.isPlaying) return 0;
+    const { secondsPerMeasure } = calcLoopParams(this.currentBpm);
     const position = Tone.getTransport().seconds;
-    const measurePosition = position % SECONDS_PER_MEASURE;
-    return SECONDS_PER_MEASURE - measurePosition;
+    const measurePosition = position % secondsPerMeasure;
+    return secondsPerMeasure - measurePosition;
   }
 
   /**
@@ -250,7 +378,13 @@ class AudioEngine {
   private createTrackNode(sticker: StickerState): TrackNode | null {
     if (!this.masterGain) return null;
 
-    const buffer = this.audioBuffers.get(sticker.type);
+    let buffer: Tone.ToneAudioBuffer | undefined;
+    if (this.isSpecialMode) {
+      buffer = this.specialAudioBuffers.get(sticker.type);
+    }
+    if (!buffer) {
+      buffer = this.audioBuffers.get(sticker.type);
+    }
     if (!buffer) return null;
 
     // プレイヤーを作成
@@ -315,7 +449,8 @@ class AudioEngine {
 
     // オフセットを計算（再生開始時点での位置を計算して同期）
     const startPosition = transportPosition + startDelaySeconds;
-    const offset = startPosition % LOOP_DURATION;
+    const { loopDuration } = calcLoopParams(this.currentBpm);
+    const offset = startPosition % loopDuration;
 
     trackNode.player.start(startTime, offset);
     this.trackNodes.set(sticker.id, trackNode);
@@ -415,6 +550,17 @@ class AudioEngine {
    * シール一覧から状態を同期
    */
   syncWithStickers(stickers: StickerState[]): void {
+    // スペシャルモード判定
+    const modeResult = this.detectSpecialMode(stickers);
+    const modeChanged = modeResult.isSpecial !== this.isSpecialMode
+      || modeResult.kitNumber !== this.specialKitNumber;
+
+    if (modeChanged) {
+      this.handleModeTransition(modeResult, stickers);
+      return;
+    }
+
+    // --- existing sync logic below (unchanged) ---
     // 現在のシールIDセット
     const currentIds = new Set(stickers.map((s) => s.id));
 
@@ -500,6 +646,7 @@ class AudioEngine {
 
     // Transportを開始
     Tone.getTransport().start();
+    Tone.getTransport().bpm.value = this.currentBpm;
 
     // 全トラックで共通の基準時刻を使用（同期精度向上）
     const referenceTime = Tone.now();
@@ -610,6 +757,8 @@ class AudioEngine {
       activeTracks: new Map(this.stickerCounts),
       totalVolume: this.totalVolume,
       saturationAmount: 0, // サチュレーションは無効化（コンプレッサー/リミッターで保護）
+      isSpecialMode: this.isSpecialMode,
+      specialBpm: this.currentBpm,
     };
   }
 
@@ -711,6 +860,15 @@ class AudioEngine {
     }
     this.audioBuffers.clear();
 
+    for (const buffer of this.specialAudioBuffers.values()) {
+      try { buffer.dispose(); } catch (e) { /* ignore */ }
+    }
+    this.specialAudioBuffers.clear();
+    this.kitSpecialInfo.clear();
+    this.isSpecialMode = false;
+    this.specialKitNumber = null;
+    this.currentBpm = DEFAULT_BPM;
+
     // マスターエフェクトを破棄
     try { this.masterGain?.dispose(); } catch (e) { /* ignore */ }
     try { this.masterDistortion?.dispose(); } catch (e) { /* ignore */ }
@@ -768,4 +926,5 @@ class AudioEngine {
 }
 
 export default AudioEngine;
-export { LOOP_DURATION, SECONDS_PER_MEASURE, BPM };
+export { LOOP_DURATION, SECONDS_PER_MEASURE };
+export const BPM = DEFAULT_BPM;
