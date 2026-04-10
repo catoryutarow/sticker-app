@@ -5,6 +5,142 @@
 
 ---
 
+## 🆕 直近のセッションで実装した主要機能（2026-04-10）
+
+> **次の担当者向けの引き継ぎサマリ**: このセッションでは「クリエイターUX刷新」「スペシャルキット/スペシャル台紙機能」「背景のDB化」「本番デプロイ+データ移行」を実施しました。詳細は後述の各Phase参照。
+
+### 1. クリエイターUX刷新（かんたん作成モード）
+- **QuickCreatePage** (`src/creator/pages/QuickCreatePage.tsx`) — 5ステップのウィザード形式:
+  1. キット名 + 画像選択（2〜5枚、ImageCropper で正方形トリミング）
+  2. 配置プレビュー + レイアウト調整（シャッフル、追加、削除、回転）
+  3. 音設定（シールごとにドラム/メロディ切替、再生試聴、PC からの音源アップロード可）
+  4. 詳細（説明、テーマカラー、タグ）
+  5. 完成（公開）
+- **下書き/公開済みキットの再編集にも対応** — `/creator/kits/quick/:kitId` で復元可能
+- **DashboardPage** — 大きな「シールをつくる」ボタン + 「上級者向け作成」リンクに整理
+- **KitCard** — `MiniPreview` でライブレンダリング（サムネイルとの乖離を防止）。admin は「編集」で `/creator/kits/:id`（上級者ビュー）、一般 creator は `/creator/kits/quick/:id`（かんたん編集）に分岐
+- **動的APIURL解決** (`src/config/apiUrl.ts`) — `localhost` を `window.location.hostname` に置換してモバイル実機テスト対応
+- **全APIファイルが `API_BASE_URL` を共通利用**するよう統一
+
+### 2. スペシャルキット + スペシャル台紙機能（admin専用の新コンテンツ形式）
+**コンセプト**: adminが「スペシャルキット」を指定すると、そのキットのシールは2つの音源を持つ（通常BPM120 + カスタムBPMのスペシャル版）。さらにそのキットに**1対1で紐付く「スペシャル台紙」**を別途作成でき、以下の条件が全て揃ったときだけスペシャルモードが発動する:
+1. キャンバスに対応キットのシールが**2枚以上**
+2. キャンバスに**他キットのシール無し**
+3. 現在選択中の台紙が**そのキットに紐付くスペシャル台紙**
+
+これにより「解禁されたら台紙を切り替える」というゲーム的な体験を実現。
+
+#### DB 変更（本番マイグレーション完了）
+- `kits` テーブル: `is_special INTEGER DEFAULT 0`, `special_bpm INTEGER DEFAULT 120`
+- `stickers` テーブル: `special_audio_uploaded INTEGER DEFAULT 0`
+- 新規 `backgrounds` テーブル: `id`, `name`, `name_ja`, `filename`, `is_special`, `special_kit_id`(FK), `sort_order`
+- マイグレーションは `server/routes/kits.js` 先頭で起動時に冪等実行
+
+#### サーバーAPI
+- `PUT /api/kits/:kitId` — admin のみ `isSpecial`/`specialBpm` を更新可能
+- `POST /api/kits/:kitId/stickers/:stickerId/special-audio` — admin専用のスペシャル音源アップロード
+- 新規ルーター `server/routes/backgrounds.js`:
+  - `GET /api/backgrounds` — 公開
+  - `POST /api/backgrounds` — admin専用（画像 + name + isSpecial + specialKitId）
+  - `DELETE /api/backgrounds/:id` — admin専用（legacy 3件はファイル削除せずDBのみ）
+
+#### フロントエンド
+- **新規**: `src/api/backgroundsApi.ts`, `src/config/BackgroundDataContext.tsx`, `src/admin/pages/AdminBackgroundsPage.tsx`
+- **`src/config/backgroundConfig.ts`** を DB ベースに書き換え（動的レジストリ経由）
+- **`src/config/KitDataContext.tsx`** でキット読み込み時に `AudioEngine.registerKitSpecialInfo(kit_number, isSpecial, bpm, kitUuid)` を呼ぶ
+- **`src/config/kitConfig.ts`** の `KitDefinition` に `kitUuid`, `isSpecial`, `specialBpm` を追加
+- **`src/app/components/BackgroundSwitcher.tsx`** — 以下の可視条件を実装:
+  - 対応キットのシールが2枚以上
+  - 他キットのシールが0枚（両方満たさないと特殊bgは一覧に出ない）
+- **`src/app/components/StickerAlbum.tsx`** — 可視条件を満たさなくなったら `setBackgroundId(DEFAULT_BACKGROUND_ID)` で自動復帰（auto-revert useEffect）
+- **`src/app/components/StickerSheet.tsx`** — 背景レンダリングを `useBackgroundData()` 経由に変更（以前は空配列の `BACKGROUNDS` をマップしていたバグを修正）
+
+#### AudioEngine の変更 (`src/audio/AudioEngine.ts`)
+- **動的BPM/ループ長**: `DEFAULT_BPM = 120` を base にしつつ `calcLoopParams(bpm)` で動的計算
+- **スペシャルモード検知**: `detectSpecialMode(stickers)` が「2枚以上 + 同一キット + そのキットが special + 現在背景の kitUuid が一致」を全て満たせば `isSpecial=true` を返す
+- **バッファの二重管理**: `audioBuffers`(通常) + `specialAudioBuffers`(スペシャル)
+- **モード遷移**: `handleModeTransition()` が全トラック停止 → BPM 変更 → スペシャル音源プリロード → 再開、を実行
+- **遷移中のロック**: `modeTransitionInProgress` フラグで競合防止。遷移中の `syncWithStickers` 呼び出しは stickerStates 更新のみ
+- **オフセット同期**: `startTrack()` は `trackNode.player.buffer.duration` をループ長として使用（BPM計算値ではない）。これにより 16小節@BPM181 等の任意長の音源でも正しくループする
+- **スペシャルモード中の新規シール追加対応**: `startTrackWithLoad()` が `isSpecialMode=true` の場合、スペシャルバッファもオンデマンドロード
+- **背景連動**: `setCurrentBackgroundKit(kitUuid|null)` で AudioEngine に現在背景の紐付きキット UUID を通知、モード再判定をトリガー
+
+#### 管理UI
+- 新規 `/admin/backgrounds` ページ — 背景一覧、アップロードフォーム（画像 + name + isSpecial + スペシャルキット選択）、削除。AdminLayout のナビに「台紙」を追加
+- `KitDetailPage.tsx` に admin 専用パネル追加:
+  - スペシャルキットトグル
+  - `special_bpm` 入力
+  - シールごとのスペシャル音源アップロード
+
+### 3. i18n ガイド刷新
+- ダッシュボードの「シールキットの作り方」ガイドが旧フロー（新規作成→シール追加→音選択→公開）のままだったため、新しいかんたん作成フローに合わせて**全5言語更新**:
+  - step1: 「シールをつくる」をタップ
+  - step2: 画像を選ぶ（正方形トリミング）
+  - step3: 配置と音を決める（ドラム/メロディ切替）
+  - step4: 詳細を設定して公開
+- 旧キー（`keyInfo`, `audioTypeLabel`, `fromLibrary`, `libraryHint` 等）を新キー（`step1Info`, `step2Info`, `step3Info`, `melodyBadge`, `drumBadge`, `step2Info1/2`）に改名
+- `src/creator/pages/DashboardPage.tsx` の TSX 構造も更新（step1=時計アイコン付き所要時間、step2=画像ヒントリスト、step3=音種バッジ）
+
+### 4. デプロイと本番データ移行
+- **本番環境確認** — fly.toml は古い名残で実際は **EC2 + Docker + Nginx** (`api.sirucho.com`)
+- **docker-compose.yml 修正** — `env_file: ./server/.env` を追加。これ以前は `FRONTEND_URL`, `RESEND_API_KEY`, `EMAIL_FROM` がコンテナに渡されておらず、メール認証リンクが `http://localhost:5173` にフォールバックしていた長年の問題を解決
+- **マイグレーション実行** — 本番EC2 で `git pull` → `docker compose build && up -d` を実行、起動時マイグレーションで新カラム追加 + backgrounds シード成功
+- **kit-029 データ移行** — ローカルから本番DBへ以下を直接INSERT（ローカル/本番の admin UUID が一致していたため ID マッピング不要）:
+  - Kit `ネコメタル-オッドアイ` (is_special=1, special_bpm=181)
+  - 6 stickers (Drum/Bass/guitar/pad/vocal1/vocal2, 全て special_audio_uploaded=1)
+  - 6 sticker_layouts
+  - 1 kit_tag（ネコメタル）
+  - 1 background `necometal` (is_special=1, special_kit_id=kit-029)
+- **バイナリ転送** — kit-029 のアセット（音源12ファイル、シール画像6×2フォーマット、背景画像）は git 経由でコミット/push/pull 済み
+- **backup**: 本番DBは `server/data/sticker.db.bak-20260410-125459` と `.bak-checkpoint-20260410-125514` としてEC2上に保管
+
+### 5. 現時点で本番確認済みの項目
+- ✅ admin ログイン（`admin@example.com`）
+- ✅ `/api/backgrounds` 公開API が 4件返却（default/panel/p0436/necometal）
+- ✅ 既存API (`/health`, `/api/kits/public`) 互換性維持
+- ✅ スペシャルキット+スペシャル台紙の音源切替（基本ケース）
+- ✅ 非対応シール追加時の auto-revert（BackgroundSwitcher + StickerAlbum）
+- ✅ メール認証リンク → 正しく `https://sirucho.com/verify-email?token=...` に飛ぶように
+
+### 6. 既知の懸念 / 未検証
+- **5言語全てのガイド表記**: ja/en 以外（ko/es/zh）は新キーに沿って翻訳済みだが実機確認未了
+- **kit-029 以外の複数スペシャルキット** のケース（現時点で本番には1件のみ）
+- **ローカル `docker-compose.yml` と `.env.development`** は未コミット状態のまま（開発用オーバーライドとして保持）。次回 `git status` に常に M で見えるが意図通り
+
+### 7. このセッション中のコミット（mainブランチ）
+```
+8374a86 fix(guide): correct image crop description — squares, not circles
+b429499 docs(guide): rewrite creator guide to match Quick Create flow
+22282e9 fix: hide special background when foreign sticker present, auto-revert
+325dfd6 debug: add console logs to auto-revert effect (後続でクリーンアップ済)
+1903fb4 feat(stickers): auto-revert to default bg when foreign-kit sticker is added
+e95a2bd fix(audio): preload special buffer for stickers added during special mode
+cc4ef46 fix(audio): use buffer duration for offset sync and lock mode transitions
+9fd5721 fix: load env vars from server/.env in docker-compose
+e5c7fe0 Merge feature/creator-improvements: special kit + dual audio + backgrounds
+3b3ee51 feat: add kit-029 (ネコメタル-オッドアイ) assets and necometal special background
+ba7f05d fix: StickerSheet uses dynamic backgrounds from BackgroundDataContext
+772a261 feat: creator improvements (quick create, refactored kit card, dynamic API URL)
+86dcffe feat: admin backgrounds management page
+ce34977 feat: dynamic BackgroundSwitcher with lock-gated special backgrounds
+f4be6e3 feat: gate special audio mode on matching background selection
+f22b1b4 feat: dynamic backgrounds loading via API and context provider
+8a12934 feat: backgrounds DB schema, seed migration, and admin API
+2083609 feat: admin UI for special kit settings and special audio upload
+5e8f6ff feat: wire kit special info from KitDataContext into AudioEngine
+a69d2ab feat: AudioEngine special mode detection, BPM switching, dual-buffer playback
+e967c06 feat: frontend types and API methods for special kit dual audio
+45f1703 feat: add special kit DB columns, server API, and special audio upload endpoint
+```
+
+### 8. 次のエージェントへの注意事項
+- **Docker の再ビルドが必要**: ローカルで `server/` のコードを変更したら `docker compose build encoder && up -d encoder`（ボリュームマウントではなく COPY ビルド方式）
+- **本番デプロイフロー**: main に push → Vercel は自動デプロイ / EC2 は `ssh → cd ~/sticker-app → git pull → docker compose build encoder && up -d encoder`
+- **ローカルのシール/音源アセット**: `kit-006` 〜 `kit-028` は未コミット。本番の同じ kit_number に別データが存在するため**絶対にコミットしない**（競合防止）
+- **superpowers の writing-plans プラグイン**で作成した詳細計画: `docs/superpowers/plans/2026-04-10-special-kit-dual-audio.md`
+
+---
+
 ## 解決済みの課題
 
 ### 1. Webサービスとしての完成度
@@ -135,8 +271,25 @@
 3. ~~バックエンドデプロイ~~ → AWS EC2 (Amazon Linux 2023)
 4. ~~リバースプロキシ~~ → Nginx設定
 5. ~~SSL証明書~~ → Let's Encrypt (Certbot)
-6. ~~プロセス管理~~ → PM2
+6. ~~プロセス管理~~ → ~~PM2~~ Docker Compose に移行済み
 7. ~~DBデータ移行~~ → SCP経由でローカルDB転送
+
+### ✅ Phase 4: クリエイターUX刷新（完了・2026-04-10）
+1. ~~QuickCreate ウィザード~~ → 5ステップの簡易作成フロー実装
+2. ~~Dashboard リデザイン~~ → 大型「シールをつくる」ボタン + 上級者向けリンク
+3. ~~KitCard 刷新~~ → MiniPreview でライブレンダリング、admin/creator で編集先分岐
+4. ~~下書き/公開済み編集対応~~ → `/creator/kits/quick/:kitId` で復元編集
+5. ~~動的APIURL解決~~ → モバイル実機テスト対応（localhost → window.location.hostname）
+6. ~~「上級者向け作成」整理~~ → 全ページで統一、NewKitPage 簡素化
+
+### ✅ Phase 5: スペシャルキット + スペシャル台紙機能（完了・2026-04-10）
+1. ~~DB スキーマ拡張~~ → `kits.is_special`, `kits.special_bpm`, `stickers.special_audio_uploaded`
+2. ~~backgrounds テーブル新規作成~~ → 既存3背景を legacy ID 保持でシード
+3. ~~Server API~~ → admin 専用 CRUD + スペシャル音源アップロード + 背景 CRUD
+4. ~~AudioEngine 拡張~~ → 動的BPM、デュアルバッファ、モード検知、遷移ロック
+5. ~~BackgroundSwitcher~~ → 可視条件（2枚以上 + 他キット無し）でロック/解禁
+6. ~~Admin UI~~ → `/admin/backgrounds` ページ、KitDetailPage のスペシャル設定パネル
+7. ~~本番デプロイ + データ移行~~ → kit-029 + necometal 台紙を本番に完全移行
 
 ---
 
@@ -179,15 +332,17 @@
 - [ ] アカウント削除
 
 #### クリエイター機能
-- [ ] ダッシュボード表示
-- [ ] キット新規作成
-- [ ] シール追加・編集
-- [ ] レイアウト編集
-- [ ] キット公開/非公開
+- [x] ダッシュボード表示 ✅ かんたん作成ボタン中心に刷新
+- [x] キット新規作成 ✅ QuickCreate ウィザードで動作確認
+- [x] シール追加・編集 ✅ QuickCreate 内および上級者ビューから
+- [x] レイアウト編集 ✅ QuickCreate Step2 + 上級者ビュー
+- [x] キット公開/非公開 ✅ 公開 → 再編集（下書きに戻す）フロー対応
+- [x] スペシャルキット設定 ✅ admin 専用、KitDetailPage から
 
 #### 管理者機能
 - [ ] ユーザー一覧・管理
 - [ ] タグ管理
+- [x] 台紙（背景）管理 ✅ `/admin/backgrounds` ページ追加
 
 #### 発見した問題
 | 問題 | ステータス | 対応 |
@@ -261,16 +416,17 @@
 | レイヤー | 技術 |
 |----------|------|
 | Frontend | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS v4 |
 | UI Components | Radix UI (Dialog等) |
-| State | React Context |
-| Audio | Web Audio API |
-| Backend | Express.js |
+| State | React Context（KitDataContext, BackgroundDataContext, AuthContext） |
+| Audio | Tone.js + Web Audio API（AudioEngine シングルトン、デュアルバッファ、動的BPM） |
+| Backend | Express.js (Docker Compose) |
 | Database | SQLite (better-sqlite3) |
-| Auth | JWT + bcrypt + メール認証（AWS SES） |
+| Auth | JWT + bcrypt + メール認証（Resend / AWS SES） |
 | Security | helmet, express-rate-limit, express-validator |
 | Testing | Vitest + React Testing Library |
 | i18n | react-i18next（5言語: 日/英/中/西/韓） |
+| Deploy | Vercel (front) + EC2 Docker Compose (back) |
 
 ---
 
@@ -334,6 +490,17 @@
 
 | 日付 | 機能 |
 |------|------|
+| 2026-04-10 | **シールキット作り方ガイド刷新**（全5言語、新かんたん作成フローに対応） |
+| 2026-04-10 | **スペシャル台紙 auto-revert**（可視条件を満たさないと自動で通常台紙に戻る） |
+| 2026-04-10 | **AudioEngine 修正**（buffer.duration 同期、モード遷移ロック、オンデマンド特殊バッファロード） |
+| 2026-04-10 | **docker-compose env_file 修正**（FRONTEND_URL 他の環境変数が渡らないバグ解決 → メール認証リンク正常化） |
+| 2026-04-10 | **kit-029 + necometal 台紙を本番に移行**（DB直接INSERT + バイナリgit転送） |
+| 2026-04-10 | **スペシャル台紙機能**（DB化された backgrounds + 1:1 スペシャルキット紐付け + ロック解禁UI） |
+| 2026-04-10 | **スペシャルキット + デュアル音源**（admin 専用、BPM可変、シールごと2音源） |
+| 2026-04-10 | **背景をDB化**（新規 backgrounds テーブル、admin /backgrounds 管理ページ、BackgroundDataContext） |
+| 2026-04-10 | **QuickCreate ウィザード**（かんたん作成5ステップ、下書き/公開済み再編集対応） |
+| 2026-04-10 | **KitCard 刷新**（MiniPreview ライブレンダリング、編集先 admin/creator 分岐） |
+| 2026-04-10 | **動的APIURL解決**（`apiUrl.ts` でモバイル実機テスト対応） |
 | 2026-02-03 | **サイト名変更**（シルチョ → シール帳） |
 | 2026-02-03 | **GA4/GSC/AdSense設定完了**（G-MMKXH1LJCZ, ca-pub-9855000353509090） |
 | 2026-02-03 | **AdSense審査対応完了**（メタデータ、法定ページ、動的OGP、技術ファイル） |
@@ -364,7 +531,7 @@
 
 ---
 
-*最終更新: 2026-02-03（Phase 3F: GA4/GSC/AdSense設定完了、サイト名「シール帳」に変更）*
+*最終更新: 2026-04-10（Phase 4 + 5 完了: クリエイターUX刷新、スペシャルキット/スペシャル台紙機能、本番デプロイ&データ移行）*
 
 ---
 
