@@ -13,6 +13,27 @@ import { generateKitThumbnail } from '../utils/thumbnail.js';
 import { normalizeTagName, validateTagName } from './tags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// === Migration: Special Kit columns ===
+try {
+  const kitCols = db.prepare("PRAGMA table_info(kits)").all().map(c => c.name);
+  if (!kitCols.includes('is_special')) {
+    db.prepare("ALTER TABLE kits ADD COLUMN is_special INTEGER DEFAULT 0").run();
+    console.log('Migration: Added is_special to kits');
+  }
+  if (!kitCols.includes('special_bpm')) {
+    db.prepare("ALTER TABLE kits ADD COLUMN special_bpm INTEGER DEFAULT 120").run();
+    console.log('Migration: Added special_bpm to kits');
+  }
+  const stickerCols = db.prepare("PRAGMA table_info(stickers)").all().map(c => c.name);
+  if (!stickerCols.includes('special_audio_uploaded')) {
+    db.prepare("ALTER TABLE stickers ADD COLUMN special_audio_uploaded INTEGER DEFAULT 0").run();
+    console.log('Migration: Added special_audio_uploaded to stickers');
+  }
+} catch (e) {
+  console.error('Migration error:', e);
+}
+
 const router = Router();
 
 // 単一キー → 並行調フォーマット変換
@@ -421,7 +442,7 @@ router.get('/:kitId', authenticateToken, (req, res) => {
 router.put('/:kitId', authenticateToken, async (req, res) => {
   try {
     const { kitId } = req.params;
-    const { name, nameJa, description, color, musicalKey, status } = req.body;
+    const { name, nameJa, description, color, musicalKey, status, isSpecial, specialBpm } = req.body;
 
     const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
     if (ownership.error) {
@@ -431,8 +452,8 @@ router.put('/:kitId', authenticateToken, async (req, res) => {
     // 現在のキット情報を取得
     const currentKit = db.prepare('SELECT * FROM kits WHERE id = ?').get(kitId);
 
-    // 公開済みキットは編集不可（adminは除外）
-    if (currentKit.status === 'published' && req.user.role !== 'admin') {
+    // 公開済みキットは編集不可（adminは除外、ただし draft への戻しは許可）
+    if (currentKit.status === 'published' && req.user.role !== 'admin' && status !== 'draft') {
       return res.status(400).json({ error: '公開済みキットは編集できません' });
     }
 
@@ -528,6 +549,14 @@ router.put('/:kitId', authenticateToken, async (req, res) => {
     // 公開時は確定したキーを保存、それ以外は元のmusicalKeyを使用
     const keyToSave = (status === 'published') ? finalMusicalKey : musicalKey;
 
+    // isSpecial/specialBpm はadminのみ変更可能
+    const isSpecialValue = (req.user.role === 'admin' && isSpecial !== undefined)
+      ? (isSpecial ? 1 : 0)
+      : undefined;
+    const specialBpmValue = (req.user.role === 'admin' && specialBpm !== undefined)
+      ? specialBpm
+      : undefined;
+
     db.prepare(`
       UPDATE kits
       SET name = COALESCE(?, name),
@@ -536,9 +565,11 @@ router.put('/:kitId', authenticateToken, async (req, res) => {
           color = COALESCE(?, color),
           musical_key = COALESCE(?, musical_key),
           status = COALESCE(?, status),
+          is_special = COALESCE(?, is_special),
+          special_bpm = COALESCE(?, special_bpm),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(name, nameJa, description, color, keyToSave, status, kitId);
+    `).run(name, nameJa, description, color, keyToSave, status, isSpecialValue, specialBpmValue, kitId);
 
     const kit = db.prepare('SELECT * FROM kits WHERE id = ?').get(kitId);
 
@@ -1320,6 +1351,66 @@ router.post('/:kitId/stickers/:stickerId/audio', authenticateToken, upload.singl
     });
   } catch (error) {
     console.error('Upload audio error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/kits/:kitId/stickers/:stickerId/special-audio
+ * スペシャル音源アップロード（admin専用）
+ */
+router.post('/:kitId/stickers/:stickerId/special-audio', authenticateToken, upload.single('audio'), async (req, res) => {
+  try {
+    const { kitId, stickerId } = req.params;
+
+    // admin専用
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const kit = db.prepare('SELECT * FROM kits WHERE id = ?').get(kitId);
+    if (!kit) {
+      return res.status(404).json({ error: 'Kit not found' });
+    }
+
+    if (!kit.is_special) {
+      return res.status(400).json({ error: 'Kit is not marked as special' });
+    }
+
+    const sticker = db.prepare('SELECT * FROM stickers WHERE id = ? AND kit_id = ?').get(stickerId, kitId);
+    if (!sticker) {
+      return res.status(404).json({ error: 'Sticker not found' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Audio file is required' });
+    }
+
+    // 音声形式チェック
+    const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav', 'application/octet-stream'];
+    const allowedExtensions = ['.mp3', '.wav'];
+    const ext = req.file.originalname.toLowerCase().slice(req.file.originalname.lastIndexOf('.'));
+
+    if (!allowedTypes.includes(req.file.mimetype) && !allowedExtensions.includes(ext)) {
+      return res.status(400).json({ error: 'Invalid audio type. Allowed: MP3, WAV' });
+    }
+
+    const dirPath = join(projectRoot, 'public', 'assets', 'audio', `kit-${kit.kit_number}`);
+    const filePath = join(dirPath, `${sticker.full_id}_special.mp3`);
+
+    await mkdir(dirPath, { recursive: true });
+    await writeFile(filePath, req.file.buffer);
+
+    db.prepare('UPDATE stickers SET special_audio_uploaded = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(stickerId);
+
+    const updatedSticker = db.prepare('SELECT * FROM stickers WHERE id = ?').get(stickerId);
+
+    res.json({
+      sticker: updatedSticker,
+      audioPath: `/assets/audio/kit-${kit.kit_number}/${sticker.full_id}_special.mp3`,
+    });
+  } catch (error) {
+    console.error('Upload special audio error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
