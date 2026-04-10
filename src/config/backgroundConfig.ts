@@ -1,55 +1,57 @@
 /**
- * backgroundConfig.ts - 背景設定の一元管理
+ * backgroundConfig.ts - 背景設定（DB駆動 + 動的登録）
  *
- * 背景を追加するには:
- * 1. このファイルのBACKGROUNDS配列にエントリを追加
- * 2. public/backgrounds/{filename} に画像を配置
+ * 背景はDBから BackgroundDataContext 経由でロードされ、
+ * registerDynamicBackground() でこのモジュールに登録される。
+ * 既存コードとの互換性のため、同期APIを維持。
  */
+
+import { getBackgroundUrl } from './assetUrl';
 
 export interface BackgroundDefinition {
   id: string;
   name: string;
   nameJa: string;
   filename: string;
+  isSpecial?: boolean;
+  specialKitId?: string | null;
 }
-
-/**
- * 背景定義一覧
- */
-export const BACKGROUNDS: BackgroundDefinition[] = [
-  {
-    id: 'default',
-    name: 'Blue Sky',
-    nameJa: '青空',
-    filename: 'AdobeStock_584852960.jpeg',
-  },
-  {
-    id: 'panel',
-    name: 'Panel',
-    nameJa: 'パネル',
-    filename: 'panel.jpg',
-  },
-  {
-    id: 'p0436',
-    name: 'P0436',
-    nameJa: 'P0436',
-    filename: 'p0436_m.jpeg',
-  },
-];
 
 /**
  * デフォルト背景ID
  */
 export const DEFAULT_BACKGROUND_ID = 'default';
 
+// 動的に登録される背景（API から）
+const dynamicBackgrounds = new Map<string, BackgroundDefinition>();
+
+/**
+ * 動的に背景を登録（BackgroundDataContext から呼び出す）
+ */
+export function registerDynamicBackground(bg: BackgroundDefinition): void {
+  dynamicBackgrounds.set(bg.id, bg);
+}
+
+/**
+ * 動的背景をクリア
+ */
+export function clearDynamicBackgrounds(): void {
+  dynamicBackgrounds.clear();
+}
+
+/**
+ * 全ての背景を取得（sort_order順ではなく、登録順）
+ */
+export function getAllBackgrounds(): BackgroundDefinition[] {
+  return Array.from(dynamicBackgrounds.values());
+}
+
 /**
  * IDから背景定義を取得
  */
 export function getBackgroundById(id: string): BackgroundDefinition | undefined {
-  return BACKGROUNDS.find((b) => b.id === id);
+  return dynamicBackgrounds.get(id);
 }
-
-import { getBackgroundUrl } from './assetUrl';
 
 /**
  * IDから背景画像URLを取得（CDN対応）
@@ -57,9 +59,9 @@ import { getBackgroundUrl } from './assetUrl';
 export function getBackgroundImagePath(id: string): string {
   const bg = getBackgroundById(id);
   if (!bg) {
-    // フォールバック: デフォルト背景
-    const defaultBg = getBackgroundById(DEFAULT_BACKGROUND_ID);
-    return getBackgroundUrl(defaultBg?.filename || 'AdobeStock_584852960.jpeg');
+    // フォールバック: 最初の背景 または レガシーデフォルトファイル
+    const fallback = dynamicBackgrounds.get(DEFAULT_BACKGROUND_ID);
+    return getBackgroundUrl(fallback?.filename || 'AdobeStock_584852960.jpeg');
   }
   return getBackgroundUrl(bg.filename);
 }
@@ -68,5 +70,12 @@ export function getBackgroundImagePath(id: string): string {
  * 全背景IDの配列を取得
  */
 export function getAllBackgroundIds(): string[] {
-  return BACKGROUNDS.map((b) => b.id);
+  return Array.from(dynamicBackgrounds.keys());
 }
+
+/**
+ * 後方互換用: 静的な BACKGROUNDS 配列（空）
+ * 既存コードは `BACKGROUNDS` を import している箇所があるが、
+ * 新しいコードは getAllBackgrounds() を使うこと
+ */
+export const BACKGROUNDS: BackgroundDefinition[] = [];
