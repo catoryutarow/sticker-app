@@ -1,5 +1,4 @@
-// API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from '@/config/apiUrl';
 
 // プレビュー用のレイアウト型（sticker_layouts + sticker情報）
 export interface LayoutPreviewItem {
@@ -25,6 +24,8 @@ export interface Kit {
   musical_key: string;
   creator_id: string;
   status: 'draft' | 'published';
+  is_special: number;       // 0 or 1
+  special_bpm: number;      // BPM for special mode
   created_at: string;
   updated_at: string;
   sticker_count?: number;
@@ -53,6 +54,7 @@ export interface Sticker {
   is_percussion: number;
   image_uploaded: number;
   audio_uploaded: number;
+  special_audio_uploaded: number;
   sort_order: number;
   // レイアウト情報（旧形式、後方互換用）
   layout_x: number;
@@ -81,6 +83,8 @@ export interface UpdateKitRequest {
   color?: string;
   musicalKey?: string;
   status?: 'draft' | 'published';
+  isSpecial?: boolean;
+  specialBpm?: number;
 }
 
 export interface CreateStickerRequest {
@@ -312,6 +316,25 @@ export const kitsApi = {
     formData.append('audio', file);
 
     const response = await fetch(`${API_BASE_URL}/kits/${kitId}/stickers/${stickerId}/audio`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    return handleResponse<{ sticker: Sticker; audioPath: string }>(response);
+  },
+
+  /**
+   * スペシャル音声アップロード（admin専用）
+   */
+  uploadSpecialAudio: async (
+    kitId: string,
+    stickerId: string,
+    file: File
+  ): Promise<{ sticker: Sticker; audioPath: string }> => {
+    const formData = new FormData();
+    formData.append('audio', file);
+
+    const response = await fetch(`${API_BASE_URL}/kits/${kitId}/stickers/${stickerId}/special-audio`, {
       method: 'POST',
       credentials: 'include',
       body: formData,

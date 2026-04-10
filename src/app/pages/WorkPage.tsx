@@ -10,6 +10,7 @@ import { Helmet } from 'react-helmet-async';
 import { worksApi, Work } from '../../api/worksApi';
 import { StickerShape } from '../components/StickerShape';
 import { getBackgroundImagePath } from '../../config/backgroundConfig';
+import { useBackgroundData } from '@/config/BackgroundDataContext';
 import { useAudioEngine } from '../../audio';
 import { getKitBaseSemitone } from '../../config/kitConfig';
 import { isStickerPercussion } from '../../config/stickerConfig';
@@ -54,7 +55,11 @@ export function WorkPage() {
     setSheetWidth,
     syncWithStickers,
     preloadAudio,
+    setCurrentBackgroundKit,
   } = useAudioEngine();
+
+  // 動的背景データ（AudioEngine連動用）
+  const { backgrounds } = useBackgroundData();
 
   // 音声ファイルのプリロード状態
   const [audioLoaded, setAudioLoaded] = useState(false);
@@ -84,6 +89,20 @@ export function WorkPage() {
 
     loadAndSync();
   }, [work, syncWithStickers, preloadAudio]);
+
+  // 背景が変わるたびに AudioEngine にスペシャル背景→キット紐付けを通知
+  useEffect(() => {
+    if (!work) {
+      setCurrentBackgroundKit(null);
+      return;
+    }
+    const bg = backgrounds.find((b) => b.id === work.backgroundId);
+    if (bg?.isSpecial && bg.specialKitId) {
+      setCurrentBackgroundKit(bg.specialKitId);
+    } else {
+      setCurrentBackgroundKit(null);
+    }
+  }, [work, backgrounds, setCurrentBackgroundKit]);
 
   // 台紙の幅をオーディオエンジンに設定
   // シールの座標は元のスケール（baseWidth=600）で保存されているため、

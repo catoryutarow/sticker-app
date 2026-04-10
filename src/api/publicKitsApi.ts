@@ -1,5 +1,4 @@
-// API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from '@/config/apiUrl';
 
 export interface PublicKitTag {
   name: string;
@@ -15,6 +14,8 @@ export interface PublicKit {
   color: string;
   musical_key: string;
   status: string;
+  is_special: number;
+  special_bpm: number;
   sticker_count?: number;
   tags?: PublicKitTag[];
   stickers?: PublicSticker[];
@@ -41,6 +42,7 @@ export interface PublicSticker {
   is_percussion: number;
   image_uploaded: number;
   audio_uploaded: number;
+  special_audio_uploaded: number;
   sort_order: number;
   // 新レイアウト情報
   layouts?: PublicStickerLayout[];

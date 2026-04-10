@@ -4,6 +4,7 @@ export { LoginPage } from './pages/LoginPage';
 export { DashboardPage } from './pages/DashboardPage';
 export { NewKitPage } from './pages/NewKitPage';
 export { KitDetailPage } from './pages/KitDetailPage';
+export { QuickCreatePage } from './pages/QuickCreatePage';
 export { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 export { ResetPasswordPage } from './pages/ResetPasswordPage';
 export { VerifyEmailPage } from './pages/VerifyEmailPage';

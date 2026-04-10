@@ -9,6 +9,7 @@ import {
   DashboardPage,
   NewKitPage,
   KitDetailPage,
+  QuickCreatePage,
   ForgotPasswordPage,
   ResetPasswordPage,
   VerifyEmailPage,
@@ -25,6 +26,7 @@ import {
   TagsPage,
   AdminArticlesPage,
   ArticleEditPage,
+  AdminBackgroundsPage,
 } from '@/admin';
 import {
   PrivacyPage,
@@ -108,6 +110,14 @@ const router = createBrowserRouter([
         element: <Navigate to="/creator" replace />,
       },
       {
+        path: 'kits/quick',
+        element: <QuickCreatePage />,
+      },
+      {
+        path: 'kits/quick/:kitId',
+        element: <QuickCreatePage />,
+      },
+      {
         path: 'kits/new',
         element: <NewKitPage />,
       },
@@ -157,6 +167,10 @@ const router = createBrowserRouter([
       {
         path: 'tags',
         element: <TagsPage />,
+      },
+      {
+        path: 'backgrounds',
+        element: <AdminBackgroundsPage />,
       },
       {
         path: 'articles',

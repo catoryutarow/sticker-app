@@ -3,7 +3,8 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Sticker } from '@/app/components/StickerAlbum';
 import { PlacedSticker, BASE_SHEET_WIDTH } from '@/app/components/PlacedSticker';
 import { StickerEditor } from '@/app/components/StickerEditor';
-import { getBackgroundImagePath, BACKGROUNDS } from '../../config/backgroundConfig';
+import { getBackgroundImagePath } from '../../config/backgroundConfig';
+import { useBackgroundData } from '../../config/BackgroundDataContext';
 
 export type AspectRatio = '3:4' | '1:1';
 
@@ -37,6 +38,7 @@ export function StickerSheet({
   const selectedSticker = stickers.find((s) => s.id === selectedStickerId);
   const sheetRef = useRef<HTMLDivElement>(null);
   const [sheetWidth, setSheetWidth] = useState(BASE_SHEET_WIDTH);
+  const { backgrounds } = useBackgroundData();
 
   // 台紙幅を追跡（シールサイズ計算用）
   useLayoutEffect(() => {
@@ -50,10 +52,11 @@ export function StickerSheet({
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // 全背景画像を初回マウント時にプリロード
+  // 背景画像が更新されたらプリロード
   const [imagesLoaded, setImagesLoaded] = useState(false);
   useEffect(() => {
-    const promises = BACKGROUNDS.map((bg) => {
+    if (backgrounds.length === 0) return;
+    const promises = backgrounds.map((bg) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => resolve();
@@ -62,7 +65,7 @@ export function StickerSheet({
       });
     });
     Promise.all(promises).then(() => setImagesLoaded(true));
-  }, []);
+  }, [backgrounds]);
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ['sticker', 'placed-sticker'],
@@ -126,7 +129,7 @@ export function StickerSheet({
         }}
       >
         {/* 背景画像レイヤー（全画像を重ねて、選択中のみ表示） */}
-        {BACKGROUNDS.map((bg) => (
+        {backgrounds.map((bg) => (
           <div
             key={bg.id}
             className="absolute inset-0"

@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS kits (
   musical_key TEXT DEFAULT 'random',
   creator_id TEXT NOT NULL,
   status TEXT DEFAULT 'draft',            -- 'draft', 'published'
+  is_special INTEGER DEFAULT 0,             -- スペシャルキットフラグ（admin専用）
+  special_bpm INTEGER DEFAULT 120,          -- スペシャルモード時のBPM
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (creator_id) REFERENCES users(id)
@@ -73,6 +75,7 @@ CREATE TABLE IF NOT EXISTS stickers (
   is_percussion INTEGER DEFAULT 0,
   image_uploaded INTEGER DEFAULT 0,
   audio_uploaded INTEGER DEFAULT 0,
+  special_audio_uploaded INTEGER DEFAULT 0, -- スペシャル音源アップロード済み
   sort_order INTEGER DEFAULT 0,
   -- レイアウト情報（シールパレット内の配置）
   layout_x REAL DEFAULT 10,               -- x座標（パーセント: 0-100）
@@ -165,3 +168,22 @@ CREATE INDEX IF NOT EXISTS idx_works_share_id ON works(share_id);
 CREATE INDEX IF NOT EXISTS idx_works_anonymous_id ON works(anonymous_id);
 CREATE INDEX IF NOT EXISTS idx_works_user_id ON works(user_id);
 CREATE INDEX IF NOT EXISTS idx_works_created_at ON works(created_at DESC);
+
+-- ================================
+-- 台紙（背景）システム
+-- ================================
+CREATE TABLE IF NOT EXISTS backgrounds (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  name_ja TEXT,
+  filename TEXT NOT NULL,                   -- public/backgrounds/ 配下のファイル名
+  is_special INTEGER DEFAULT 0,              -- スペシャル台紙フラグ
+  special_kit_id TEXT,                       -- スペシャルキットとの紐付け（is_special=1の時のみ）
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (special_kit_id) REFERENCES kits(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_backgrounds_special ON backgrounds(is_special);
+CREATE INDEX IF NOT EXISTS idx_backgrounds_sort ON backgrounds(sort_order);

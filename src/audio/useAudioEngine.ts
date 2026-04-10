@@ -18,6 +18,8 @@ interface UseAudioEngineReturn {
   activeTracks: Map<StickerType, number>;
   totalVolume: number;
   saturationAmount: number;
+  isSpecialMode: boolean;
+  specialBpm: number;
 
   // Actions
   initialize: () => Promise<void>;
@@ -26,6 +28,7 @@ interface UseAudioEngineReturn {
   toggle: () => void;
   setMasterVolume: (volume: number) => void;
   setSheetWidth: (width: number) => void;
+  setCurrentBackgroundKit: (kitUuid: string | null) => void;
 
   // Sticker sync
   syncWithStickers: (stickers: StickerState[]) => void;
@@ -128,6 +131,13 @@ export function useAudioEngine(): UseAudioEngineReturn {
     [engine]
   );
 
+  const setCurrentBackgroundKit = useCallback(
+    (kitUuid: string | null) => {
+      engine.setCurrentBackgroundKit(kitUuid);
+    },
+    [engine]
+  );
+
   const syncWithStickers = useCallback(
     (stickers: StickerState[]) => {
       engine.syncWithStickers(stickers);
@@ -181,6 +191,8 @@ export function useAudioEngine(): UseAudioEngineReturn {
     activeTracks: state.activeTracks,
     totalVolume: state.totalVolume,
     saturationAmount: state.saturationAmount,
+    isSpecialMode: state.isSpecialMode,
+    specialBpm: state.specialBpm,
 
     // Actions
     initialize,
@@ -189,6 +201,7 @@ export function useAudioEngine(): UseAudioEngineReturn {
     toggle,
     setMasterVolume,
     setSheetWidth,
+    setCurrentBackgroundKit,
 
     // Sticker sync
     syncWithStickers,

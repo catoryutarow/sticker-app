@@ -158,6 +158,26 @@ export const DashboardPage = () => {
         </p>
       </div>
 
+      {/* シールをつくるボタン */}
+      <Link
+        to="/creator/kits/quick"
+        className="block bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-8 text-white hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl group"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold">{t('quickCreate.dashboardCta')}</h2>
+            <p className="mt-1 text-blue-100 text-sm">
+              {t('quickCreate.dashboardDesc')}
+            </p>
+          </div>
+          <div className="flex-shrink-0 w-14 h-14 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+        </div>
+      </Link>
+
       {/* スタッツカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white shadow rounded-lg p-6">
@@ -204,15 +224,12 @@ export const DashboardPage = () => {
                 </option>
               ))}
             </select>
-            {/* 新規作成ボタン */}
+            {/* 上級者向け作成リンク（控えめ） */}
             <Link
               to="/creator/kits/new"
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              {t('dashboard.createNew')}
+              {t('quickCreate.advancedLink')}
             </Link>
           </div>
         </div>
@@ -231,13 +248,13 @@ export const DashboardPage = () => {
             </svg>
             <p className="text-gray-500 mb-4">{t('dashboard.noKits')}</p>
             <Link
-              to="/creator/kits/new"
+              to="/creator/kits/quick"
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {t('dashboard.createFirst')}
+              {t('quickCreate.dashboardCta')}
             </Link>
           </div>
         ) : (

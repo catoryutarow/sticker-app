@@ -3,6 +3,7 @@ import { fetchPublicKitsPaginated, PublicKit, PublicSticker, PaginationInfo } fr
 import { KitDefinition, registerDynamicKit, clearDynamicKits } from './kitConfig';
 import { StickerLayoutItem } from './stickerLayout';
 import { StickerDefinition, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
+import AudioEngine from '@/audio/AudioEngine';
 
 interface KitDataContextType {
   kits: KitDefinition[];
@@ -50,6 +51,9 @@ function convertKitToDefinition(kit: PublicKit & { tags?: Array<{ name: string; 
     description: kit.description || undefined,
     musicalKey: kit.musical_key,
     tags: kit.tags || [],
+    isSpecial: kit.is_special === 1,
+    specialBpm: kit.special_bpm,
+    kitUuid: kit.id,  // サーバー側 UUID (kit_number ではない)
   };
 }
 
@@ -164,6 +168,15 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           apiKits.forEach(kit => registerDynamicKit(kit));
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
 
+          // Register special kit info with AudioEngine
+          const engine = AudioEngine.getInstance();
+          engine.clearKitSpecialInfo();
+          result.kits.forEach(k => {
+            if (k.is_special === 1) {
+              engine.registerKitSpecialInfo(k.kit_number, true, k.special_bpm || 120, k.id);
+            }
+          });
+
           setKits(apiKits);
           setStickers(apiStickers);
           setLayoutByKit(apiLayout);
@@ -239,6 +252,13 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           // グローバル登録
           apiKits.forEach(kit => registerDynamicKit(kit));
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
+
+          const engine = AudioEngine.getInstance();
+          newKits.forEach(k => {
+            if (k.is_special === 1) {
+              engine.registerKitSpecialInfo(k.kit_number, true, k.special_bpm || 120, k.id);
+            }
+          });
 
           setLoadedKitIds(prev => {
             const updated = new Set(prev);

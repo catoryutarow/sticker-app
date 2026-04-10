@@ -2,57 +2,45 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { Kit, LayoutPreviewItem } from '@/api/kitsApi';
-import { getStickerImageUrl, getKitThumbnailUrl, getDefaultThumbnailUrl } from '@/config/assetUrl';
+import { getStickerImageUrl } from '@/config/assetUrl';
 import { KitShareDialog } from '@/app/components/KitShareDialog';
+import { useAuth } from '@/auth';
 
 interface KitCardProps {
   kit: Kit;
   onDelete?: (kit: Kit) => void;
 }
 
-// ミニプレビューコンポーネント（下書きキット用の動的レンダリング）
-// サムネイル生成（280x420px）と同じ座標系を使用し、0.5倍でレンダリング
+// ミニプレビューコンポーネント（LayoutPreviewと同じ座標系でレンダリング）
+// LayoutPreview: 280x420カード内に280x380のシール配置領域、CSS %で配置
+// MiniPreview: 同じ構造を0.5倍スケールで再現
 const MiniPreview = ({ kit, layouts, noStickersLabel }: { kit: Kit; layouts: LayoutPreviewItem[]; noStickersLabel: string }) => {
-  // サムネイル生成と同じ基準サイズ
-  const THUMBNAIL_WIDTH = 280;
-  const THUMBNAIL_HEIGHT = 420;
-  const STICKER_AREA_WIDTH = 280;
-  const STICKER_AREA_HEIGHT = 380;
-  const STICKER_AREA_TOP_OFFSET = 40;
-
-  // 表示スケール（カードに収まるサイズ）
   const SCALE = 0.5;
-  const CARD_WIDTH = THUMBNAIL_WIDTH * SCALE;  // 140
-  const CARD_HEIGHT = THUMBNAIL_HEIGHT * SCALE; // 210
+  const CARD_WIDTH = 280 * SCALE;   // 140
+  const CARD_HEIGHT = 420 * SCALE;  // 210
+  const STICKER_AREA_HEIGHT = 380 * SCALE; // 190
 
   return (
     <div
-      className="relative rounded-lg overflow-hidden shadow-inner"
+      className="relative rounded-lg overflow-hidden shadow-inner flex-shrink-0"
       style={{
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
         background: `linear-gradient(135deg, ${kit.color}40 0%, ${kit.color}20 100%)`,
       }}
     >
-      {/* レイアウトを配置（サムネイル生成と同じ座標系） */}
-      {layouts.map((layout) => {
-        // サムネイル生成と同じ計算: x,yはシール配置領域に対するパーセンテージ
-        const x = (layout.x / 100) * STICKER_AREA_WIDTH;
-        const y = (layout.y / 100) * STICKER_AREA_HEIGHT + STICKER_AREA_TOP_OFFSET;
-        // sizeはピクセル値としてそのまま使用
-        const size = layout.size;
-
-        return (
+      {/* シール配置領域（LayoutPreviewのシール配置div相当） */}
+      <div className="relative" style={{ height: STICKER_AREA_HEIGHT }}>
+        {layouts.map((layout) => (
           <div
             key={layout.id}
             className="absolute"
             style={{
-              // スケールを適用して表示
-              left: x * SCALE,
-              top: y * SCALE,
-              width: size * SCALE,
-              height: size * SCALE,
-              transform: `translate(-50%, -50%) rotate(${layout.rotation}deg)`,
+              left: `${layout.x}%`,
+              top: `${layout.y}%`,
+              width: layout.size * SCALE,
+              height: layout.size * SCALE,
+              transform: `rotate(${layout.rotation}deg)`,
             }}
           >
             {layout.image_uploaded ? (
@@ -71,8 +59,8 @@ const MiniPreview = ({ kit, layouts, noStickersLabel }: { kit: Kit; layouts: Lay
               </div>
             )}
           </div>
-        );
-      })}
+        ))}
+      </div>
 
       {/* レイアウトがない場合 */}
       {layouts.length === 0 && (
@@ -80,33 +68,6 @@ const MiniPreview = ({ kit, layouts, noStickersLabel }: { kit: Kit; layouts: Lay
           {noStickersLabel}
         </div>
       )}
-    </div>
-  );
-};
-
-// サムネイル画像コンポーネント（公開済みキット用、フォールバック対応）
-const ThumbnailImage = ({ kit }: { kit: Kit }) => {
-  const [imgSrc, setImgSrc] = useState(getKitThumbnailUrl(kit.kit_number));
-
-  const handleError = () => {
-    // サムネイルが見つからない場合はデフォルト画像にフォールバック
-    if (!imgSrc.includes('default.png')) {
-      setImgSrc(getDefaultThumbnailUrl());
-    }
-  };
-
-  return (
-    <div
-      className="relative rounded-lg overflow-hidden shadow-inner flex-shrink-0"
-      style={{ width: 140, height: 210 }}
-    >
-      <img
-        src={imgSrc}
-        alt={kit.name}
-        className="w-full h-full object-cover"
-        loading="lazy"
-        onError={handleError}
-      />
     </div>
   );
 };
@@ -149,9 +110,13 @@ const formatMusicalKey = (key: string | undefined, autoLabel: string): string =>
 
 export const KitCard = ({ kit, onDelete }: KitCardProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const isPublished = kit.status === 'published';
   const layouts = kit.layouts || [];
   const [isShareOpen, setIsShareOpen] = useState(false);
+  // adminは上級者ビュー（スペシャル設定等）、一般ユーザーはかんたん編集
+  const editPath = isAdmin ? `/creator/kits/${kit.id}` : `/creator/kits/quick/${kit.id}`;
 
   return (
     <div
@@ -161,12 +126,8 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
       <div className="p-4">
         {/* プレビュー + 情報 */}
         <div className="flex gap-4">
-          {/* プレビュー: 公開済みはサムネイル画像、下書きは動的レンダリング */}
-          {isPublished ? (
-            <ThumbnailImage kit={kit} />
-          ) : (
-            <MiniPreview kit={kit} layouts={layouts} noStickersLabel={t('kitCard.noStickers')} />
-          )}
+          {/* プレビュー: 常にライブレンダリング（サムネイルとの乖離を防止） */}
+          <MiniPreview kit={kit} layouts={layouts} noStickersLabel={t('kitCard.noStickers')} />
 
           {/* 情報エリア */}
           <div className="flex-1 min-w-0 flex flex-col">
@@ -212,14 +173,10 @@ export const KitCard = ({ kit, onDelete }: KitCardProps) => {
             {/* アクションボタン */}
             <div className="flex items-center gap-2 mt-2">
               <Link
-                to={`/creator/kits/${kit.id}`}
-                className={`flex-1 text-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  isPublished
-                    ? 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                    : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                }`}
+                to={editPath}
+                className="flex-1 text-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors text-blue-600 bg-blue-50 hover:bg-blue-100"
               >
-                {isPublished ? t('kitCard.details') : t('kitCard.edit')}
+                {t('kitCard.edit')}
               </Link>
 
               {/* 共有ボタン（公開済みのみ） */}

@@ -9,3 +9,4 @@ export { AdminNewKitPage } from './pages/AdminNewKitPage';
 export { TagsPage } from './pages/TagsPage';
 export { AdminArticlesPage } from './pages/AdminArticlesPage';
 export { ArticleEditPage } from './pages/ArticleEditPage';
+export { AdminBackgroundsPage } from './pages/AdminBackgroundsPage';

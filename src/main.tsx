@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./auth";
 import { KitDataProvider } from "./config/KitDataContext";
+import { BackgroundDataProvider } from "./config/BackgroundDataContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppRouter } from "./router";
 import "./i18n";
@@ -12,7 +13,9 @@ createRoot(document.getElementById("root")!).render(
     <HelmetProvider>
       <AuthProvider>
         <KitDataProvider>
-          <AppRouter />
+          <BackgroundDataProvider>
+            <AppRouter />
+          </BackgroundDataProvider>
         </KitDataProvider>
       </AuthProvider>
     </HelmetProvider>

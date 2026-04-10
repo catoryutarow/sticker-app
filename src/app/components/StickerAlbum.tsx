@@ -13,6 +13,7 @@ import { WelcomeModal, shouldShowWelcome } from '@/app/components/WelcomeModal';
 import { X, Sparkles, Undo2, Redo2, Download, Share2, RotateCcw, HelpCircle } from 'lucide-react';
 import { useAudioEngine } from '../../audio';
 import { DEFAULT_BACKGROUND_ID } from '../../config/backgroundConfig';
+import { useBackgroundData } from '@/config/BackgroundDataContext';
 import { getKitBaseSemitone } from '../../config/kitConfig';
 import { isStickerPercussion } from '../../config/stickerConfig';
 
@@ -61,7 +62,11 @@ export function StickerAlbum() {
     toggle: toggleAudio,
     setSheetWidth,
     syncWithStickers,
+    setCurrentBackgroundKit,
   } = useAudioEngine();
+
+  // 動的背景データ（AudioEngine連動用）
+  const { backgrounds } = useBackgroundData();
 
   // シールが変更されたときにオーディオエンジンと同期
   // pitch値をスライダー位置から実際の転調量に変換
@@ -76,6 +81,16 @@ export function StickerAlbum() {
     });
     syncWithStickers(stickersForAudio);
   }, [stickers, syncWithStickers]);
+
+  // 背景が変わるたびに AudioEngine にスペシャル背景→キット紐付けを通知
+  useEffect(() => {
+    const bg = backgrounds.find((b) => b.id === backgroundId);
+    if (bg?.isSpecial && bg.specialKitId) {
+      setCurrentBackgroundKit(bg.specialKitId);
+    } else {
+      setCurrentBackgroundKit(null);
+    }
+  }, [backgroundId, backgrounds, setCurrentBackgroundKit]);
 
   // 台紙の幅をオーディオエンジンに設定（パンニング計算用）
   useLayoutEffect(() => {
@@ -386,6 +401,7 @@ export function StickerAlbum() {
             <BackgroundSwitcher
               currentBackgroundId={backgroundId}
               onBackgroundChange={setBackgroundId}
+              stickers={stickers}
             />
             <StickerSheet
               stickers={stickers}
@@ -562,6 +578,7 @@ export function StickerAlbum() {
           <BackgroundSwitcher
             currentBackgroundId={backgroundId}
             onBackgroundChange={setBackgroundId}
+            stickers={stickers}
           />
           <StickerSheet
             stickers={stickers}

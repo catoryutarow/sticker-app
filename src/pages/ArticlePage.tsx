@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from '@/config/apiUrl';
 
 interface Article {
   id: string;
