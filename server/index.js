@@ -17,6 +17,7 @@ import adminRoutes from './routes/admin.js';
 import tagRoutes from './routes/tags.js';
 import worksRoutes from './routes/works.js';
 import articlesRoutes from './routes/articles.js';
+import backgroundsRoutes from './routes/backgrounds.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -26,8 +27,9 @@ const app = express();
 app.set('trust proxy', 1);
 
 // セキュリティヘッダー設定
+const isDev = process.env.NODE_ENV === 'development';
 app.use(helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: isDev ? false : {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
@@ -115,6 +117,9 @@ app.use('/api/works', worksRoutes);
 
 // 記事ルート
 app.use('/api/articles', articlesRoutes);
+
+// 背景ルート
+app.use('/api/backgrounds', backgroundsRoutes);
 
 // 静的ファイル配信（アップロードされた画像・音声）
 // UPLOAD_DIRが設定されていればそれを使用、なければ親ディレクトリ

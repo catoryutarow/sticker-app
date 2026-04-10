@@ -34,6 +34,41 @@ try {
   console.error('Migration error:', e);
 }
 
+// === Migration: Backgrounds table ===
+try {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS backgrounds (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      name_ja TEXT,
+      filename TEXT NOT NULL,
+      is_special INTEGER DEFAULT 0,
+      special_kit_id TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (special_kit_id) REFERENCES kits(id) ON DELETE SET NULL
+    )
+  `).run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_backgrounds_special ON backgrounds(is_special)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_backgrounds_sort ON backgrounds(sort_order)').run();
+
+  // Seed existing backgrounds (preserve legacy IDs for works.background_id compatibility)
+  const existingCount = db.prepare('SELECT COUNT(*) as count FROM backgrounds').get().count;
+  if (existingCount === 0) {
+    const insertBg = db.prepare(`
+      INSERT INTO backgrounds (id, name, name_ja, filename, is_special, sort_order)
+      VALUES (?, ?, ?, ?, 0, ?)
+    `);
+    insertBg.run('default', 'Blue Sky', '青空', 'AdobeStock_584852960.jpeg', 0);
+    insertBg.run('panel', 'Panel', 'パネル', 'panel.jpg', 1);
+    insertBg.run('p0436', 'P0436', 'P0436', 'p0436_m.jpeg', 2);
+    console.log('Migration: Seeded 3 existing backgrounds');
+  }
+} catch (e) {
+  console.error('Backgrounds migration error:', e);
+}
+
 const router = Router();
 
 // 単一キー → 並行調フォーマット変換
