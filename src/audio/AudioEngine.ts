@@ -90,7 +90,10 @@ class AudioEngine {
   private isSpecialMode: boolean = false;
   private specialKitNumber: string | null = null;
   private specialAudioBuffers: Map<string, Tone.ToneAudioBuffer> = new Map();
-  private kitSpecialInfo: Map<string, { isSpecial: boolean; specialBpm: number }> = new Map();
+  private kitSpecialInfo: Map<string, { isSpecial: boolean; specialBpm: number; kitUuid: string }> = new Map();
+
+  // 現在選択中のスペシャル台紙が紐付くキット UUID (なければ null)
+  private currentBackgroundKitUuid: string | null = null;
 
   private stateChangeCallbacks: Set<StateChangeCallback> = new Set();
 
@@ -118,6 +121,7 @@ class AudioEngine {
     this.isSpecialMode = false;
     this.specialKitNumber = null;
     this.currentBpm = DEFAULT_BPM;
+    this.currentBackgroundKitUuid = null;
 
     this.notifyStateChange();
   }
@@ -197,8 +201,21 @@ class AudioEngine {
     return loadedIds;
   }
 
-  registerKitSpecialInfo(kitNumber: string, isSpecial: boolean, specialBpm: number): void {
-    this.kitSpecialInfo.set(kitNumber, { isSpecial, specialBpm });
+  registerKitSpecialInfo(kitNumber: string, isSpecial: boolean, specialBpm: number, kitUuid: string): void {
+    this.kitSpecialInfo.set(kitNumber, { isSpecial, specialBpm, kitUuid });
+  }
+
+  /**
+   * 現在選択中の台紙に紐付くスペシャルキットUUIDを設定
+   * @param kitUuid スペシャル台紙なら kit UUID、通常台紙なら null
+   */
+  setCurrentBackgroundKit(kitUuid: string | null): void {
+    if (this.currentBackgroundKitUuid === kitUuid) return;
+    this.currentBackgroundKitUuid = kitUuid;
+
+    // モード再判定が必要なので、現在のシール状態で syncWithStickers を呼ぶ
+    const currentStickers = Array.from(this.stickerStates.values());
+    this.syncWithStickers(currentStickers);
   }
 
   clearKitSpecialInfo(): void {
@@ -259,6 +276,7 @@ class AudioEngine {
       return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
     }
 
+    // 全シールのキット番号を抽出
     const kitNumbers = new Set<string>();
     for (const sticker of stickers) {
       const kitNumber = sticker.type.split('-')[0] || '001';
@@ -273,6 +291,11 @@ class AudioEngine {
     const kitInfo = this.kitSpecialInfo.get(kitNumber);
 
     if (!kitInfo || !kitInfo.isSpecial) {
+      return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
+    }
+
+    // NEW: 現在の台紙がこのキットの紐付くスペシャル台紙でないとスペシャルモードにしない
+    if (this.currentBackgroundKitUuid !== kitInfo.kitUuid) {
       return { isSpecial: false, kitNumber: null, bpm: DEFAULT_BPM };
     }
 
@@ -868,6 +891,7 @@ class AudioEngine {
     this.isSpecialMode = false;
     this.specialKitNumber = null;
     this.currentBpm = DEFAULT_BPM;
+    this.currentBackgroundKitUuid = null;
 
     // マスターエフェクトを破棄
     try { this.masterGain?.dispose(); } catch (e) { /* ignore */ }

@@ -170,9 +170,9 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           // Register special kit info with AudioEngine
           const engine = AudioEngine.getInstance();
           engine.clearKitSpecialInfo();
-          apiKits.forEach(kit => {
-            if (kit.isSpecial) {
-              engine.registerKitSpecialInfo(kit.id, true, kit.specialBpm || 120);
+          result.kits.forEach(k => {
+            if (k.is_special === 1) {
+              engine.registerKitSpecialInfo(k.kit_number, true, k.special_bpm || 120, k.id);
             }
           });
 
@@ -253,9 +253,9 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
 
           const engine = AudioEngine.getInstance();
-          apiKits.forEach(kit => {
-            if (kit.isSpecial) {
-              engine.registerKitSpecialInfo(kit.id, true, kit.specialBpm || 120);
+          newKits.forEach(k => {
+            if (k.is_special === 1) {
+              engine.registerKitSpecialInfo(k.kit_number, true, k.special_bpm || 120, k.id);
             }
           });
 
