@@ -18,6 +18,8 @@ interface UseAudioEngineReturn {
   activeTracks: Map<StickerType, number>;
   totalVolume: number;
   saturationAmount: number;
+  isSpecialMode: boolean;
+  specialBpm: number;
 
   // Actions
   initialize: () => Promise<void>;
@@ -181,6 +183,8 @@ export function useAudioEngine(): UseAudioEngineReturn {
     activeTracks: state.activeTracks,
     totalVolume: state.totalVolume,
     saturationAmount: state.saturationAmount,
+    isSpecialMode: state.isSpecialMode,
+    specialBpm: state.specialBpm,
 
     // Actions
     initialize,

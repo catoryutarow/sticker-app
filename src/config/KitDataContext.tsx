@@ -3,6 +3,7 @@ import { fetchPublicKitsPaginated, PublicKit, PublicSticker, PaginationInfo } fr
 import { KitDefinition, registerDynamicKit, clearDynamicKits } from './kitConfig';
 import { StickerLayoutItem } from './stickerLayout';
 import { StickerDefinition, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
+import AudioEngine from '@/audio/AudioEngine';
 
 interface KitDataContextType {
   kits: KitDefinition[];
@@ -166,6 +167,15 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           apiKits.forEach(kit => registerDynamicKit(kit));
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
 
+          // Register special kit info with AudioEngine
+          const engine = AudioEngine.getInstance();
+          engine.clearKitSpecialInfo();
+          apiKits.forEach(kit => {
+            if (kit.isSpecial) {
+              engine.registerKitSpecialInfo(kit.id, true, kit.specialBpm || 120);
+            }
+          });
+
           setKits(apiKits);
           setStickers(apiStickers);
           setLayoutByKit(apiLayout);
@@ -241,6 +251,13 @@ export function KitDataProvider({ children }: KitDataProviderProps) {
           // グローバル登録
           apiKits.forEach(kit => registerDynamicKit(kit));
           apiStickers.forEach(sticker => registerDynamicSticker(sticker));
+
+          const engine = AudioEngine.getInstance();
+          apiKits.forEach(kit => {
+            if (kit.isSpecial) {
+              engine.registerKitSpecialInfo(kit.id, true, kit.specialBpm || 120);
+            }
+          });
 
           setLoadedKitIds(prev => {
             const updated = new Set(prev);
