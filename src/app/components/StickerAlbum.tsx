@@ -97,20 +97,22 @@ export function StickerAlbum() {
   const { kits } = useKitData();
   useEffect(() => {
     const bg = backgrounds.find((b) => b.id === backgroundId);
+    console.log('[auto-revert] bg:', bg?.id, 'isSpecial:', bg?.isSpecial, 'specialKitId:', bg?.specialKitId);
     if (!bg?.isSpecial || !bg.specialKitId) return;
 
     // スペシャル台紙の紐付くキット UUID から kit_number を解決
     const linkedKit = kits.find((k) => k.kitUuid === bg.specialKitId);
+    console.log('[auto-revert] kits loaded:', kits.length, 'linkedKit:', linkedKit?.id, 'kitUuid:', linkedKit?.kitUuid);
     if (!linkedKit) return;
     const linkedKitNumber = linkedKit.id; // KitDefinition.id は kit_number
 
     // 紐付かないキットのシールが1枚でもあれば通常台紙に戻す
-    const hasForeignSticker = stickers.some((s) => {
-      const kitNumber = s.type.split('-')[0] || '';
-      return kitNumber !== linkedKitNumber;
-    });
+    const stickerKits = stickers.map(s => s.type.split('-')[0] || '');
+    const hasForeignSticker = stickerKits.some(k => k !== linkedKitNumber);
+    console.log('[auto-revert] linkedKitNumber:', linkedKitNumber, 'stickerKits:', stickerKits, 'hasForeign:', hasForeignSticker);
 
     if (hasForeignSticker) {
+      console.log('[auto-revert] REVERTING to default bg');
       setBackgroundId(DEFAULT_BACKGROUND_ID);
     }
   }, [stickers, backgroundId, backgrounds, kits]);
