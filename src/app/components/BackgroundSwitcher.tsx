@@ -42,15 +42,22 @@ export function BackgroundSwitcher({
     return counts;
   }, [stickers]);
 
-  // 背景をフィルタリング（通常背景は常時表示、スペシャル背景は条件付き）
+  // 背景をフィルタリング:
+  // - 通常背景は常時表示
+  // - スペシャル背景は「対応キットのシールが2枚以上」かつ「それ以外のキットのシール無し」の時のみ表示
   const visibleBackgrounds = useMemo(() => {
     return backgrounds.filter((bg) => {
       if (!bg.isSpecial) return true;
-      // スペシャル背景は、対応キットのシールが2枚以上キャンバス上にある時のみ表示
       if (!bg.specialKitId) return false;
       const kitNum = uuidToKitNumber.get(bg.specialKitId);
       if (!kitNum) return false;
-      return (stickerCountByKit.get(kitNum) || 0) >= 2;
+      const matchingCount = stickerCountByKit.get(kitNum) || 0;
+      if (matchingCount < 2) return false;
+      // 他のキットのシールが1枚でもあれば非表示
+      for (const [k, count] of stickerCountByKit) {
+        if (k !== kitNum && count > 0) return false;
+      }
+      return true;
     });
   }, [backgrounds, uuidToKitNumber, stickerCountByKit]);
 
