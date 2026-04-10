@@ -95,6 +95,9 @@ class AudioEngine {
   // 現在選択中のスペシャル台紙が紐付くキット UUID (なければ null)
   private currentBackgroundKitUuid: string | null = null;
 
+  // モード遷移中フラグ（preload 中の競合防止）
+  private modeTransitionInProgress: boolean = false;
+
   private stateChangeCallbacks: Set<StateChangeCallback> = new Set();
 
   private constructor() {}
@@ -122,6 +125,7 @@ class AudioEngine {
     this.specialKitNumber = null;
     this.currentBpm = DEFAULT_BPM;
     this.currentBackgroundKitUuid = null;
+    this.modeTransitionInProgress = false;
 
     this.notifyStateChange();
   }
@@ -306,54 +310,75 @@ class AudioEngine {
     modeResult: { isSpecial: boolean; kitNumber: string | null; bpm: number },
     stickers: StickerState[]
   ): Promise<void> {
+    // 既に遷移中なら何もしない（競合防止）
+    if (this.modeTransitionInProgress) return;
+    this.modeTransitionInProgress = true;
+
     const wasPlaying = this.isPlaying;
 
-    // 1. Stop all tracks
-    for (const trackNode of this.trackNodes.values()) {
-      this.disposeTrackNode(trackNode);
-    }
-    this.trackNodes.clear();
+    try {
+      // 1. Stop all tracks
+      for (const trackNode of this.trackNodes.values()) {
+        this.disposeTrackNode(trackNode);
+      }
+      this.trackNodes.clear();
 
-    // 2. Update mode state
-    this.isSpecialMode = modeResult.isSpecial;
-    this.specialKitNumber = modeResult.kitNumber;
-    this.currentBpm = modeResult.bpm;
+      // 2. Update mode state
+      this.isSpecialMode = modeResult.isSpecial;
+      this.specialKitNumber = modeResult.kitNumber;
+      this.currentBpm = modeResult.bpm;
 
-    // 3. Change BPM
-    Tone.getTransport().bpm.value = this.currentBpm;
+      // 3. Change BPM
+      Tone.getTransport().bpm.value = this.currentBpm;
 
-    // 4. Update sticker states
-    this.stickerStates.clear();
-    this.stickerCounts.clear();
+      // 4. Update sticker states
+      this.stickerStates.clear();
+      this.stickerCounts.clear();
 
-    const newCounts = new Map<string, number>();
-    for (const sticker of stickers) {
-      if (!isStickerType(sticker.type) && !isValidStickerId(sticker.type)) continue;
-      this.stickerStates.set(sticker.id, sticker);
-      const count = newCounts.get(sticker.type) || 0;
-      newCounts.set(sticker.type, count + 1);
-    }
-    this.stickerCounts = newCounts;
+      const newCounts = new Map<string, number>();
+      for (const sticker of stickers) {
+        if (!isStickerType(sticker.type) && !isValidStickerId(sticker.type)) continue;
+        this.stickerStates.set(sticker.id, sticker);
+        const count = newCounts.get(sticker.type) || 0;
+        newCounts.set(sticker.type, count + 1);
+      }
+      this.stickerCounts = newCounts;
 
-    // 5. Preload special audio if entering special mode
-    if (modeResult.isSpecial) {
-      const stickerTypes = [...new Set(stickers.map(s => s.type))];
-      await this.preloadSpecialAudioBuffers(stickerTypes);
-    }
+      // 5. Preload special audio if entering special mode
+      if (modeResult.isSpecial) {
+        const stickerTypes = [...new Set(stickers.map(s => s.type))];
+        await this.preloadSpecialAudioBuffers(stickerTypes);
+      }
 
-    // 6. Restart playback if was playing
-    if (wasPlaying) {
-      Tone.getTransport().stop();
-      Tone.getTransport().start();
+      // 6. Restart playback if was playing — use current (possibly updated) sticker states
+      if (wasPlaying) {
+        Tone.getTransport().stop();
+        Tone.getTransport().start();
+        Tone.getTransport().bpm.value = this.currentBpm;
 
-      const referenceTime = Tone.now();
-      for (const sticker of this.stickerStates.values()) {
-        this.startTrack(sticker, true, referenceTime);
+        const referenceTime = Tone.now();
+        for (const sticker of this.stickerStates.values()) {
+          this.startTrack(sticker, true, referenceTime);
+        }
+      }
+
+      this.updateMasterEffects();
+      this.notifyStateChange();
+    } finally {
+      this.modeTransitionInProgress = false;
+
+      // 遷移中にシール状態が変わっている可能性があるので再同期
+      // （syncWithStickers 内で再度 modeChanged を検知すれば再遷移、さもなくば通常パス）
+      const latestStickers = Array.from(this.stickerStates.values());
+      const latestMode = this.detectSpecialMode(latestStickers);
+      if (
+        latestMode.isSpecial !== this.isSpecialMode ||
+        latestMode.kitNumber !== this.specialKitNumber
+      ) {
+        // モードが再び変わっているなら再遷移
+        this.handleModeTransition(latestMode, latestStickers);
       }
     }
-
-    this.updateMasterEffects();
-    this.notifyStateChange();
   }
 
   /**
@@ -471,9 +496,11 @@ class AudioEngine {
     const startTime = now + startDelaySeconds;
 
     // オフセットを計算（再生開始時点での位置を計算して同期）
+    // 音源ファイルの実長をループ長として使用することで、任意の小節数・BPMに対応
     const startPosition = transportPosition + startDelaySeconds;
-    const { loopDuration } = calcLoopParams(this.currentBpm);
-    const offset = startPosition % loopDuration;
+    const bufferDuration =
+      trackNode.player.buffer?.duration || calcLoopParams(this.currentBpm).loopDuration;
+    const offset = startPosition % bufferDuration;
 
     trackNode.player.start(startTime, offset);
     this.trackNodes.set(sticker.id, trackNode);
@@ -573,6 +600,17 @@ class AudioEngine {
    * シール一覧から状態を同期
    */
   syncWithStickers(stickers: StickerState[]): void {
+    // モード遷移中は stickerStates のみ更新し、トラック操作は避ける
+    // 遷移完了時に handleModeTransition の finally で再同期が走る
+    if (this.modeTransitionInProgress) {
+      this.stickerStates.clear();
+      for (const s of stickers) {
+        if (!isStickerType(s.type) && !isValidStickerId(s.type)) continue;
+        this.stickerStates.set(s.id, s);
+      }
+      return;
+    }
+
     // スペシャルモード判定
     const modeResult = this.detectSpecialMode(stickers);
     const modeChanged = modeResult.isSpecial !== this.isSpecialMode
