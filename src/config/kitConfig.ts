@@ -17,6 +17,7 @@ export interface KitDefinition {
   tags?: KitTag[];      // キットのタグ
   isSpecial?: boolean;
   specialBpm?: number;
+  kitUuid?: string;     // サーバー側のUUID
 }
 
 // musicalKeyは並行調フォーマット（メジャー/マイナー）

@@ -53,6 +53,7 @@ function convertKitToDefinition(kit: PublicKit & { tags?: Array<{ name: string; 
     tags: kit.tags || [],
     isSpecial: kit.is_special === 1,
     specialBpm: kit.special_bpm,
+    kitUuid: kit.id,  // サーバー側 UUID (kit_number ではない)
   };
 }
 
