@@ -86,6 +86,14 @@ export const KitDetailPage = () => {
   const [isTagsSaving, setIsTagsSaving] = useState(false);
   const [tagError, setTagError] = useState('');
 
+  // 公開時の説明
+  const [publishDescription, setPublishDescription] = useState('');
+
+  // スペシャルキット設定
+  const [isSpecial, setIsSpecial] = useState(false);
+  const [specialBpm, setSpecialBpm] = useState(120);
+  const [specialSaving, setSpecialSaving] = useState(false);
+
   // 共有ダイアログ
   const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -102,6 +110,8 @@ export const KitDetailPage = () => {
       setError('');
       const response = await kitsApi.getKit(kitId);
       setKit(response.kit);
+      setIsSpecial(!!response.kit.is_special);
+      setSpecialBpm(response.kit.special_bpm || 120);
       setStickers(response.stickers);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('kitDetail.loadFailed'));
@@ -273,6 +283,35 @@ export const KitDetailPage = () => {
   };
 
 
+  const handleSaveSpecialSettings = async () => {
+    if (!kit) return;
+    setSpecialSaving(true);
+    try {
+      await kitsApi.updateKit(kit.id, {
+        isSpecial,
+        specialBpm,
+      });
+      const data = await kitsApi.getKit(kit.id);
+      setKit(data.kit);
+    } catch (error) {
+      console.error('Failed to save special settings:', error);
+    } finally {
+      setSpecialSaving(false);
+    }
+  };
+
+  const handleSpecialAudioUpload = async (sticker: Sticker, file: File) => {
+    if (!kit) return;
+    try {
+      const result = await kitsApi.uploadSpecialAudio(kit.id, sticker.id, file);
+      setStickers(prev => prev.map(s =>
+        s.id === result.sticker.id ? result.sticker : s
+      ));
+    } catch (error) {
+      console.error('Failed to upload special audio:', error);
+    }
+  };
+
   // 公開確認モーダルを開く前にレイアウト状態をチェック
   const handleOpenPublishConfirm = async () => {
     if (!kitId || !kit) return;
@@ -304,7 +343,10 @@ export const KitDetailPage = () => {
     setIsPublishing(true);
     setPublishError('');
     try {
-      const response = await kitsApi.updateKit(kitId, { status: 'published' });
+      const response = await kitsApi.updateKit(kitId, {
+        status: 'published',
+        ...(publishDescription.trim() && { description: publishDescription.trim() }),
+      });
       setKit(response.kit);
       setShowPublishConfirm(false);
       setPublishError('');
@@ -552,6 +594,99 @@ export const KitDetailPage = () => {
           </div>
         )}
       </div>
+
+      {/* スペシャルキット設定（admin専用） */}
+            {isAdmin && (
+              <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                    {t('specialKit.title')}
+                  </h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {t('specialKit.description')}
+                  </p>
+
+                  <div className="flex items-center gap-3 mb-4">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isSpecial}
+                        onChange={(e) => setIsSpecial(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                    <span className="text-sm font-medium text-gray-900">
+                      {t('specialKit.enable')}
+                    </span>
+                  </div>
+
+                  {isSpecial && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('specialKit.bpm')}
+                      </label>
+                      <input
+                        type="number"
+                        value={specialBpm}
+                        onChange={(e) => setSpecialBpm(Number(e.target.value))}
+                        min={60}
+                        max={200}
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">{t('specialKit.bpmHelp')}</p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSaveSpecialSettings}
+                    disabled={specialSaving}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {specialSaving ? t('specialKit.saving') : t('specialKit.save')}
+                  </button>
+
+                  {isSpecial && stickers.length > 0 && (
+                    <div className="mt-6 border-t pt-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                        {t('specialKit.specialAudio')}
+                      </h3>
+                      <div className="space-y-3">
+                        {stickers.map((sticker) => (
+                          <div key={sticker.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-gray-900">{sticker.name}</span>
+                              <span className="ml-2 text-xs text-gray-500">({sticker.full_id})</span>
+                            </div>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              sticker.special_audio_uploaded
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {sticker.special_audio_uploaded
+                                ? t('specialKit.specialAudioUploaded')
+                                : t('specialKit.specialAudioNotUploaded')}
+                            </span>
+                            <label className="cursor-pointer px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50">
+                              {t('specialKit.uploadSpecialAudio')}
+                              <input
+                                type="file"
+                                accept=".mp3,.wav"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleSpecialAudioUpload(sticker, file);
+                                }}
+                              />
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
       {/* メインコンテンツ：2カラムレイアウト（モバイルは縦並び、シール→プレビューの順） */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -828,6 +963,21 @@ export const KitDetailPage = () => {
                   <div className="bg-gray-50 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
                     <div className="text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">{kit.name}</div>
                     <div className="text-[10px] sm:text-xs text-gray-500">{t('kitDetail.stickersCount', { count: stickers.length })}</div>
+                  </div>
+
+                  {/* 説明（任意） */}
+                  <div className="mb-3 sm:mb-4">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1">
+                      {t('kitForm.description')}
+                      <span className="text-gray-400 font-normal ml-1">({t('common.optional')})</span>
+                    </label>
+                    <textarea
+                      value={publishDescription}
+                      onChange={e => setPublishDescription(e.target.value)}
+                      rows={2}
+                      placeholder={t('kitForm.descriptionPlaceholder')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm resize-none"
+                    />
                   </div>
                   <div className="flex items-center justify-center lg:justify-end gap-2 sm:gap-3">
                     <button
