@@ -675,13 +675,21 @@ class AudioEngine {
 
   /**
    * トラックを開始（必要に応じてオンデマンドロード）
+   * スペシャルモード中ならスペシャル音源も併せてロードする
    */
   private async startTrackWithLoad(
     sticker: StickerState,
     immediate: boolean = false,
     referenceTime?: number
   ): Promise<void> {
-    // バッファがなければロード
+    // スペシャルモード中で、このシールのスペシャルバッファが未ロードならロード
+    // （モード遷移時は初期のシールのみプリロードされるため、
+    //  スペシャルモード中に後から追加したシールは個別ロードが必要）
+    if (this.isSpecialMode && !this.specialAudioBuffers.has(sticker.type)) {
+      await this.preloadSpecialAudioBuffers([sticker.type]);
+    }
+
+    // 通常バッファもフォールバックとしてロード
     if (!this.audioBuffers.has(sticker.type)) {
       const loaded = await this.loadAudioBufferIfNeeded(sticker.type);
       if (!loaded) {
