@@ -14,9 +14,17 @@
  * 環境変数が設定されていればCDN URL、なければ空文字（相対パス）
  */
 export function getAssetBaseUrl(): string {
-  const baseUrl = import.meta.env.VITE_ASSET_BASE_URL || '';
-  // 末尾のスラッシュを除去
-  return baseUrl.replace(/\/$/, '');
+  const { ASSET_BASE_URL } = await_import_hack();
+  return ASSET_BASE_URL.replace(/\/$/, '');
+}
+
+// 循環参照を避けるためインライン解決
+function await_import_hack() {
+  const raw = import.meta.env.VITE_ASSET_BASE_URL || '';
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    return { ASSET_BASE_URL: raw.replace('localhost', window.location.hostname) };
+  }
+  return { ASSET_BASE_URL: raw };
 }
 
 /**
@@ -88,6 +96,18 @@ export function getStickerImageUrl(kitId: string, stickerId: string, cacheBuster
  */
 export function getStickerAudioUrl(kitId: string, stickerId: string, cacheBuster?: string | number): string {
   const path = `/assets/audio/kit-${kitId}/${stickerId}.mp3`;
+  const url = getAssetUrl(path);
+  return cacheBuster ? `${url}?t=${cacheBuster}` : url;
+}
+
+/**
+ * スペシャル音声のURLを生成
+ * @param kitId - キット番号（例: '001'）
+ * @param stickerId - シールID（例: '001-001'）
+ * @param cacheBuster - キャッシュバスティング用のタイムスタンプ（オプション）
+ */
+export function getStickerSpecialAudioUrl(kitId: string, stickerId: string, cacheBuster?: string | number): string {
+  const path = `/assets/audio/kit-${kitId}/${stickerId}_special.mp3`;
   const url = getAssetUrl(path);
   return cacheBuster ? `${url}?t=${cacheBuster}` : url;
 }

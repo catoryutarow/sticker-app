@@ -100,7 +100,7 @@ export function getAllStickerIds(): string[] {
   return [...new Set([...staticIds, ...dynamicIds])];
 }
 
-import { getStickerImageUrl, getStickerAudioUrl } from './assetUrl';
+import { getStickerImageUrl, getStickerAudioUrl, getStickerSpecialAudioUrl } from './assetUrl';
 
 /**
  * IDからキットIDを抽出
@@ -121,6 +121,11 @@ export function getStickerImagePath(id: string): string {
 export function getStickerAudioPath(id: string): string {
   const kitId = getKitIdFromStickerId(id);
   return getStickerAudioUrl(kitId, id);
+}
+
+export function getStickerSpecialAudioPath(id: string): string {
+  const kitId = getKitIdFromStickerId(id);
+  return getStickerSpecialAudioUrl(kitId, id);
 }
 
 /**

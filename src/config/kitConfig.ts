@@ -15,6 +15,8 @@ export interface KitDefinition {
   description?: string;
   musicalKey?: string;  // 'C/Am', 'G/Em' など（並行調フォーマット）
   tags?: KitTag[];      // キットのタグ
+  isSpecial?: boolean;
+  specialBpm?: number;
 }
 
 // musicalKeyは並行調フォーマット（メジャー/マイナー）

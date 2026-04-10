@@ -50,6 +50,8 @@ function convertKitToDefinition(kit: PublicKit & { tags?: Array<{ name: string; 
     description: kit.description || undefined,
     musicalKey: kit.musical_key,
     tags: kit.tags || [],
+    isSpecial: kit.is_special === 1,
+    specialBpm: kit.special_bpm,
   };
 }
 
