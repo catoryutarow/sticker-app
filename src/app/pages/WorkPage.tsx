@@ -64,31 +64,26 @@ export function WorkPage() {
   // 音声ファイルのプリロード状態
   const [audioLoaded, setAudioLoaded] = useState(false);
 
-  // シールが読み込まれたときに音声をプリロードしてからオーディオエンジンと同期
-  useEffect(() => {
-    if (!work) return;
+  // シールタイプ一覧とピッチ補正済みシール配列を memoize。
+  // NOTE: AudioContext を生成する API（Tone.getContext/getTransport/ToneAudioBuffer/Tone.now 等）は
+  // ユーザー操作前に呼んではいけない（Chrome autoplay policy が永続的にブロックする）。
+  // そのためプリロード・同期は再生ボタンのクリックハンドラ内でユーザー操作ジェスチャー後に実行する。
+  const uniqueStickerTypes = useMemo(
+    () => (work ? [...new Set(work.stickers.map((s) => s.type))] : []),
+    [work]
+  );
 
-    const loadAndSync = async () => {
-      // 音声ファイルをプリロード
-      const stickerTypes = work.stickers.map(s => s.type);
-      const uniqueTypes = [...new Set(stickerTypes)];
-      await preloadAudio(uniqueTypes);
-      setAudioLoaded(true);
-
-      // プリロード後にオーディオエンジンと同期
-      const stickersForAudio = work.stickers.map(s => {
-        const kitId = s.type.split('-')[0] || '001';
-        const baseSemitone = isStickerPercussion(s.type) ? 0 : getKitBaseSemitone(kitId);
-        return {
-          ...s,
-          pitch: s.pitch - baseSemitone,
-        };
-      });
-      syncWithStickers(stickersForAudio);
-    };
-
-    loadAndSync();
-  }, [work, syncWithStickers, preloadAudio]);
+  const stickersForAudio = useMemo(
+    () =>
+      work
+        ? work.stickers.map((s) => {
+            const kitId = s.type.split('-')[0] || '001';
+            const baseSemitone = isStickerPercussion(s.type) ? 0 : getKitBaseSemitone(kitId);
+            return { ...s, pitch: s.pitch - baseSemitone };
+          })
+        : [],
+    [work]
+  );
 
   // 背景が変わるたびに AudioEngine にスペシャル背景→キット紐付けを通知
   useEffect(() => {
@@ -173,12 +168,28 @@ export function WorkPage() {
   }, [work, containerSize]);
 
   // 再生ボタンハンドラー
+  // ユーザージェスチャー発火後にこの関数が走るため、ここで初めて
+  // AudioContext を生成（Tone.start）→ バッファプリロード → シール状態同期 の順で実行する。
+  // これにより Chrome の autoplay policy を回避し、確実に音が再生される。
   const handlePlayToggle = useCallback(async () => {
+    if (!work) return;
     if (!isAudioInitialized) {
       await initializeAudio();
+      await preloadAudio(uniqueStickerTypes);
+      setAudioLoaded(true);
+      syncWithStickers(stickersForAudio);
     }
     toggleAudio();
-  }, [isAudioInitialized, initializeAudio, toggleAudio]);
+  }, [
+    work,
+    isAudioInitialized,
+    initializeAudio,
+    preloadAudio,
+    uniqueStickerTypes,
+    syncWithStickers,
+    stickersForAudio,
+    toggleAudio,
+  ]);
 
   useEffect(() => {
     async function fetchWork() {

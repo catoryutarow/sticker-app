@@ -48,19 +48,26 @@ export function useAudioEngine(): UseAudioEngineReturn {
   const [state, setState] = useState<AudioEngineState>(() => engine.getState());
 
   useEffect(() => {
-    // マウント時に既存のAudioContextを停止（リロード対策）
-    try {
-      Tone.getTransport().stop();
-      Tone.getTransport().cancel();
-      const ctx = Tone.getContext();
-      if (ctx.state === 'running') {
-        ctx.rawContext.suspend();
+    // マウント時にエンジンをリセット（前回の状態をクリア）
+    // NOTE: AudioContext の停止/サスペンドは行わない。
+    // Tone.getContext() / Tone.getTransport() はゲッター呼び出しで AudioContext を
+    // 生成してしまい、ユーザー操作前に生成されたコンテキストは Chrome の autoplay policy で
+    // 永続的にブロックされる（Tone.start() で resume しても音が出ない）。
+    // engine.isInitialized が true のとき（= 既に何らかのユーザー操作で生成済み）のみ
+    // stale state を掃除する。
+    if (engine.getState().isInitialized) {
+      try {
+        Tone.getTransport().stop();
+        Tone.getTransport().cancel();
+        const ctx = Tone.getContext();
+        if (ctx.state === 'running') {
+          ctx.rawContext.suspend();
+        }
+      } catch {
+        // ignore - best effort cleanup
       }
-    } catch (e) {
-      // ignore - context might not exist yet
     }
 
-    // マウント時にエンジンをリセット（前回の状態をクリア）
     engine.reset();
 
     // 状態変更をリッスン

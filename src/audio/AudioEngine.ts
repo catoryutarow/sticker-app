@@ -192,7 +192,10 @@ class AudioEngine {
 
       try {
         const audioPath = getStickerAudioPath(id);
-        const buffer = new Tone.ToneAudioBuffer(audioPath);
+        // 空のバッファを作ってから load() する。
+        // new ToneAudioBuffer(url) は引数URL指定時にコンストラクタ内で自動ロードするため、
+        // その後に明示 load() を呼ぶと同じMP3を2回フェッチしてしまう。
+        const buffer = new Tone.ToneAudioBuffer();
         await buffer.load(audioPath);
         this.audioBuffers.set(id, buffer);
         loadedIds.push(id);
