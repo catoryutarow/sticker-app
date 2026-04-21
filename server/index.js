@@ -205,17 +205,19 @@ app.post('/encode', upload.fields([
     ffmpegArgs.push(
       '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',  // 幅と高さを偶数に
       '-c:v', 'libx264',
-      '-tune', 'stillimage',
+      '-tune', 'stillimage',      // 静止画＋音声のパターンに最適化（x264が長GOPを採用）
+      '-preset', 'veryfast',       // fast から veryfast に格上げ (~2x 高速化)
+      '-crf', '23',                // デフォルト相当。明示することで互換性を担保
+      '-threads', '0',             // 利用可能なCPUコアを全て使用（t2.micro でも有効）
       '-pix_fmt', 'yuv420p',
       '-t', String(duration),
       '-r', String(fps),
-      '-preset', 'fast',  // エンコード速度優先
     );
 
     if (audioFile) {
       ffmpegArgs.push(
         '-c:a', 'aac',
-        '-b:a', '192k',
+        '-b:a', '128k',            // 192k から 128k へ削減。静止画動画の BGM 用途では差が分からない
         '-shortest',
       );
     }
