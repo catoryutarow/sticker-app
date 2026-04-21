@@ -8,7 +8,7 @@ export function PrivacyPage() {
       <Helmet>
         <title>プライバシーポリシー | シール帳</title>
         <meta name="description" content="シール帳のプライバシーポリシー。個人情報の取り扱い、Cookie、広告について説明します。" />
-        <link rel="canonical" href="https://sirucho.com/privacy" />
+        <link rel="canonical" href="https://www.sirucho.com/privacy" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">

@@ -101,6 +101,7 @@
 - ✅ スペシャルキット+スペシャル台紙の音源切替（基本ケース）
 - ✅ 非対応シール追加時の auto-revert（BackgroundSwitcher + StickerAlbum）
 - ✅ メール認証リンク → 正しく `https://sirucho.com/verify-email?token=...` に飛ぶように
+  - ⚠️ 2026-04-21 時点: 本番 EC2 の `server/.env` の `FRONTEND_URL` が `https://sirucho.com` のままで、www統一に伴い `https://www.sirucho.com` へ変更すべき（未対応）
 
 ### 6. 既知の懸念 / 未検証
 - **5言語全てのガイド表記**: ja/en 以外（ko/es/zh）は新キーに沿って翻訳済みだが実機確認未了
@@ -545,11 +546,11 @@ e967c06 feat: frontend types and API methods for special kit dual audio
 ### ✅ Google Search Console (GSC) — 設定完了
 
 - **所有権確認**: HTMLメタタグ方式（`fDowaRJ5TELVxVbFi-5VhHuT9FW27T7Ou0vs6DhQk_o`）
-- サイトマップ送信: `https://sirucho.com/sitemap.xml`
+- サイトマップ送信: `https://www.sirucho.com/sitemap.xml`（2026-04-21にwwwホスト統一＆記事URL追加）
 
 ### AdSense — コード設置完了（審査未申請）
 
-- **Publisher ID**: `ca-pub-9855000353509090`
+- **Publisher ID**: `ca-pub-6401969583966289`（`index.html` と `public/ads.txt` の双方で一致）
 - `index.html` にAdSenseスクリプト設置済み
 - `public/ads.txt` 更新済み
 - **審査申請**: 未実施（記事コンテンツ追加後に申請予定）

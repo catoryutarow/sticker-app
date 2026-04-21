@@ -63,9 +63,9 @@ export function ArticlesPage() {
         '@type': 'BlogPosting',
         headline: article.title,
         description: article.description || '',
-        url: `https://sirucho.com/articles/${article.slug}`,
+        url: `https://www.sirucho.com/articles/${article.slug}`,
         datePublished: article.published_at,
-        ...(article.thumbnail && { image: `https://sirucho.com${article.thumbnail}` }),
+        ...(article.thumbnail && { image: `https://www.sirucho.com${article.thumbnail}` }),
       },
     })),
   };
@@ -75,11 +75,11 @@ export function ArticlesPage() {
       <Helmet>
         <title>ブログ | シール帳</title>
         <meta name="description" content="シール帳の公式ブログ。音楽シールの使い方、作曲のコツ、新機能のお知らせなどをお届けします。" />
-        <link rel="canonical" href="https://sirucho.com/articles" />
+        <link rel="canonical" href="https://www.sirucho.com/articles" />
         <meta property="og:title" content="ブログ | シール帳" />
         <meta property="og:description" content="シール帳の公式ブログ。音楽シールの使い方、作曲のコツ、新機能のお知らせなどをお届けします。" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://sirucho.com/articles" />
+        <meta property="og:url" content="https://www.sirucho.com/articles" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 

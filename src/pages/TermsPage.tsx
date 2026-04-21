@@ -8,7 +8,7 @@ export function TermsPage() {
       <Helmet>
         <title>利用規約 | シール帳</title>
         <meta name="description" content="シール帳の利用規約。サービスのご利用条件、禁止事項、免責事項について説明します。" />
-        <link rel="canonical" href="https://sirucho.com/terms" />
+        <link rel="canonical" href="https://www.sirucho.com/terms" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">

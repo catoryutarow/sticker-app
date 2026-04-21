@@ -5,4 +5,4 @@ Allow: /
 Disallow: /admin
 Disallow: /creator
 
-Sitemap: https://sirucho.com/sitemap.xml
+Sitemap: https://www.sirucho.com/sitemap.xml

@@ -91,21 +91,21 @@ export function ArticlePage() {
     '@type': 'BlogPosting',
     headline: article.title,
     description: article.description || '',
-    url: `https://sirucho.com/articles/${article.slug}`,
+    url: `https://www.sirucho.com/articles/${article.slug}`,
     datePublished: article.published_at,
     dateModified: article.published_at,
     author: {
       '@type': 'Organization',
       name: 'シール帳',
-      url: 'https://sirucho.com',
+      url: 'https://www.sirucho.com',
     },
     publisher: {
       '@type': 'Organization',
       name: 'シール帳',
-      url: 'https://sirucho.com',
+      url: 'https://www.sirucho.com',
     },
     ...(article.thumbnail && {
-      image: `https://sirucho.com${article.thumbnail}`,
+      image: `https://www.sirucho.com${article.thumbnail}`,
     }),
   };
 
@@ -114,13 +114,13 @@ export function ArticlePage() {
       <Helmet>
         <title>{article.title} | シール帳</title>
         <meta name="description" content={article.description || article.title} />
-        <link rel="canonical" href={`https://sirucho.com/articles/${article.slug}`} />
+        <link rel="canonical" href={`https://www.sirucho.com/articles/${article.slug}`} />
         <meta property="og:title" content={`${article.title} | シール帳`} />
         <meta property="og:description" content={article.description || article.title} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://sirucho.com/articles/${article.slug}`} />
+        <meta property="og:url" content={`https://www.sirucho.com/articles/${article.slug}`} />
         {article.thumbnail && (
-          <meta property="og:image" content={`https://sirucho.com${article.thumbnail}`} />
+          <meta property="og:image" content={`https://www.sirucho.com${article.thumbnail}`} />
         )}
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

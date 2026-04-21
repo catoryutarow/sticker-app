@@ -8,7 +8,7 @@ export function AboutPage() {
       <Helmet>
         <title>シール帳について | シール帳</title>
         <meta name="description" content="シール帳は株式会社モテコロが運営する、音楽シールで楽曲を作れる無料Webアプリです。誰でも簡単に音楽体験を楽しめます。" />
-        <link rel="canonical" href="https://sirucho.com/about" />
+        <link rel="canonical" href="https://www.sirucho.com/about" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">

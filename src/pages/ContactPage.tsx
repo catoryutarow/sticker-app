@@ -8,7 +8,7 @@ export function ContactPage() {
       <Helmet>
         <title>お問い合わせ | シール帳</title>
         <meta name="description" content="シール帳へのお問い合わせ。ご質問、ご要望、不具合報告などお気軽にご連絡ください。" />
-        <link rel="canonical" href="https://sirucho.com/contact" />
+        <link rel="canonical" href="https://www.sirucho.com/contact" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">

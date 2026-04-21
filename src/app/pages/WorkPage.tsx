@@ -260,7 +260,7 @@ export function WorkPage() {
     );
   }
 
-  const SITE_URL = 'https://sirucho.com';
+  const SITE_URL = 'https://www.sirucho.com';
   const ogTitle = work.title || t('work.title');
   const ogDescription = t('work.ogDescription', { count: work.stickers.length });
   const ogImageRaw = work.thumbnailUrl || '/og-default.png';

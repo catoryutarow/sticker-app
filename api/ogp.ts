@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const SITE_URL = 'https://sirucho.com';
+const SITE_URL = 'https://www.sirucho.com';
 const API_URL = 'https://api.sirucho.com';
 
 interface Work {
