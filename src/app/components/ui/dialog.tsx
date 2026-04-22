@@ -7,10 +7,15 @@ import { XIcon } from "lucide-react";
 import { cn } from "./utils";
 
 /**
- * Keep CSS variables --vv-height and --vv-top in sync with the VisualViewport API.
- * Unlike the CSS `dvh` unit (which is inconsistent on iOS Safari with respect to the
- * virtual keyboard), the VisualViewport API reliably reports the currently visible
- * area — including shrinking when the iOS keyboard/toolbar appears — on iOS 13+.
+ * Mirror the VisualViewport API into CSS variables so the dialog can track the
+ * actually-visible area — not just the layout viewport. Critical on iOS Safari
+ * where (1) the virtual keyboard shrinks the viewport vertically and (2) the
+ * text-input auto-zoom shifts the viewport horizontally, both of which cause a
+ * layout-viewport-centered dialog to appear off-center.
+ *
+ * Variables set on `document.documentElement`:
+ *   --vv-top / --vv-left    offsetTop / offsetLeft of the visible area
+ *   --vv-height / --vv-width  size of the visible area
  */
 function useVisualViewportVars() {
   React.useEffect(() => {
@@ -19,8 +24,10 @@ function useVisualViewportVars() {
     if (!vv) return;
     const root = document.documentElement;
     const update = () => {
-      root.style.setProperty("--vv-height", `${vv.height}px`);
       root.style.setProperty("--vv-top", `${vv.offsetTop}px`);
+      root.style.setProperty("--vv-left", `${vv.offsetLeft}px`);
+      root.style.setProperty("--vv-height", `${vv.height}px`);
+      root.style.setProperty("--vv-width", `${vv.width}px`);
     };
     update();
     vv.addEventListener("resize", update);
@@ -86,17 +93,19 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          // Center within the *visible* viewport (tracked via --vv-top / --vv-height set
-          // by useVisualViewportVars). Fallback to 100vh keeps desktop and SSR rendering
-          // correct when visualViewport is unavailable.
-          "fixed left-[50%] z-50 translate-x-[-50%] translate-y-[-50%]",
-          "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
+          // Position / size are driven inline via the CSS variables set by
+          // useVisualViewportVars — both axes — so the dialog is centered in whatever
+          // area is currently visible on screen (iOS keyboard + input-zoom shift aware).
+          "fixed z-50 translate-x-[-50%] translate-y-[-50%]",
+          "w-full sm:max-w-lg",
           "overflow-y-auto overscroll-contain",
           "grid gap-4 rounded-lg border p-6 shadow-lg duration-200",
           className,
         )}
         style={{
           top: "calc(var(--vv-top, 0px) + var(--vv-height, 100vh) / 2)",
+          left: "calc(var(--vv-left, 0px) + var(--vv-width, 100vw) / 2)",
+          maxWidth: "calc(var(--vv-width, 100vw) - 2rem)",
           maxHeight: "calc(var(--vv-height, 100vh) - 2rem)",
           ...style,
         }}
