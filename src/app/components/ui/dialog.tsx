@@ -58,11 +58,12 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          // Positioning: top-aligned on mobile (so iOS virtual keyboard does not cover the dialog),
-          // vertically centered on sm+ screens where the viewport is tall enough.
-          "fixed left-[50%] z-50 translate-x-[-50%] top-4 sm:top-[50%] sm:translate-y-[-50%]",
-          // Sizing: full width on mobile (minus margin), capped on sm+, and height respects
-          // the dynamic viewport (shrinks when iOS keyboard/toolbar appears on Safari 17+).
+          // Positioning: center within the dynamic viewport (dvh) so the dialog stays in
+          // the visible area even when the iOS virtual keyboard/toolbar shrinks the viewport.
+          "fixed left-[50%] top-[50dvh] z-50 translate-x-[-50%] translate-y-[-50%]",
+          // Sizing: full width on mobile (minus margin), capped on sm+. max-height follows
+          // the dynamic viewport; any overflow becomes an in-dialog scroll without chaining
+          // to the background page.
           "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
           "max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain",
           "grid gap-4 rounded-lg border p-6 shadow-lg duration-200",
