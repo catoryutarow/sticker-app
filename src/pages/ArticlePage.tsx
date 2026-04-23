@@ -62,6 +62,33 @@ export function ArticlePage() {
     });
   };
 
+  // Strip a leading `# heading` from Markdown when it duplicates article.title.
+  // Some legacy articles have the title echoed as the first H1 in content; rendering both
+  // produces a visible duplicate. We only strip when the first non-empty line is a single
+  // H1 AND its text matches the article title (after normalizing whitespace/punctuation).
+  const stripDuplicateTitleHeading = (content: string, title: string): string => {
+    if (!content) return content;
+    const lines = content.split('\n');
+    let i = 0;
+    while (i < lines.length && lines[i].trim() === '') i++;
+    if (i >= lines.length) return content;
+    const firstLine = lines[i];
+    const headingMatch = firstLine.match(/^#\s+(.+?)\s*#*\s*$/);
+    if (!headingMatch) return content;
+    const normalize = (s: string) =>
+      s.replace(/[\s　「」『』"'！!？?。、・：:；;]/g, '').toLowerCase();
+    const a = normalize(headingMatch[1]);
+    const b = normalize(title);
+    if (!a || !b) return content;
+    if (a === b || a.includes(b) || b.includes(a)) {
+      const rest = lines.slice(i + 1);
+      // drop an immediately-following blank line to avoid extra vertical gap
+      if (rest.length > 0 && rest[0].trim() === '') rest.shift();
+      return rest.join('\n');
+    }
+    return content;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center">
@@ -125,11 +152,11 @@ export function ArticlePage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-3 sm:px-4">
         <div className="max-w-3xl mx-auto">
           <Link
             to="/articles"
-            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 mb-6"
+            className="inline-flex items-center gap-2 text-base sm:text-sm text-indigo-600 hover:text-indigo-800 mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             記事一覧へ戻る
@@ -146,7 +173,7 @@ export function ArticlePage() {
               </div>
             )}
 
-            <div className="p-6 md:p-10">
+            <div className="p-5 sm:p-6 md:p-10">
               <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-4">
                 <Calendar className="w-4 h-4" />
                 <time dateTime={article.published_at}>
@@ -154,13 +181,13 @@ export function ArticlePage() {
                 </time>
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 break-keep [overflow-wrap:anywhere]">
                 {article.title}
               </h1>
 
-              <div className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-md">
+              <div className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-md [overflow-wrap:anywhere] break-words">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {article.content}
+                  {stripDuplicateTitleHeading(article.content, article.title)}
                 </ReactMarkdown>
               </div>
             </div>
@@ -168,38 +195,41 @@ export function ArticlePage() {
 
           {/* 前後記事ナビ */}
           {(prevArticle || nextArticle) && (
-            <nav className="grid grid-cols-2 gap-4 mt-8">
+            <nav
+              aria-label="記事ナビゲーション"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-8"
+            >
               {prevArticle ? (
                 <Link
                   to={`/articles/${prevArticle.slug}`}
-                  className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow group"
+                  className="bg-white rounded-xl shadow-md p-4 sm:p-5 min-h-[72px] hover:shadow-lg transition-shadow group focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2"
                 >
-                  <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                  <div className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-indigo-600 mb-1.5">
                     <ChevronLeft className="w-3.5 h-3.5" />
                     前の記事
                   </div>
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                  <p className="text-sm sm:text-base font-medium text-gray-800 group-hover:text-indigo-600 transition-colors line-clamp-2 break-keep [overflow-wrap:anywhere]">
                     {prevArticle.title}
                   </p>
                 </Link>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
               {nextArticle ? (
                 <Link
                   to={`/articles/${nextArticle.slug}`}
-                  className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow group text-right"
+                  className="bg-white rounded-xl shadow-md p-4 sm:p-5 min-h-[72px] hover:shadow-lg transition-shadow group text-right focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2"
                 >
-                  <div className="flex items-center justify-end gap-1 text-xs text-gray-400 mb-1">
+                  <div className="flex items-center justify-end gap-1 text-xs font-medium uppercase tracking-wide text-indigo-600 mb-1.5">
                     次の記事
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                  <p className="text-sm sm:text-base font-medium text-gray-800 group-hover:text-indigo-600 transition-colors line-clamp-2 break-keep [overflow-wrap:anywhere]">
                     {nextArticle.title}
                   </p>
                 </Link>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
             </nav>
           )}

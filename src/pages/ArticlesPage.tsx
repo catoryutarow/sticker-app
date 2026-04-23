@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen } from 'lucide-react';
 
 import { API_BASE_URL } from '@/config/apiUrl';
 
@@ -83,19 +83,22 @@ export function ArticlesPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 py-8 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 mb-6"
+            className="inline-flex items-center gap-2 text-base sm:text-sm text-indigo-600 hover:text-indigo-800 mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             トップページへ戻る
           </Link>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 break-keep">
             ブログ
           </h1>
+          <p className="text-sm text-gray-600 mb-8">
+            シール帳の使い方や音楽のコラム
+          </p>
 
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
@@ -105,17 +108,23 @@ export function ArticlesPage() {
               </div>
             </div>
           ) : articles.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">記事はまだありません。</p>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-md px-6 py-12 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-50 text-indigo-500 mb-4">
+                <BookOpen className="w-7 h-7" aria-hidden="true" />
+              </div>
+              <p className="text-gray-700 font-medium mb-1">記事はまだありません</p>
+              <p className="text-sm text-gray-500">
+                近日中に公開予定です。しばらくお待ちください。
+              </p>
             </div>
           ) : (
             <>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {articles.map((article) => (
                   <Link
                     key={article.id}
                     to={`/articles/${article.slug}`}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow overflow-hidden group"
+                    className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow overflow-hidden group focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2"
                   >
                     {article.thumbnail ? (
                       <div className="aspect-video bg-gray-100 overflow-hidden">
@@ -123,19 +132,20 @@ export function ArticlesPage() {
                           src={article.thumbnail}
                           alt={article.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
                         />
                       </div>
                     ) : (
                       <div className="aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                        <span className="text-4xl">📝</span>
+                        <span className="text-4xl" aria-hidden="true">📝</span>
                       </div>
                     )}
-                    <div className="p-4">
-                      <h2 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                    <div className="p-4 sm:p-5">
+                      <h2 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors break-keep [overflow-wrap:anywhere]">
                         {article.title}
                       </h2>
                       {article.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2 break-keep [overflow-wrap:anywhere]">
                           {article.description}
                         </p>
                       )}
