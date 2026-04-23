@@ -114,19 +114,22 @@ export function ControlPanel({
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
             }}
           />
-          <div className="relative p-3 lg:p-4">
-            <div className="flex flex-wrap items-center justify-center gap-2 lg:gap-3">
+          <div className="relative px-2 py-2 lg:p-4">
+            {/* モバイルはアイコン中心のコンパクト行（区切りは lg 以上のみ）。
+                各ボタンは 44x44 以上のタップ領域を確保しつつ、390px幅で 1 行に収まるよう詰める。 */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 lg:gap-3">
               {/* 戻る/進む */}
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={onUndo}
                   disabled={!canUndo}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg font-semibold transition-all ${
                     canUndo
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                   title={t('control.undoTitle')}
+                  aria-label={t('control.undo')}
                 >
                   <Undo2 className="w-5 h-5" />
                   <span className="hidden sm:inline">{t('control.undo')}</span>
@@ -135,20 +138,21 @@ export function ControlPanel({
                 <button
                   onClick={onRedo}
                   disabled={!canRedo}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg font-semibold transition-all ${
                     canRedo
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                   title={t('control.redoTitle')}
+                  aria-label={t('control.redo')}
                 >
                   <Redo2 className="w-5 h-5" />
                   <span className="hidden sm:inline">{t('control.redo')}</span>
                 </button>
               </div>
 
-              {/* 区切り */}
-              <div className="w-px h-8 bg-gray-400"></div>
+              {/* 区切り（sm 以上でのみ表示） */}
+              <div className="hidden sm:block w-px h-8 bg-gray-400"></div>
 
               {/* オーディオコントロール */}
               <AudioControls
@@ -160,20 +164,21 @@ export function ControlPanel({
                 onInitialize={onAudioInitialize}
               />
 
-              {/* 区切り */}
-              <div className="w-px h-8 bg-gray-400"></div>
+              {/* 区切り（sm 以上でのみ表示） */}
+              <div className="hidden sm:block w-px h-8 bg-gray-400"></div>
 
               {/* エクスポート・共有 */}
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={onExport}
                   disabled={!hasStickers}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg font-semibold transition-all ${
                     hasStickers
                       ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-md hover:shadow-lg active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                   title={t('control.exportTitle')}
+                  aria-label={t('control.export')}
                 >
                   <Download className="w-5 h-5" />
                   <span className="hidden sm:inline">{t('control.export')}</span>
@@ -183,12 +188,13 @@ export function ControlPanel({
                   <button
                     onClick={onShare}
                     disabled={!hasStickers}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                    className={`flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg font-semibold transition-all ${
                       hasStickers
                         ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                     title={t('control.share')}
+                    aria-label={t('control.share')}
                   >
                     <Share2 className="w-5 h-5" />
                     <span className="hidden sm:inline">{t('control.share')}</span>
@@ -196,14 +202,15 @@ export function ControlPanel({
                 )}
               </div>
 
-              {/* 区切り */}
-              <div className="w-px h-8 bg-gray-400"></div>
+              {/* 区切り（sm 以上でのみ表示） */}
+              <div className="hidden sm:block w-px h-8 bg-gray-400"></div>
 
               {/* 初期化 */}
               <button
                 onClick={handleResetClick}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
                 title={t('control.reset')}
+                aria-label={t('control.reset')}
               >
                 <RotateCcw className="w-5 h-5" />
                 <span className="hidden sm:inline">{t('control.reset')}</span>
@@ -212,11 +219,12 @@ export function ControlPanel({
               {/* ヘルプ */}
               {onShowHelp && (
                 <>
-                  <div className="w-px h-8 bg-gray-400"></div>
+                  <div className="hidden sm:block w-px h-8 bg-gray-400"></div>
                   <button
                     onClick={onShowHelp}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
+                    className="flex items-center justify-center gap-2 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
                     title={t('control.help')}
+                    aria-label={t('control.help')}
                   >
                     <HelpCircle className="w-5 h-5" />
                     <span className="hidden sm:inline">{t('control.help')}</span>

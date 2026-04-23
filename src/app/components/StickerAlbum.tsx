@@ -337,11 +337,12 @@ export function StickerAlbum() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* ヘッダー - PC/モバイル共通 */}
-      <header className="mb-4 lg:mb-6 text-center">
-        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-1 lg:mb-2">
+      {/* モバイルでは右上に「シール」FABが浮いているため、タイトルの左右にスペースを確保してクリッピング/重なりを防ぐ */}
+      <header className="mb-4 lg:mb-6 text-center px-16 lg:px-0">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 lg:mb-2 leading-tight">
           {t('app.albumTitle')}
         </h1>
-        <p className="text-sm text-gray-600">{t('app.dragDropHint')}</p>
+        <p className="text-xs sm:text-sm text-gray-600">{t('app.dragDropHint')}</p>
       </header>
 
       {/* モバイル用シールボタン（右上に追尾） */}

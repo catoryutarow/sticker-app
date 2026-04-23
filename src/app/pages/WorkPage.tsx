@@ -422,11 +422,13 @@ export function WorkPage() {
                     type="text"
                     value={shareUrl}
                     readOnly
-                    className="flex-1 px-3 py-2 border rounded-lg bg-gray-50 text-sm min-w-0"
+                    aria-label={t('work.shareThis')}
+                    className="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-xs sm:text-sm min-w-0 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
                   />
                   <button
                     onClick={handleCopyUrl}
-                    className={`px-3 py-2 rounded-lg transition-colors flex-shrink-0 ${
+                    aria-label={copied ? t('common.copied') : t('common.copy')}
+                    className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors flex-shrink-0 ${
                       copied
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

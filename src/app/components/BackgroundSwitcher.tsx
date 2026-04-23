@@ -79,8 +79,8 @@ export function BackgroundSwitcher({
   };
 
   return (
-    <div className="mb-4 flex items-center gap-2">
-      <span className="text-xs text-gray-500 flex-shrink-0">{t('background.label')}:</span>
+    <div className="mb-4 flex items-center gap-2 pr-20 lg:pr-0">
+      <span className="text-xs text-gray-500 flex-shrink-0">{t('background.label')}</span>
       <div
         ref={scrollRef}
         className="flex gap-2 overflow-x-auto scrollbar-hide py-1 px-1 -mx-1"
