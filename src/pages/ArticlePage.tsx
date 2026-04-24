@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { API_BASE_URL } from '@/config/apiUrl';
+import { Footer } from '@/components/Footer';
 
 interface Article {
   id: string;
@@ -234,6 +235,7 @@ export function ArticlePage() {
             </nav>
           )}
         </div>
+        <Footer />
       </div>
     </>
   );

@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Calendar, BookOpen } from 'lucide-react';
 
 import { API_BASE_URL } from '@/config/apiUrl';
+import { Footer } from '@/components/Footer';
 
 interface Article {
   id: string;
@@ -185,6 +186,7 @@ export function ArticlesPage() {
             </>
           )}
         </div>
+        <Footer />
       </div>
     </>
   );

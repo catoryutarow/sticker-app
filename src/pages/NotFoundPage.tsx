@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Home, Music, FileText, Mail, Shield } from 'lucide-react';
+import { Footer } from '@/components/Footer';
 
 export function NotFoundPage() {
   return (
@@ -10,7 +11,8 @@ export function NotFoundPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center px-3 sm:px-4 py-10">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-10">
         <div className="text-center max-w-md w-full">
           <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
             <Music className="w-10 h-10 sm:w-12 sm:h-12 text-white" aria-hidden="true" />
@@ -76,6 +78,8 @@ export function NotFoundPage() {
             </Link>
           </div>
         </div>
+        </div>
+        <Footer />
       </div>
     </>
   );

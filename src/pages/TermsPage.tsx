@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Footer } from '@/components/Footer';
 
 function SectionHeading({ num, children }: { num: number; children: ReactNode }) {
   return (
@@ -186,6 +187,7 @@ export function TermsPage() {
             </div>
           </article>
         </div>
+        <Footer />
       </div>
     </>
   );

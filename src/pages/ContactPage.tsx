@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, ExternalLink, Mail, HelpCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Footer } from '@/components/Footer';
 
 function FaqItem({ q, children }: { q: string; children: ReactNode }) {
   return (
@@ -188,6 +189,7 @@ export function ContactPage() {
             </div>
           </article>
         </div>
+        <Footer />
       </div>
     </>
   );
