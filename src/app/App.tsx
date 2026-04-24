@@ -4,6 +4,8 @@ import { TouchBackend } from 'react-dnd-touch-backend';
 import { StickerAlbum } from '@/app/components/StickerAlbum';
 import { ThreeBackground } from '@/app/components/ThreeBackground';
 import { LatestArticles } from '@/app/components/LatestArticles';
+import { IntroSections } from '@/app/components/IntroSections';
+import { Footer } from '@/components/Footer';
 
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -35,9 +37,11 @@ export default function App() {
         <StickerAlbum />
       </div>
 
-      {/* ブログセクション（SEO用・スクロール下部） */}
+      {/* 静的セクション＋ブログ＋フッター（SEO用・スクロール下部） */}
       <div className="relative" style={{ zIndex: 10 }}>
+        <IntroSections />
         <LatestArticles />
+        <Footer />
       </div>
     </DndProvider>
   );
