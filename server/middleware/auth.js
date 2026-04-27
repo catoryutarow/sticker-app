@@ -1,6 +1,13 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-key-change-in-production';
+const isProduction = process.env.NODE_ENV === 'production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET && isProduction) {
+  throw new Error('JWT_SECRET must be set in production');
+}
+
+const resolvedJwtSecret = JWT_SECRET || 'development-secret-key-change-in-production';
 
 /**
  * JWT検証ミドルウェア
@@ -15,7 +22,7 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, resolvedJwtSecret);
     req.user = decoded;
     next();
   } catch (error) {
@@ -35,7 +42,7 @@ export const optionalAuth = (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, resolvedJwtSecret);
       req.user = decoded;
     } catch {
       // トークンが無効でも続行
@@ -72,4 +79,17 @@ export const requireAdmin = (req, res, next) => {
   next();
 };
 
-export { JWT_SECRET };
+export const requireEmailVerified = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  if (!req.user.emailVerified) {
+    return res.status(403).json({ error: 'Email verification required' });
+  }
+  next();
+};
+
+export { resolvedJwtSecret as JWT_SECRET };

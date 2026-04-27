@@ -9,7 +9,7 @@
  */
 
 import * as Tone from 'tone';
-import { getAllStickerTypes, isStickerType } from './audioAssets';
+import { isStickerType } from './audioAssets';
 import { getStickerAudioPath, getStickerSpecialAudioPath, isValidStickerId } from '../config/stickerConfig';
 
 // Constants
@@ -918,7 +918,7 @@ class AudioEngine {
     try {
       Tone.getTransport().stop();
       Tone.getTransport().cancel();
-    } catch (e) {
+    } catch {
       // ignore
     }
 
@@ -926,14 +926,14 @@ class AudioEngine {
     for (const buffer of this.audioBuffers.values()) {
       try {
         buffer.dispose();
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
     this.audioBuffers.clear();
 
     for (const buffer of this.specialAudioBuffers.values()) {
-      try { buffer.dispose(); } catch (e) { /* ignore */ }
+      try { buffer.dispose(); } catch { /* ignore */ }
     }
     this.specialAudioBuffers.clear();
     this.kitSpecialInfo.clear();
@@ -943,11 +943,11 @@ class AudioEngine {
     this.currentBackgroundKitUuid = null;
 
     // マスターエフェクトを破棄
-    try { this.masterGain?.dispose(); } catch (e) { /* ignore */ }
-    try { this.masterDistortion?.dispose(); } catch (e) { /* ignore */ }
-    try { this.masterCompressor?.dispose(); } catch (e) { /* ignore */ }
-    try { this.masterLimiter?.dispose(); } catch (e) { /* ignore */ }
-    try { this.analyser?.dispose(); } catch (e) { /* ignore */ }
+    try { this.masterGain?.dispose(); } catch { /* ignore */ }
+    try { this.masterDistortion?.dispose(); } catch { /* ignore */ }
+    try { this.masterCompressor?.dispose(); } catch { /* ignore */ }
+    try { this.masterLimiter?.dispose(); } catch { /* ignore */ }
+    try { this.analyser?.dispose(); } catch { /* ignore */ }
 
     this.masterGain = null;
     this.masterDistortion = null;
@@ -962,10 +962,11 @@ class AudioEngine {
     // AudioContextを閉じる
     try {
       const ctx = Tone.getContext();
-      if (ctx.state !== 'closed') {
-        ctx.rawContext.close();
+      const rawContext = ctx.rawContext as AudioContext;
+      if (ctx.state !== 'closed' && 'close' in rawContext) {
+        rawContext.close();
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
 
@@ -979,16 +980,17 @@ class AudioEngine {
     try {
       Tone.getTransport().stop();
       Tone.getTransport().cancel();
-    } catch (e) {
+    } catch {
       // ignore
     }
 
     try {
       const ctx = Tone.getContext();
-      if (ctx.state === 'running') {
-        ctx.rawContext.suspend();
+      const rawContext = ctx.rawContext as AudioContext;
+      if (ctx.state === 'running' && 'suspend' in rawContext) {
+        rawContext.suspend();
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
 

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { nanoid } from 'nanoid';
 import db from '../db/index.js';
@@ -13,15 +14,23 @@ function generateShareId() {
   return nanoid(8);
 }
 
+function generateEditToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function hashEditToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 /**
  * Check if the requester owns the work
  * Works can be owned by authenticated users OR anonymous users
  */
-function checkWorkOwnership(work, userId, anonymousId) {
+function checkWorkOwnership(work, userId, editToken) {
   if (userId && work.user_id === userId) {
     return true;
   }
-  if (anonymousId && work.anonymous_id === anonymousId) {
+  if (editToken && work.edit_token_hash && work.edit_token_hash === hashEditToken(editToken)) {
     return true;
   }
   return false;
@@ -102,19 +111,27 @@ router.post('/', optionalAuth, async (req, res) => {
 
     const id = uuidv4();
     const shareId = generateShareId();
-    const userId = req.user?.userId || null;
+    const userId = req.user?.id || null;
     const stickersJson = JSON.stringify(stickers);
+    const isAnonymousSave = !userId;
+    const editToken = isAnonymousSave ? generateEditToken() : null;
+    const editTokenHash = editToken ? hashEditToken(editToken) : null;
 
     // Validate aspectRatio
     const validAspectRatio = ['3:4', '1:1'].includes(aspectRatio) ? aspectRatio : '3:4';
 
+    if (isAnonymousSave && !anonymousId) {
+      return res.status(400).json({ error: 'anonymousId is required for anonymous saves' });
+    }
+
     db.prepare(`
-      INSERT INTO works (id, share_id, anonymous_id, user_id, title, stickers_json, background_id, aspect_ratio, video_url, thumbnail_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO works (id, share_id, anonymous_id, edit_token_hash, user_id, title, stickers_json, background_id, aspect_ratio, video_url, thumbnail_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       shareId,
       anonymousId || null,
+      editTokenHash,
       userId,
       title || '',
       stickersJson,
@@ -136,6 +153,7 @@ router.post('/', optionalAuth, async (req, res) => {
       viewCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(editToken ? { editToken } : {}),
     });
   } catch (error) {
     console.error('Save work error:', error);
@@ -146,19 +164,19 @@ router.post('/', optionalAuth, async (req, res) => {
 /**
  * PUT /api/works/:shareId/video
  * Attach a video URL to an existing work
- * Body: { videoUrl, anonymousId? }
+ * Body: { videoUrl, editToken? }
  */
 router.put('/:shareId/video', optionalAuth, async (req, res) => {
   try {
     const { shareId } = req.params;
-    const { videoUrl, anonymousId } = req.body;
+    const { videoUrl, editToken } = req.body;
 
     if (!videoUrl) {
       return res.status(400).json({ error: 'Video URL is required' });
     }
 
     const work = db.prepare(`
-      SELECT id, user_id, anonymous_id FROM works WHERE share_id = ?
+      SELECT id, user_id, edit_token_hash FROM works WHERE share_id = ?
     `).get(shareId);
 
     if (!work) {
@@ -166,7 +184,7 @@ router.put('/:shareId/video', optionalAuth, async (req, res) => {
     }
 
     // Check ownership
-    if (!checkWorkOwnership(work, req.user?.userId, anonymousId)) {
+    if (!checkWorkOwnership(work, req.user?.id, editToken)) {
       return res.status(403).json({ error: 'Not authorized to update this work' });
     }
 
@@ -184,15 +202,15 @@ router.put('/:shareId/video', optionalAuth, async (req, res) => {
 /**
  * PUT /api/works/:shareId
  * Update a work's metadata (title, thumbnail)
- * Body: { title?, thumbnailUrl?, anonymousId? }
+ * Body: { title?, thumbnailUrl?, editToken? }
  */
 router.put('/:shareId', optionalAuth, async (req, res) => {
   try {
     const { shareId } = req.params;
-    const { title, thumbnailUrl, anonymousId } = req.body;
+    const { title, thumbnailUrl, editToken } = req.body;
 
     const work = db.prepare(`
-      SELECT id, user_id, anonymous_id FROM works WHERE share_id = ?
+      SELECT id, user_id, edit_token_hash FROM works WHERE share_id = ?
     `).get(shareId);
 
     if (!work) {
@@ -200,7 +218,7 @@ router.put('/:shareId', optionalAuth, async (req, res) => {
     }
 
     // Check ownership
-    if (!checkWorkOwnership(work, req.user?.userId, anonymousId)) {
+    if (!checkWorkOwnership(work, req.user?.id, editToken)) {
       return res.status(403).json({ error: 'Not authorized to update this work' });
     }
 
@@ -238,15 +256,15 @@ router.put('/:shareId', optionalAuth, async (req, res) => {
 /**
  * DELETE /api/works/:shareId
  * Delete a work (owner only)
- * Query: ?anonymousId=xxx
+ * Query: ?editToken=xxx
  */
 router.delete('/:shareId', optionalAuth, async (req, res) => {
   try {
     const { shareId } = req.params;
-    const { anonymousId } = req.query;
+    const { editToken } = req.query;
 
     const work = db.prepare(`
-      SELECT id, user_id, anonymous_id FROM works WHERE share_id = ?
+      SELECT id, user_id, edit_token_hash FROM works WHERE share_id = ?
     `).get(shareId);
 
     if (!work) {
@@ -254,7 +272,7 @@ router.delete('/:shareId', optionalAuth, async (req, res) => {
     }
 
     // Check ownership
-    if (!checkWorkOwnership(work, req.user?.userId, anonymousId)) {
+    if (!checkWorkOwnership(work, req.user?.id, editToken)) {
       return res.status(403).json({ error: 'Not authorized to delete this work' });
     }
 

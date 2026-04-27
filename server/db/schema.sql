@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS works (
   id TEXT PRIMARY KEY,
   share_id TEXT UNIQUE NOT NULL,           -- 短いID (nanoid 8文字) for URL sharing
   anonymous_id TEXT,                        -- 匿名ユーザーID (localStorage UUID)
+  edit_token_hash TEXT,                     -- 匿名編集用トークンのハッシュ
   user_id TEXT REFERENCES users(id),       -- ログインユーザー (nullable)
   title TEXT DEFAULT '',
   stickers_json TEXT NOT NULL,             -- JSON配列: シール配置データ

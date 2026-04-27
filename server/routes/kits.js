@@ -7,7 +7,7 @@ import { constants } from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
 import db from '../db/index.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireEmailVerified } from '../middleware/auth.js';
 import { AUDIO_LIBRARY, libraryPath, getRandomMatchingSound } from './audioLibrary.js';
 import { generateKitThumbnail } from '../utils/thumbnail.js';
 import { normalizeTagName, validateTagName } from './tags.js';
@@ -356,11 +356,13 @@ const checkKitOwnership = (kitId, userId, userRole) => {
 // キットAPI
 // ================================
 
+router.use(authenticateToken, requireEmailVerified);
+
 /**
  * GET /api/kits
  * キット一覧取得（自分のキットのみ）
  */
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', (req, res) => {
   try {
     const kits = db.prepare(`
       SELECT k.*,
@@ -402,7 +404,7 @@ const AVAILABLE_KEYS = [
  * POST /api/kits
  * キット作成（トランザクションでレースコンディション対策）
  */
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', (req, res) => {
   try {
     const { name, nameJa, description, color, musicalKey } = req.body;
 
@@ -441,7 +443,7 @@ router.post('/', authenticateToken, (req, res) => {
  * GET /api/kits/:kitId
  * キット詳細取得
  */
-router.get('/:kitId', authenticateToken, (req, res) => {
+router.get('/:kitId', (req, res) => {
   try {
     const { kitId } = req.params;
 
@@ -474,7 +476,7 @@ router.get('/:kitId', authenticateToken, (req, res) => {
  * PUT /api/kits/:kitId
  * キット更新
  */
-router.put('/:kitId', authenticateToken, async (req, res) => {
+router.put('/:kitId', async (req, res) => {
   try {
     const { kitId } = req.params;
     const { name, nameJa, description, color, musicalKey, status, isSpecial, specialBpm } = req.body;
@@ -623,7 +625,7 @@ router.put('/:kitId', authenticateToken, async (req, res) => {
  * DELETE /api/kits/:kitId
  * キット削除
  */
-router.delete('/:kitId', authenticateToken, (req, res) => {
+router.delete('/:kitId', (req, res) => {
   try {
     const { kitId } = req.params;
 
@@ -651,7 +653,7 @@ const MAX_TAGS_PER_KIT = 5;
  * GET /api/kits/:kitId/tags
  * キットのタグ一覧取得
  */
-router.get('/:kitId/tags', authenticateToken, (req, res) => {
+router.get('/:kitId/tags', (req, res) => {
   try {
     const { kitId } = req.params;
 
@@ -684,7 +686,7 @@ router.get('/:kitId/tags', authenticateToken, (req, res) => {
  * PUT /api/kits/:kitId/tags
  * キットのタグを一括更新（最大5個）
  */
-router.put('/:kitId/tags', authenticateToken, (req, res) => {
+router.put('/:kitId/tags', (req, res) => {
   try {
     const { kitId } = req.params;
     const { tags } = req.body;
@@ -768,7 +770,7 @@ router.put('/:kitId/tags', authenticateToken, (req, res) => {
  * POST /api/kits/:kitId/tags
  * キットにタグを追加
  */
-router.post('/:kitId/tags', authenticateToken, (req, res) => {
+router.post('/:kitId/tags', (req, res) => {
   try {
     const { kitId } = req.params;
     const { tagName } = req.body;
@@ -825,7 +827,7 @@ router.post('/:kitId/tags', authenticateToken, (req, res) => {
  * DELETE /api/kits/:kitId/tags/:tagName
  * キットからタグを削除
  */
-router.delete('/:kitId/tags/:tagName', authenticateToken, (req, res) => {
+router.delete('/:kitId/tags/:tagName', (req, res) => {
   try {
     const { kitId, tagName } = req.params;
 
@@ -855,7 +857,7 @@ router.delete('/:kitId/tags/:tagName', authenticateToken, (req, res) => {
  * POST /api/kits/:kitId/regenerate-thumbnail
  * サムネイル再生成
  */
-router.post('/:kitId/regenerate-thumbnail', authenticateToken, async (req, res) => {
+router.post('/:kitId/regenerate-thumbnail', async (req, res) => {
   try {
     const { kitId } = req.params;
 
@@ -889,7 +891,7 @@ router.post('/:kitId/regenerate-thumbnail', authenticateToken, async (req, res) 
  * GET /api/kits/:kitId/stickers
  * シール一覧取得
  */
-router.get('/:kitId/stickers', authenticateToken, (req, res) => {
+router.get('/:kitId/stickers', (req, res) => {
   try {
     const { kitId } = req.params;
 
@@ -913,7 +915,7 @@ router.get('/:kitId/stickers', authenticateToken, (req, res) => {
  * POST /api/kits/:kitId/stickers
  * シール追加
  */
-router.post('/:kitId/stickers', authenticateToken, (req, res) => {
+router.post('/:kitId/stickers', (req, res) => {
   try {
     const { kitId } = req.params;
     const { name, nameJa, color, isPercussion } = req.body;
@@ -954,7 +956,7 @@ router.post('/:kitId/stickers', authenticateToken, (req, res) => {
  * PUT /api/kits/:kitId/stickers/:stickerId
  * シール更新
  */
-router.put('/:kitId/stickers/:stickerId', authenticateToken, (req, res) => {
+router.put('/:kitId/stickers/:stickerId', (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
     const { name, nameJa, color, isPercussion, sortOrder, layoutX, layoutY, layoutSize, layoutRotation, layoutCount } = req.body;
@@ -1010,7 +1012,7 @@ router.put('/:kitId/stickers/:stickerId', authenticateToken, (req, res) => {
  * DELETE /api/kits/:kitId/stickers/:stickerId
  * シール削除
  */
-router.delete('/:kitId/stickers/:stickerId', authenticateToken, (req, res) => {
+router.delete('/:kitId/stickers/:stickerId', (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
 
@@ -1041,7 +1043,7 @@ router.delete('/:kitId/stickers/:stickerId', authenticateToken, (req, res) => {
  * GET /api/kits/:kitId/stickers/:stickerId/layouts
  * シールのレイアウト一覧取得
  */
-router.get('/:kitId/stickers/:stickerId/layouts', authenticateToken, (req, res) => {
+router.get('/:kitId/stickers/:stickerId/layouts', (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
 
@@ -1068,7 +1070,7 @@ router.get('/:kitId/stickers/:stickerId/layouts', authenticateToken, (req, res) 
  * POST /api/kits/:kitId/stickers/:stickerId/layouts
  * シールレイアウト追加（複製）
  */
-router.post('/:kitId/stickers/:stickerId/layouts', authenticateToken, (req, res) => {
+router.post('/:kitId/stickers/:stickerId/layouts', (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
     const { x, y, size, rotation } = req.body;
@@ -1111,7 +1113,7 @@ router.post('/:kitId/stickers/:stickerId/layouts', authenticateToken, (req, res)
  * PUT /api/kits/:kitId/stickers/:stickerId/layouts/:layoutId
  * シールレイアウト更新
  */
-router.put('/:kitId/stickers/:stickerId/layouts/:layoutId', authenticateToken, (req, res) => {
+router.put('/:kitId/stickers/:stickerId/layouts/:layoutId', (req, res) => {
   try {
     const { kitId, stickerId, layoutId } = req.params;
     const { x, y, size, rotation } = req.body;
@@ -1158,7 +1160,7 @@ router.put('/:kitId/stickers/:stickerId/layouts/:layoutId', authenticateToken, (
  * DELETE /api/kits/:kitId/stickers/:stickerId/layouts/:layoutId
  * シールレイアウト削除
  */
-router.delete('/:kitId/stickers/:stickerId/layouts/:layoutId', authenticateToken, (req, res) => {
+router.delete('/:kitId/stickers/:stickerId/layouts/:layoutId', (req, res) => {
   try {
     const { kitId, stickerId, layoutId } = req.params;
 
@@ -1199,7 +1201,7 @@ router.delete('/:kitId/stickers/:stickerId/layouts/:layoutId', authenticateToken
  * POST /api/kits/:kitId/stickers/:stickerId/image
  * シール画像アップロード
  */
-router.post('/:kitId/stickers/:stickerId/image', authenticateToken, upload.single('image'), async (req, res) => {
+router.post('/:kitId/stickers/:stickerId/image', upload.single('image'), async (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
 
@@ -1260,7 +1262,7 @@ router.post('/:kitId/stickers/:stickerId/image', authenticateToken, upload.singl
  * POST /api/kits/:kitId/stickers/:stickerId/audio-from-library
  * ライブラリ音声をシールに割り当て
  */
-router.post('/:kitId/stickers/:stickerId/audio-from-library', authenticateToken, async (req, res) => {
+router.post('/:kitId/stickers/:stickerId/audio-from-library', async (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
     const { soundId } = req.body;
@@ -1338,7 +1340,7 @@ router.post('/:kitId/stickers/:stickerId/audio-from-library', authenticateToken,
  * POST /api/kits/:kitId/stickers/:stickerId/audio
  * シール音声アップロード
  */
-router.post('/:kitId/stickers/:stickerId/audio', authenticateToken, upload.single('audio'), async (req, res) => {
+router.post('/:kitId/stickers/:stickerId/audio', upload.single('audio'), async (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
 
@@ -1394,7 +1396,7 @@ router.post('/:kitId/stickers/:stickerId/audio', authenticateToken, upload.singl
  * POST /api/kits/:kitId/stickers/:stickerId/special-audio
  * スペシャル音源アップロード（admin専用）
  */
-router.post('/:kitId/stickers/:stickerId/special-audio', authenticateToken, upload.single('audio'), async (req, res) => {
+router.post('/:kitId/stickers/:stickerId/special-audio', upload.single('audio'), async (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
 

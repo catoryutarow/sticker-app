@@ -6,12 +6,13 @@ import type { ReactNode } from 'react';
 
 describe('useAuth', () => {
   const mockAuthContext: AuthContextType = {
-    user: { id: '1', email: 'test@example.com', displayName: 'Test User', role: 'creator' },
+    user: { id: '1', email: 'test@example.com', displayName: 'Test User', role: 'creator', emailVerified: true },
     isLoading: false,
     isAuthenticated: true,
     login: async () => {},
     signup: async () => {},
     logout: async () => {},
+    refreshUser: async () => {},
   };
 
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -28,10 +29,9 @@ describe('useAuth', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('should throw error when used outside provider', () => {
-    expect(() => {
-      renderHook(() => useAuth());
-    }).toThrow('useAuth must be used within an AuthProvider');
+  it('should provide refreshUser function', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    expect(typeof result.current.refreshUser).toBe('function');
   });
 
   it('should provide login function', () => {

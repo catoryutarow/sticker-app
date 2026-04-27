@@ -37,6 +37,7 @@ const SALT_ROUNDS = 10;
 // トークン有効期限
 const VERIFICATION_TOKEN_EXPIRES_HOURS = 24;
 const PASSWORD_RESET_TOKEN_EXPIRES_HOURS = 1;
+const COOKIE_SAME_SITE = process.env.COOKIE_SAME_SITE || 'lax';
 
 /**
  * セキュアなトークン生成（64文字の16進数文字列）
@@ -44,6 +45,8 @@ const PASSWORD_RESET_TOKEN_EXPIRES_HOURS = 1;
 const generateSecureToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 /**
  * JWTトークン生成
@@ -69,7 +72,7 @@ const setCookie = (res, token) => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: COOKIE_SAME_SITE,
     maxAge: COOKIE_MAX_AGE,
     path: '/',
   });
@@ -79,7 +82,8 @@ const setCookie = (res, token) => {
  * メール認証トークンを作成
  */
 const createVerificationToken = (userId) => {
-  const token = generateSecureToken();
+  const rawToken = generateSecureToken();
+  const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRES_HOURS * 60 * 60 * 1000);
 
   // 既存のトークンを削除
@@ -89,16 +93,17 @@ const createVerificationToken = (userId) => {
   db.prepare(`
     INSERT INTO email_verification_tokens (id, user_id, token, expires_at)
     VALUES (?, ?, ?, ?)
-  `).run(uuidv4(), userId, token, expiresAt.toISOString());
+  `).run(uuidv4(), userId, tokenHash, expiresAt.toISOString());
 
-  return token;
+  return rawToken;
 };
 
 /**
  * パスワードリセットトークンを作成
  */
 const createPasswordResetToken = (userId) => {
-  const token = generateSecureToken();
+  const rawToken = generateSecureToken();
+  const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRES_HOURS * 60 * 60 * 1000);
 
   // 既存の未使用トークンを無効化
@@ -112,9 +117,9 @@ const createPasswordResetToken = (userId) => {
   db.prepare(`
     INSERT INTO password_reset_tokens (id, user_id, token, expires_at)
     VALUES (?, ?, ?, ?)
-  `).run(uuidv4(), userId, token, expiresAt.toISOString());
+  `).run(uuidv4(), userId, tokenHash, expiresAt.toISOString());
 
-  return token;
+  return rawToken;
 };
 
 /**
@@ -171,7 +176,6 @@ router.post('/signup', signupLimiter, validateSignup, async (req, res) => {
         displayName: user.display_name,
         emailVerified: user.email_verified === 1,
       },
-      token,
       verificationSent,
       message: verificationSent
         ? '確認メールを送信しました。メールのリンクをクリックして認証を完了してください。'
@@ -215,7 +219,6 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         displayName: user.display_name,
         emailVerified: user.email_verified === 1,
       },
-      token,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -231,7 +234,7 @@ router.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: COOKIE_SAME_SITE,
     path: '/',
   });
   res.json({ message: 'ログアウトしました' });
@@ -260,6 +263,14 @@ router.get('/me', authenticateToken, (req, res) => {
   });
 });
 
+const getTokenRecord = (tableName, rawToken) => {
+  const tokenHash = hashToken(rawToken);
+  return db.prepare(`
+    SELECT * FROM ${tableName}
+    WHERE token IN (?, ?) AND expires_at > datetime('now')
+  `).get(tokenHash, rawToken);
+};
+
 /**
  * POST /api/auth/verify-email
  * メールアドレス認証
@@ -269,10 +280,7 @@ router.post('/verify-email', validateVerifyEmail, async (req, res) => {
     const { token } = req.body;
 
     // トークンを検索
-    const tokenRecord = db.prepare(`
-      SELECT * FROM email_verification_tokens
-      WHERE token = ? AND expires_at > datetime('now')
-    `).get(token);
+    const tokenRecord = getTokenRecord('email_verification_tokens', token);
 
     if (!tokenRecord) {
       return res.status(400).json({
@@ -306,7 +314,6 @@ router.post('/verify-email', validateVerifyEmail, async (req, res) => {
         displayName: user.display_name,
         emailVerified: true,
       },
-      token: newToken,
     });
   } catch (error) {
     console.error('Verify email error:', error);
@@ -385,10 +392,11 @@ router.post('/reset-password', validateResetPassword, async (req, res) => {
     const { token, password } = req.body;
 
     // トークンを検索
+    const tokenHash = hashToken(token);
     const tokenRecord = db.prepare(`
       SELECT * FROM password_reset_tokens
-      WHERE token = ? AND expires_at > datetime('now') AND used_at IS NULL
-    `).get(token);
+      WHERE token IN (?, ?) AND expires_at > datetime('now') AND used_at IS NULL
+    `).get(tokenHash, token);
 
     if (!tokenRecord) {
       return res.status(400).json({
@@ -509,12 +517,12 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
     }
 
     // Cookieをクリア
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/',
-    });
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: COOKIE_SAME_SITE,
+    path: '/',
+  });
 
     res.json({ message: 'アカウントが削除されました' });
   } catch (error) {

@@ -15,6 +15,7 @@ import {
 import { Check, Copy, Download, Loader2, Share2, X } from 'lucide-react';
 import { worksApi, Work, PlacedSticker, AspectRatio } from '../../api/worksApi';
 import { getAnonymousId } from '../../utils/anonymousId';
+import { saveWorkEditToken } from '../../utils/workEditTokens';
 
 interface ShareDialogProps {
   isOpen: boolean;
@@ -97,6 +98,10 @@ export function ShareDialog({
         anonymousId,
         thumbnailUrl: thumbnailDataUrl || undefined,
       });
+
+      if (work.editToken) {
+        saveWorkEditToken(work.shareId, work.editToken);
+      }
 
       setSavedWork(work);
       setPhase('ready');
