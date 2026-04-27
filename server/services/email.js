@@ -8,9 +8,9 @@ const APP_NAME = 'シール帳';
 
 /**
  * メール送信が有効かどうか
- * SESはIAMロールで認証するため、常に有効
+ * smoke test では明示的に無効化できるようにする
  */
-export const isEmailEnabled = () => true;
+export const isEmailEnabled = () => process.env.DISABLE_EMAIL !== 'true';
 
 /**
  * SESでメールを送信

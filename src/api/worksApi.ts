@@ -34,6 +34,7 @@ export interface Work {
   viewCount: number;
   createdAt: string;
   updatedAt: string;
+  editToken?: string;
 }
 
 export interface SaveWorkRequest {
@@ -49,7 +50,7 @@ export interface SaveWorkRequest {
 export interface UpdateWorkRequest {
   title?: string;
   thumbnailUrl?: string;
-  anonymousId?: string;
+  editToken?: string;
 }
 
 class WorksApiError extends Error {
@@ -96,14 +97,14 @@ export const worksApi = {
   /**
    * Update a work's video URL
    */
-  updateWorkVideo: async (shareId: string, videoUrl: string, anonymousId?: string): Promise<void> => {
+  updateWorkVideo: async (shareId: string, videoUrl: string, editToken?: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/works/${shareId}/video`, {
       method: 'PUT',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ videoUrl, anonymousId }),
+      body: JSON.stringify({ videoUrl, editToken }),
     });
     await handleResponse<{ message: string }>(response);
   },
@@ -126,10 +127,10 @@ export const worksApi = {
   /**
    * Delete a work
    */
-  deleteWork: async (shareId: string, anonymousId?: string): Promise<void> => {
+  deleteWork: async (shareId: string, editToken?: string): Promise<void> => {
     const url = new URL(`${API_BASE_URL}/works/${shareId}`);
-    if (anonymousId) {
-      url.searchParams.set('anonymousId', anonymousId);
+    if (editToken) {
+      url.searchParams.set('editToken', editToken);
     }
     const response = await fetch(url.toString(), {
       method: 'DELETE',

@@ -1,7 +1,11 @@
 node_modules/
 dist/
 .DS_Store
+.playwright-mcp/
 *.local
+*-mobile.png
+*-mobile-after.png
+prod-*-final.png
 .env
 .env.local
 .env.production
@@ -10,6 +14,7 @@ dist/
 server/data/*.db
 server/data/*.db-wal
 server/data/*.db-shm
+server/data/*.bak*
 server/db/*.db
 server/db/*.db-wal
 server/db/*.db-shm

@@ -29,6 +29,11 @@ const schemaPath = join(__dirname, 'schema.sql');
 const schema = readFileSync(schemaPath, 'utf-8');
 db.exec(schema);
 
+const anonymousWorkRetentionDays = Number.parseInt(
+  process.env.ANONYMOUS_WORK_RETENTION_DAYS || '30',
+  10
+);
+
 // 起動時にDB情報を明示的にログ出力
 console.log('==================================================');
 console.log('Database Configuration:');
@@ -129,6 +134,17 @@ const runMigrations = () => {
       `);
       console.log('Migration complete: articles table created');
     }
+
+    const worksTableInfo = db.prepare("PRAGMA table_info(works)").all();
+    const hasWorkEditTokenHash = worksTableInfo.some(col => col.name === 'edit_token_hash');
+
+    if (!hasWorkEditTokenHash) {
+      console.log('Running migration: Add anonymous work edit token hash...');
+      db.exec(`
+        ALTER TABLE works ADD COLUMN edit_token_hash TEXT;
+      `);
+      console.log('Migration complete: anonymous work edit token hash added');
+    }
   } catch (error) {
     console.error('Migration error:', error);
   }
@@ -136,6 +152,29 @@ const runMigrations = () => {
 
 // マイグレーション実行
 runMigrations();
+
+const runMaintenance = () => {
+  if (!Number.isInteger(anonymousWorkRetentionDays) || anonymousWorkRetentionDays <= 0) {
+    console.warn('Skipping anonymous work cleanup due to invalid retention setting:', anonymousWorkRetentionDays);
+    return;
+  }
+
+  try {
+    const result = db.prepare(`
+      DELETE FROM works
+      WHERE user_id IS NULL
+        AND updated_at < datetime('now', ?)
+    `).run(`-${anonymousWorkRetentionDays} days`);
+
+    if (result.changes > 0) {
+      console.log(`Maintenance: deleted ${result.changes} expired anonymous works`);
+    }
+  } catch (error) {
+    console.error('Maintenance error:', error);
+  }
+};
+
+runMaintenance();
 
 // Admin自動作成（環境変数が設定されている場合）
 const createAdminUser = async () => {

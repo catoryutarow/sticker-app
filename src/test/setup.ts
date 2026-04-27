@@ -1,5 +1,8 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
+
+// JSDOM does not implement canvas export APIs; return a stable dummy data URL.
+HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,test');
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

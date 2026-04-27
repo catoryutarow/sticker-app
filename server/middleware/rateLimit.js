@@ -60,3 +60,15 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * エンコードAPI用レート制限
+ * 15分で10回まで
+ */
+export const encodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'エンコード試行回数が上限を超えました。しばらく待ってから再試行してください。' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

@@ -18,18 +18,34 @@ import tagRoutes from './routes/tags.js';
 import worksRoutes from './routes/works.js';
 import articlesRoutes from './routes/articles.js';
 import backgroundsRoutes from './routes/backgrounds.js';
+import { encodeLimiter } from './middleware/rateLimit.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && !process.env.ALLOWED_ORIGINS) {
+  throw new Error('ALLOWED_ORIGINS must be set in production');
+}
+
+const configuredOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+const frontendOrigin = process.env.FRONTEND_URL
+  ? new URL(process.env.FRONTEND_URL).origin
+  : null;
+const trustedOrigins = new Set([
+  ...configuredOrigins,
+  ...(frontendOrigin ? [frontendOrigin] : []),
+]);
 
 // リバースプロキシ（Nginx）を信頼する設定
 // X-Forwarded-For ヘッダーからクライアントIPを取得
 app.set('trust proxy', 1);
 
 // セキュリティヘッダー設定
-const isDev = process.env.NODE_ENV === 'development';
 app.use(helmet({
-  contentSecurityPolicy: isDev ? false : {
+  contentSecurityPolicy: !isProduction ? false : {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
@@ -76,26 +92,59 @@ const upload = multer({
   },
 });
 
-// CORS設定（本番環境では環境変数で許可オリジンを指定）
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : null;
-
 app.use(cors({
-  origin: allowedOrigins ? (origin, callback) => {
-    // 同一オリジンまたは許可リストに含まれる場合のみ許可
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (!isProduction && trustedOrigins.size === 0) {
+      callback(null, true);
+      return;
+    }
+
+    if (trustedOrigins.has(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
-  } : true,
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   maxAge: 86400,
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
+
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+app.use((req, res, next) => {
+  const hasCookieToken = Boolean(req.cookies?.token);
+  const hasBearerToken = Boolean(req.headers.authorization?.startsWith('Bearer '));
+
+  if (!UNSAFE_METHODS.has(req.method) || !hasCookieToken || hasBearerToken) {
+    return next();
+  }
+
+  const originHeader = req.headers.origin;
+  const refererHeader = req.headers.referer;
+  let requestOrigin = originHeader || null;
+
+  if (!requestOrigin && refererHeader) {
+    try {
+      requestOrigin = new URL(refererHeader).origin;
+    } catch {
+      requestOrigin = null;
+    }
+  }
+
+  if (!requestOrigin || !trustedOrigins.has(requestOrigin)) {
+    return res.status(403).json({ error: 'CSRF validation failed' });
+  }
+
+  next();
+});
 
 // 認証ルート
 app.use('/api/auth', authRoutes);
@@ -160,7 +209,7 @@ const validateEncodeParams = (duration, fps) => {
 const FFMPEG_TIMEOUT = 5 * 60 * 1000;
 
 // MP4エンコード
-app.post('/encode', upload.fields([
+app.post('/encode', encodeLimiter, upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'audio', maxCount: 1 }
 ]), async (req, res) => {
@@ -302,9 +351,17 @@ app.use((err, req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Encoder server running on port ${PORT}`);
+export { app };
+
+export const startServer = (port = process.env.PORT || 3001, host = '0.0.0.0') => app.listen(port, host, () => {
+  console.log(`Encoder server running on port ${port}`);
   console.log(`Max file size: ${MAX_FILE_SIZE / 1024 / 1024}MB`);
   console.log(`FFmpeg timeout: ${FFMPEG_TIMEOUT / 1000}s`);
 });
+
+const isEntrypoint = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isEntrypoint) {
+  const PORT = process.env.PORT || 3001;
+  startServer(PORT);
+}

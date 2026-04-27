@@ -1,42 +1,46 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import App from '@/app/App';
-import { WorkPage } from '@/app/pages/WorkPage';
 import { AuthGuard } from '@/auth';
-import {
-  CreatorLayout,
-  SignupPage,
-  LoginPage,
-  DashboardPage,
-  NewKitPage,
-  KitDetailPage,
-  QuickCreatePage,
-  ForgotPasswordPage,
-  ResetPasswordPage,
-  VerifyEmailPage,
-} from '@/creator';
-import {
-  AdminLayout,
-  AdminGuard,
-  AdminLoginPage,
-  AdminDashboardPage,
-  UsersPage,
-  UserDetailPage,
-  AdminKitsPage,
-  AdminNewKitPage,
-  TagsPage,
-  AdminArticlesPage,
-  ArticleEditPage,
-  AdminBackgroundsPage,
-} from '@/admin';
-import {
-  PrivacyPage,
-  TermsPage,
-  ContactPage,
-  AboutPage,
-  ArticlesPage,
-  ArticlePage,
-  NotFoundPage,
-} from '@/pages';
+import { AdminGuard } from '@/admin';
+
+const WorkPage = lazy(() => import('@/app/pages/WorkPage').then((module) => ({ default: module.WorkPage })));
+const CreatorLayout = lazy(() => import('@/creator').then((module) => ({ default: module.CreatorLayout })));
+const SignupPage = lazy(() => import('@/creator').then((module) => ({ default: module.SignupPage })));
+const LoginPage = lazy(() => import('@/creator').then((module) => ({ default: module.LoginPage })));
+const DashboardPage = lazy(() => import('@/creator').then((module) => ({ default: module.DashboardPage })));
+const NewKitPage = lazy(() => import('@/creator').then((module) => ({ default: module.NewKitPage })));
+const KitDetailPage = lazy(() => import('@/creator').then((module) => ({ default: module.KitDetailPage })));
+const QuickCreatePage = lazy(() => import('@/creator').then((module) => ({ default: module.QuickCreatePage })));
+const ForgotPasswordPage = lazy(() => import('@/creator').then((module) => ({ default: module.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('@/creator').then((module) => ({ default: module.ResetPasswordPage })));
+const VerifyEmailPage = lazy(() => import('@/creator').then((module) => ({ default: module.VerifyEmailPage })));
+
+const AdminLayout = lazy(() => import('@/admin').then((module) => ({ default: module.AdminLayout })));
+const AdminLoginPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminLoginPage })));
+const AdminDashboardPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminDashboardPage })));
+const UsersPage = lazy(() => import('@/admin').then((module) => ({ default: module.UsersPage })));
+const UserDetailPage = lazy(() => import('@/admin').then((module) => ({ default: module.UserDetailPage })));
+const AdminKitsPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminKitsPage })));
+const AdminNewKitPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminNewKitPage })));
+const TagsPage = lazy(() => import('@/admin').then((module) => ({ default: module.TagsPage })));
+const AdminArticlesPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminArticlesPage })));
+const ArticleEditPage = lazy(() => import('@/admin').then((module) => ({ default: module.ArticleEditPage })));
+const AdminBackgroundsPage = lazy(() => import('@/admin').then((module) => ({ default: module.AdminBackgroundsPage })));
+
+const PrivacyPage = lazy(() => import('@/pages').then((module) => ({ default: module.PrivacyPage })));
+const TermsPage = lazy(() => import('@/pages').then((module) => ({ default: module.TermsPage })));
+const ContactPage = lazy(() => import('@/pages').then((module) => ({ default: module.ContactPage })));
+const AboutPage = lazy(() => import('@/pages').then((module) => ({ default: module.AboutPage })));
+const ArticlesPage = lazy(() => import('@/pages').then((module) => ({ default: module.ArticlesPage })));
+const ArticlePage = lazy(() => import('@/pages').then((module) => ({ default: module.ArticlePage })));
+const NotFoundPage = lazy(() => import('@/pages').then((module) => ({ default: module.NotFoundPage })));
+
+const withSuspense = (element: ReactNode) => (
+  <Suspense fallback={null}>
+    {element}
+  </Suspense>
+);
 
 const router = createBrowserRouter([
   {
@@ -45,65 +49,65 @@ const router = createBrowserRouter([
   },
   {
     path: '/w/:shareId',
-    element: <WorkPage />,
+    element: withSuspense(<WorkPage />),
   },
   // Legal & Info pages
   {
     path: '/privacy',
-    element: <PrivacyPage />,
+    element: withSuspense(<PrivacyPage />),
   },
   {
     path: '/terms',
-    element: <TermsPage />,
+    element: withSuspense(<TermsPage />),
   },
   {
     path: '/contact',
-    element: <ContactPage />,
+    element: withSuspense(<ContactPage />),
   },
   {
     path: '/about',
-    element: <AboutPage />,
+    element: withSuspense(<AboutPage />),
   },
   // Blog pages
   {
     path: '/articles',
-    element: <ArticlesPage />,
+    element: withSuspense(<ArticlesPage />),
   },
   {
     path: '/articles/:slug',
-    element: <ArticlePage />,
+    element: withSuspense(<ArticlePage />),
   },
   {
     path: '/creator/signup',
-    element: <SignupPage />,
+    element: withSuspense(<SignupPage />),
   },
   {
     path: '/creator/login',
-    element: <LoginPage />,
+    element: withSuspense(<LoginPage />),
   },
   {
     path: '/creator/forgot-password',
-    element: <ForgotPasswordPage />,
+    element: withSuspense(<ForgotPasswordPage />),
   },
   {
     path: '/reset-password',
-    element: <ResetPasswordPage />,
+    element: withSuspense(<ResetPasswordPage />),
   },
   {
     path: '/verify-email',
-    element: <VerifyEmailPage />,
+    element: withSuspense(<VerifyEmailPage />),
   },
   {
     path: '/creator',
     element: (
       <AuthGuard>
-        <CreatorLayout />
+        {withSuspense(<CreatorLayout />)}
       </AuthGuard>
     ),
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: withSuspense(<DashboardPage />),
       },
       {
         path: 'kits',
@@ -111,85 +115,85 @@ const router = createBrowserRouter([
       },
       {
         path: 'kits/quick',
-        element: <QuickCreatePage />,
+        element: withSuspense(<QuickCreatePage />),
       },
       {
         path: 'kits/quick/:kitId',
-        element: <QuickCreatePage />,
+        element: withSuspense(<QuickCreatePage />),
       },
       {
         path: 'kits/new',
-        element: <NewKitPage />,
+        element: withSuspense(<NewKitPage />),
       },
       {
         path: 'kits/:kitId',
-        element: <KitDetailPage />,
+        element: withSuspense(<KitDetailPage />),
       },
     ],
   },
   // Admin routes
   {
     path: '/admin/login',
-    element: <AdminLoginPage />,
+    element: withSuspense(<AdminLoginPage />),
   },
   {
     path: '/admin',
     element: (
       <AdminGuard>
-        <AdminLayout />
+        {withSuspense(<AdminLayout />)}
       </AdminGuard>
     ),
     children: [
       {
         index: true,
-        element: <AdminDashboardPage />,
+        element: withSuspense(<AdminDashboardPage />),
       },
       {
         path: 'users',
-        element: <UsersPage />,
+        element: withSuspense(<UsersPage />),
       },
       {
         path: 'users/:userId',
-        element: <UserDetailPage />,
+        element: withSuspense(<UserDetailPage />),
       },
       {
         path: 'kits',
-        element: <AdminKitsPage />,
+        element: withSuspense(<AdminKitsPage />),
       },
       {
         path: 'kits/new',
-        element: <AdminNewKitPage />,
+        element: withSuspense(<AdminNewKitPage />),
       },
       {
         path: 'kits/:kitId',
-        element: <KitDetailPage />,
+        element: withSuspense(<KitDetailPage />),
       },
       {
         path: 'tags',
-        element: <TagsPage />,
+        element: withSuspense(<TagsPage />),
       },
       {
         path: 'backgrounds',
-        element: <AdminBackgroundsPage />,
+        element: withSuspense(<AdminBackgroundsPage />),
       },
       {
         path: 'articles',
-        element: <AdminArticlesPage />,
+        element: withSuspense(<AdminArticlesPage />),
       },
       {
         path: 'articles/new',
-        element: <ArticleEditPage />,
+        element: withSuspense(<ArticleEditPage />),
       },
       {
         path: 'articles/:articleId',
-        element: <ArticleEditPage />,
+        element: withSuspense(<ArticleEditPage />),
       },
     ],
   },
   // 404 fallback
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: withSuspense(<NotFoundPage />),
   },
 ]);
 

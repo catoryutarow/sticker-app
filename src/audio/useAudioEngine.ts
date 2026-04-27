@@ -60,8 +60,9 @@ export function useAudioEngine(): UseAudioEngineReturn {
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         const ctx = Tone.getContext();
-        if (ctx.state === 'running') {
-          ctx.rawContext.suspend();
+        const rawContext = ctx.rawContext as AudioContext;
+        if (ctx.state === 'running' && 'suspend' in rawContext) {
+          rawContext.suspend();
         }
       } catch {
         // ignore - best effort cleanup
@@ -163,6 +164,7 @@ export function useAudioEngine(): UseAudioEngineReturn {
         y: 400,
         rotation: 0,
         scale: 1,
+        pitch: 0,
       };
       const currentStates = Array.from(engine.getStickerStates().values());
       engine.syncWithStickers([...currentStates, dummySticker]);
