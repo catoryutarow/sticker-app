@@ -14,10 +14,23 @@ prod-*-final.png
 server/data/*.db
 server/data/*.db-wal
 server/data/*.db-shm
-server/data/*.bak*
+server/data/*.backup
 server/db/*.db
 server/db/*.db-wal
 server/db/*.db-shm
+
+# DB forensic / pre-restore snapshots (production EC2 only, never commit)
+server/data/sticker.db.forensic-*
+server/data/sticker.db.pre-restore-*
+server/data/sticker.db-shm.forensic-*
+server/data/sticker.db-shm.pre-restore-*
+server/data/sticker.db-wal.forensic-*
+server/data/sticker.db-wal.pre-restore-*
+
+# Backup files (deploy-time .env backups, manual config backups)
+*.bak
+*.bak.*
+*.bak-*
 
 # Firebase
 firebase-debug.log
