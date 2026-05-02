@@ -137,7 +137,12 @@ e967c06 feat: frontend types and API methods for special kit dual audio
 ### 8. 次のエージェントへの注意事項
 - **Docker の再ビルドが必要**: ローカルで `server/` のコードを変更したら `docker compose build encoder && up -d encoder`（ボリュームマウントではなく COPY ビルド方式）
 - **本番デプロイフロー**: main に push → Vercel は自動デプロイ / EC2 は `ssh → cd ~/sticker-app → git pull → docker compose build encoder && up -d encoder`
-- **ローカルのシール/音源アセット**: `kit-006` 〜 `kit-028` は未コミット。本番の同じ kit_number に別データが存在するため**絶対にコミットしない**（競合防止）
+- **ローカルのシール/音源アセット**: `kit-006` 〜 `kit-028` および `kit-030`, `kit-032` は git に未コミット。本番の同じ kit_number に別データが存在するため**絶対にコミットしない**（競合防止）。`kit-029` 以降の追加分は admin UI から本番に直接登録されたもので、バイナリは EC2 ディスクのみに存在
+  - 2026-05-02 時点で本番に published 状態の追加 kit:
+    - `kit-029` ネコメタル-オッドアイ (special, 6 stickers)
+    - `kit-030` み！ (6 stickers)
+    - `kit-032` S! (5 stickers)
+  - EC2 でしか存在しないため、EC2 ストレージ消失リスクへの備え (rsync バックアップ等) は今後の検討事項
 - **superpowers の writing-plans プラグイン**で作成した詳細計画: `docs/superpowers/plans/2026-04-10-special-kit-dual-audio.md`
 
 ---
