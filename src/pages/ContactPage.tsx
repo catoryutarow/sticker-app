@@ -72,7 +72,7 @@ export function ContactPage() {
                 </h2>
 
                 <a
-                  href="https://formbase.jp/motechoro/contact-form"
+                  href="https://spollup.jp/contact/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block p-4 sm:p-5 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors group"
@@ -92,7 +92,7 @@ export function ContactPage() {
                         />
                       </div>
                       <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                        株式会社モテコロのお問い合わせフォームから送信できます。
+                        株式会社スポルアップのお問い合わせフォームから送信できます。
                       </p>
                     </div>
                   </div>
@@ -168,18 +168,18 @@ export function ContactPage() {
                   <dl className="space-y-2 text-sm sm:text-base">
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       <dt className="w-20 sm:w-24 text-gray-500 flex-shrink-0">会社名</dt>
-                      <dd className="font-medium">株式会社モテコロ</dd>
+                      <dd className="font-medium">株式会社スポルアップ</dd>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       <dt className="w-20 sm:w-24 text-gray-500 flex-shrink-0">Webサイト</dt>
                       <dd className="min-w-0 break-all">
                         <a
-                          href="https://motechoro.jp/"
+                          href="https://spollup.jp/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-600 hover:underline"
                         >
-                          https://motechoro.jp/
+                          https://spollup.jp/
                         </a>
                       </dd>
                     </div>

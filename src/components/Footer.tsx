@@ -55,12 +55,12 @@ export function Footer() {
             <ul className="space-y-1.5">
               <li>
                 <a
-                  href="https://motechoro.jp/"
+                  href="https://spollup.jp/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-gray-600 hover:text-indigo-600"
                 >
-                  株式会社モテコロ
+                  株式会社スポルアップ
                   <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </a>
               </li>
@@ -79,7 +79,7 @@ export function Footer() {
         </nav>
 
         <div className="mt-8 pt-5 border-t border-gray-100 text-xs text-gray-500 text-center">
-          © {year} 株式会社モテコロ All rights reserved.
+          © {year} 株式会社スポルアップ All rights reserved.
         </div>
       </div>
     </footer>

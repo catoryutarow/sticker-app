@@ -41,7 +41,7 @@ export function TermsPage() {
 
             <div className="max-w-none space-y-4 text-gray-700 leading-relaxed">
               <p>
-                この利用規約（以下「本規約」）は、株式会社モテコロ（以下「当社」）が提供する
+                この利用規約（以下「本規約」）は、株式会社スポルアップ（以下「当社」）が提供する
                 「シール帳」（以下「本サービス」）の利用条件を定めるものです。
                 ユーザーの皆様には、本規約に従って本サービスをご利用いただきます。
               </p>
@@ -182,7 +182,7 @@ export function TermsPage() {
 
               <footer className="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
                 <p>制定日: 2026年2月3日</p>
-                <p className="mt-1">株式会社モテコロ</p>
+                <p className="mt-1">株式会社スポルアップ</p>
               </footer>
             </div>
           </article>

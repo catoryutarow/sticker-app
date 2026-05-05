@@ -41,7 +41,7 @@
 │  │                │                │ • プライバシー │         │
 │  └──────────────┴──────────────┴──────────────┘         │
 │                                                          │
-│  © 2026 株式会社モテコロ  All rights reserved.            │
+│  © 2026 株式会社スポルアップ  All rights reserved.            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -97,7 +97,7 @@ export function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-2">運営</h3>
             <ul className="space-y-1">
-              <li><a href="https://motechoro.jp/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600">株式会社モテコロ</a></li>
+              <li><a href="https://spollup.jp/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600">株式会社スポルアップ</a></li>
               <li><Link to="/terms" className="text-gray-600 hover:text-indigo-600">利用規約</Link></li>
               <li><Link to="/privacy" className="text-gray-600 hover:text-indigo-600">プライバシーポリシー</Link></li>
             </ul>
@@ -106,7 +106,7 @@ export function Footer() {
 
         {/* コピーライト */}
         <div className="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-500 text-center">
-          © {year} 株式会社モテコロ All rights reserved.
+          © {year} 株式会社スポルアップ All rights reserved.
         </div>
       </div>
     </footer>

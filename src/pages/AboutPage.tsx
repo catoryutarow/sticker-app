@@ -25,7 +25,7 @@ export function AboutPage() {
         <title>シール帳について | シール帳</title>
         <meta
           name="description"
-          content="シール帳は、音楽ワークショップや講演事業を展開する株式会社モテコロが運営する、音楽シールで楽曲を作れる無料Webアプリです。QOML（クオリティ・オブ・ミュージック・ライフ）の向上を理念に、運営者の音楽現場での知見を反映しながら継続的に改善・更新しています。"
+          content="シール帳は、音楽ワークショップや講演事業を展開する株式会社スポルアップが運営する、音楽シールで楽曲を作れる無料Webアプリです。QOML（クオリティ・オブ・ミュージック・ライフ）の向上を理念に、運営者の音楽現場での知見を反映しながら継続的に改善・更新しています。"
         />
         <link rel="canonical" href="https://www.sirucho.com/about" />
       </Helmet>
@@ -151,12 +151,12 @@ export function AboutPage() {
                     現場で続けてきたメンバーによって支えられています。
                     運営会社の
                     <a
-                      href="https://motechoro.jp/"
+                      href="https://spollup.jp/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-indigo-600 hover:underline inline-flex items-center gap-0.5"
                     >
-                      株式会社モテコロ
+                      株式会社スポルアップ
                       <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                     </a>
                     は、地域・学校・企業向けに音楽ワークショップや講演・公演派遣を提供しており、
@@ -187,7 +187,7 @@ export function AboutPage() {
                 </h2>
                 <div className="bg-gray-50 rounded-xl p-5 sm:p-6">
                   <h3 className="font-bold text-lg text-gray-900 mb-3">
-                    株式会社モテコロ
+                    株式会社スポルアップ
                   </h3>
                   <p className="text-gray-700 mb-3">
                     「QOML（クオリティ・オブ・ミュージック・ライフ）の向上」を経営理念とし、
@@ -202,7 +202,7 @@ export function AboutPage() {
                     「音楽の入り口をもっと広げたい」という気づきから、自社プロダクトとして開発されました。
                   </p>
                   <a
-                    href="https://motechoro.jp/"
+                    href="https://spollup.jp/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
@@ -219,7 +219,7 @@ export function AboutPage() {
                   運営会社のこれまで
                 </h2>
                 <p className="mb-4">
-                  株式会社モテコロは、音楽を通じた体験設計を事業の柱とし、
+                  株式会社スポルアップは、音楽を通じた体験設計を事業の柱とし、
                   現場で得たノウハウを自社プロダクトに反映しています。シール帳はその流れの一部です。
                 </p>
                 <ul className="space-y-3">

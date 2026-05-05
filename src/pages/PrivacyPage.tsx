@@ -44,7 +44,7 @@ export function PrivacyPage() {
 
             <div className="max-w-none space-y-4 text-gray-700 leading-relaxed">
               <p>
-                株式会社モテコロ（以下「当社」）は、本ウェブサイト「シール帳」（以下「本サービス」）において、
+                株式会社スポルアップ（以下「当社」）は、本ウェブサイト「シール帳」（以下「本サービス」）において、
                 ユーザーの個人情報を適切に取り扱うことを重要な責務と認識し、以下のプライバシーポリシーを定めます。
               </p>
 
@@ -255,7 +255,7 @@ export function PrivacyPage() {
 
               <footer className="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
                 <p>制定日: 2026年2月3日</p>
-                <p className="mt-1">株式会社モテコロ</p>
+                <p className="mt-1">株式会社スポルアップ</p>
               </footer>
             </div>
           </article>
