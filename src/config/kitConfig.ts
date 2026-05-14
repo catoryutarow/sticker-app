@@ -18,6 +18,8 @@ export interface KitDefinition {
   isSpecial?: boolean;
   specialBpm?: number;
   kitUuid?: string;     // サーバー側のUUID
+  partnerName?: string; // 協力企業名（admin限定設定）
+  partnerUrl?: string;  // 協力企業リンク（外部URL）
 }
 
 // musicalKeyは並行調フォーマット（メジャー/マイナー）

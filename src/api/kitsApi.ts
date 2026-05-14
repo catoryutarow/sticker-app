@@ -26,6 +26,8 @@ export interface Kit {
   status: 'draft' | 'published';
   is_special: number;       // 0 or 1
   special_bpm: number;      // BPM for special mode
+  partner_name: string | null;  // 協力企業名（admin限定）
+  partner_url: string | null;   // 協力企業リンク（admin限定）
   created_at: string;
   updated_at: string;
   sticker_count?: number;
@@ -85,6 +87,8 @@ export interface UpdateKitRequest {
   status?: 'draft' | 'published';
   isSpecial?: boolean;
   specialBpm?: number;
+  partnerName?: string;
+  partnerUrl?: string;
 }
 
 export interface CreateStickerRequest {

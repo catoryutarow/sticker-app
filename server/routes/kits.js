@@ -25,6 +25,14 @@ try {
     db.prepare("ALTER TABLE kits ADD COLUMN special_bpm INTEGER DEFAULT 120").run();
     console.log('Migration: Added special_bpm to kits');
   }
+  if (!kitCols.includes('partner_name')) {
+    db.prepare("ALTER TABLE kits ADD COLUMN partner_name TEXT").run();
+    console.log('Migration: Added partner_name to kits');
+  }
+  if (!kitCols.includes('partner_url')) {
+    db.prepare("ALTER TABLE kits ADD COLUMN partner_url TEXT").run();
+    console.log('Migration: Added partner_url to kits');
+  }
   const stickerCols = db.prepare("PRAGMA table_info(stickers)").all().map(c => c.name);
   if (!stickerCols.includes('special_audio_uploaded')) {
     db.prepare("ALTER TABLE stickers ADD COLUMN special_audio_uploaded INTEGER DEFAULT 0").run();
@@ -479,7 +487,7 @@ router.get('/:kitId', (req, res) => {
 router.put('/:kitId', async (req, res) => {
   try {
     const { kitId } = req.params;
-    const { name, nameJa, description, color, musicalKey, status, isSpecial, specialBpm } = req.body;
+    const { name, nameJa, description, color, musicalKey, status, isSpecial, specialBpm, partnerName, partnerUrl } = req.body;
 
     const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
     if (ownership.error) {
@@ -586,12 +594,30 @@ router.put('/:kitId', async (req, res) => {
     // 公開時は確定したキーを保存、それ以外は元のmusicalKeyを使用
     const keyToSave = (status === 'published') ? finalMusicalKey : musicalKey;
 
-    // isSpecial/specialBpm はadminのみ変更可能
+    // isSpecial/specialBpm/partnerName/partnerUrl はadminのみ変更可能
     const isSpecialValue = (req.user.role === 'admin' && isSpecial !== undefined)
       ? (isSpecial ? 1 : 0)
       : undefined;
     const specialBpmValue = (req.user.role === 'admin' && specialBpm !== undefined)
       ? specialBpm
+      : undefined;
+
+    // Partner fields: admin限定。空文字を渡せば事実上のクリア（バッジは非表示になる）
+    const partnerNameValue = (req.user.role === 'admin' && partnerName !== undefined)
+      ? (typeof partnerName === 'string' ? partnerName.trim() : '')
+      : undefined;
+    // javascript: 等の危険スキームを弾く
+    const sanitizePartnerUrl = (u) => {
+      if (typeof u !== 'string') return '';
+      const trimmed = u.trim();
+      if (trimmed === '') return '';
+      if (/^javascript:/i.test(trimmed) || /^data:/i.test(trimmed)) return '';
+      // protocol 省略時は https を補う
+      if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+      return trimmed;
+    };
+    const partnerUrlValue = (req.user.role === 'admin' && partnerUrl !== undefined)
+      ? sanitizePartnerUrl(partnerUrl)
       : undefined;
 
     db.prepare(`
@@ -604,9 +630,11 @@ router.put('/:kitId', async (req, res) => {
           status = COALESCE(?, status),
           is_special = COALESCE(?, is_special),
           special_bpm = COALESCE(?, special_bpm),
+          partner_name = COALESCE(?, partner_name),
+          partner_url = COALESCE(?, partner_url),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(name, nameJa, description, color, keyToSave, status, isSpecialValue, specialBpmValue, kitId);
+    `).run(name, nameJa, description, color, keyToSave, status, isSpecialValue, specialBpmValue, partnerNameValue, partnerUrlValue, kitId);
 
     const kit = db.prepare('SELECT * FROM kits WHERE id = ?').get(kitId);
 

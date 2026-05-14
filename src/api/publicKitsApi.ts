@@ -16,6 +16,8 @@ export interface PublicKit {
   status: string;
   is_special: number;
   special_bpm: number;
+  partner_name: string | null;
+  partner_url: string | null;
   sticker_count?: number;
   tags?: PublicKitTag[];
   stickers?: PublicSticker[];

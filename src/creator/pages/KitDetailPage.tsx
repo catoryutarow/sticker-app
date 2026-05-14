@@ -94,6 +94,11 @@ export const KitDetailPage = () => {
   const [specialBpm, setSpecialBpm] = useState(120);
   const [specialSaving, setSpecialSaving] = useState(false);
 
+  // 協力企業設定（admin限定）
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerUrl, setPartnerUrl] = useState('');
+  const [partnerSaving, setPartnerSaving] = useState(false);
+
   // 共有ダイアログ
   const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -112,6 +117,8 @@ export const KitDetailPage = () => {
       setKit(response.kit);
       setIsSpecial(!!response.kit.is_special);
       setSpecialBpm(response.kit.special_bpm || 120);
+      setPartnerName(response.kit.partner_name || '');
+      setPartnerUrl(response.kit.partner_url || '');
       setStickers(response.stickers);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('kitDetail.loadFailed'));
@@ -297,6 +304,25 @@ export const KitDetailPage = () => {
       console.error('Failed to save special settings:', error);
     } finally {
       setSpecialSaving(false);
+    }
+  };
+
+  const handleSavePartner = async () => {
+    if (!kit) return;
+    setPartnerSaving(true);
+    try {
+      await kitsApi.updateKit(kit.id, {
+        partnerName,
+        partnerUrl,
+      });
+      const data = await kitsApi.getKit(kit.id);
+      setKit(data.kit);
+      setPartnerName(data.kit.partner_name || '');
+      setPartnerUrl(data.kit.partner_url || '');
+    } catch (error) {
+      console.error('Failed to save partner settings:', error);
+    } finally {
+      setPartnerSaving(false);
     }
   };
 
@@ -687,6 +713,58 @@ export const KitDetailPage = () => {
                 </div>
               </div>
             )}
+
+      {/* 協力企業設定（admin専用） */}
+      {isAdmin && (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              協力企業表示
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              キットのカードに「協力:〇〇」のリンクを表示します。空欄で保存すると非表示になります。
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  協力企業名
+                </label>
+                <input
+                  type="text"
+                  value={partnerName}
+                  onChange={(e) => setPartnerName(e.target.value)}
+                  placeholder="例: 株式会社〇〇"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  協力企業リンク URL
+                </label>
+                <input
+                  type="url"
+                  value={partnerUrl}
+                  onChange={(e) => setPartnerUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  http(s):// 省略時は自動で https:// を補います
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSavePartner}
+              disabled={partnerSaving}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {partnerSaving ? '保存中...' : '協力企業設定を保存'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* メインコンテンツ：2カラムレイアウト（モバイルは縦並び、シール→プレビューの順） */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

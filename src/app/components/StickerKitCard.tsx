@@ -100,6 +100,37 @@ export function StickerKitCard({
         </span>
       </div>
 
+      {/* 協力企業バッジ（admin が設定した場合のみ） */}
+      {kit.partnerName && (
+        <div className="absolute top-3 right-4 z-20">
+          {kit.partnerUrl ? (
+            <a
+              href={kit.partnerUrl}
+              target="_blank"
+              rel="sponsored noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-900/80 text-white hover:bg-gray-900 transition-colors max-w-[140px]"
+              title={`協力: ${kit.partnerName}`}
+            >
+              <span className="opacity-70">協力:</span>
+              <span className="truncate">{kit.partnerName}</span>
+              <svg className="w-2.5 h-2.5 flex-shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-900/80 text-white max-w-[140px]"
+              title={`協力: ${kit.partnerName}`}
+            >
+              <span className="opacity-70">協力:</span>
+              <span className="truncate">{kit.partnerName}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* シール一覧 */}
       <div className="relative p-4 pt-10" style={{ height: '380px' }}>
         {layout.map((item) => (
