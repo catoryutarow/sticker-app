@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { kitsApi, type Kit, type Sticker, type UpdateKitRequest, type FallbackAssignment } from '@/api/kitsApi';
+import { type StickerRole, RHYTHM_ROLES, MELODY_ROLES, ROLE_LABELS, ALL_STICKER_ROLES } from '@/config/stickerConfig';
 import { audioLibraryApi } from '@/api/audioLibraryApi';
 import { fetchKitTags, updateKitTags, type KitTag } from '@/api/tagsApi';
 import { useAuth } from '@/auth';
@@ -77,7 +78,12 @@ export const KitDetailPage = () => {
   const [stickersNotInLayout, setStickersNotInLayout] = useState<Sticker[]>([]);
   const [isCheckingLayouts, setIsCheckingLayouts] = useState(false);
 
-  const [stickerForm, setStickerForm] = useState({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
+  const [stickerForm, setStickerForm] = useState<{
+    name: string;
+    nameJa: string;
+    color: string;
+    role: StickerRole;
+  }>({ name: '', nameJa: '', color: '#CCCCCC', role: 'lead' });
   const [isStickerSubmitting, setIsStickerSubmitting] = useState(false);
 
   // タグ管理
@@ -186,11 +192,11 @@ export const KitDetailPage = () => {
         name: stickerForm.name.trim(),
         nameJa: stickerForm.nameJa.trim() || undefined,
         color: stickerForm.color,
-        isPercussion: stickerForm.isPercussion,
+        role: stickerForm.role,
       });
       setStickers([...stickers, response.sticker]);
       setNewlyCreatedSticker(response.sticker);
-      setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
+      setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', role: 'lead' });
       setAddStickerStep(2); // 画像アップロードステップへ
     } catch (err) {
       setError(err instanceof Error ? err.message : t('sticker.addFailed'));
@@ -217,7 +223,7 @@ export const KitDetailPage = () => {
     setAddStickerStep(1);
     setNewlyCreatedSticker(null);
     setNewStickerImageFile(null);
-    setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
+    setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', role: 'lead' });
   };
 
   // adminは公開済みでもシール編集可能
@@ -226,11 +232,15 @@ export const KitDetailPage = () => {
   const handleEditSticker = (sticker: Sticker) => {
     if (!canEditStickers) return;
     setEditingSticker(sticker);
+    const derivedRole: StickerRole =
+      sticker.role && (ALL_STICKER_ROLES as string[]).includes(sticker.role)
+        ? (sticker.role as StickerRole)
+        : (sticker.is_percussion === 1 ? 'percussion' : 'lead');
     setStickerForm({
       name: sticker.name,
       nameJa: sticker.name_ja || '',
       color: sticker.color,
-      isPercussion: sticker.is_percussion === 1,
+      role: derivedRole,
     });
   };
 
@@ -244,11 +254,11 @@ export const KitDetailPage = () => {
         name: stickerForm.name.trim(),
         nameJa: stickerForm.nameJa.trim() || undefined,
         color: stickerForm.color,
-        isPercussion: stickerForm.isPercussion,
+        role: stickerForm.role,
       });
       setStickers(stickers.map(s => s.id === editingSticker.id ? response.sticker : s));
       setEditingSticker(null);
-      setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
+      setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', role: 'lead' });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('sticker.updateFailed'));
     } finally {
@@ -812,11 +822,7 @@ export const KitDetailPage = () => {
                         )}
                       </div>
                       <div className="text-sm font-medium text-gray-900 truncate">{sticker.name}</div>
-                      {sticker.is_percussion === 1 && (
-                        <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] bg-orange-100 text-orange-700 rounded">
-                          Perc
-                        </span>
-                      )}
+                      <StickerRoleBadge sticker={sticker} />
                     </div>
                   ))}
                 </div>
@@ -859,11 +865,7 @@ export const KitDetailPage = () => {
                       {sticker.name_ja && (
                         <div className="text-xs text-gray-500 truncate">{sticker.name_ja}</div>
                       )}
-                      {sticker.is_percussion === 1 && (
-                        <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] bg-orange-100 text-orange-700 rounded">
-                          Perc
-                        </span>
-                      )}
+                      <StickerRoleBadge sticker={sticker} />
                     </div>
                   ))}
                 </div>
@@ -1232,47 +1234,11 @@ export const KitDetailPage = () => {
                       />
                     </div>
                   </div>
-                  {/* {t('sticker.audioType')}選択 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.audioType')}</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setStickerForm({ ...stickerForm, isPercussion: false })}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
-                          !stickerForm.isPercussion
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                        </svg>
-                        <span className="text-xs font-medium">{t('sticker.melody')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setStickerForm({ ...stickerForm, isPercussion: true })}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
-                          stickerForm.isPercussion
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="3" strokeWidth={1.5} />
-                          <circle cx="12" cy="12" r="8" strokeWidth={1.5} />
-                          <path strokeLinecap="round" strokeWidth={1.5} d="M12 4v2M12 18v2M4 12h2M18 12h2" />
-                        </svg>
-                        <span className="text-xs font-medium">{t('sticker.drum')}</span>
-                      </button>
-                    </div>
-                    <p className="mt-1.5 text-xs text-gray-500">
-                      {stickerForm.isPercussion
-                        ? t('sticker.drumDesc')
-                        : t('sticker.melodyDesc')}
-                    </p>
-                  </div>
+                  {/* 役割選択 */}
+                  <RoleSelector
+                    value={stickerForm.role}
+                    onChange={(role) => setStickerForm({ ...stickerForm, role })}
+                  />
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button
                       type="button"
@@ -1444,53 +1410,17 @@ export const KitDetailPage = () => {
                   />
                 </div>
               </div>
-              {/* {t('sticker.audioType')}選択 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sticker.audioType')}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStickerForm({ ...stickerForm, isPercussion: false })}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
-                      !stickerForm.isPercussion
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                    <span className="text-xs font-medium">{t('sticker.melody')}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStickerForm({ ...stickerForm, isPercussion: true })}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
-                      stickerForm.isPercussion
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="3" strokeWidth={1.5} />
-                      <circle cx="12" cy="12" r="8" strokeWidth={1.5} />
-                      <path strokeLinecap="round" strokeWidth={1.5} d="M12 4v2M12 18v2M4 12h2M18 12h2" />
-                    </svg>
-                    <span className="text-xs font-medium">{t('sticker.drum')}</span>
-                  </button>
-                </div>
-                <p className="mt-1.5 text-xs text-gray-500">
-                  {stickerForm.isPercussion
-                    ? t('sticker.drumDesc')
-                    : t('sticker.melodyDesc')}
-                </p>
-              </div>
+              {/* 役割選択 */}
+              <RoleSelector
+                value={stickerForm.role}
+                onChange={(role) => setStickerForm({ ...stickerForm, role })}
+              />
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setEditingSticker(null);
-                    setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', isPercussion: false });
+                    setStickerForm({ name: '', nameJa: '', color: '#CCCCCC', role: 'lead' });
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
@@ -1546,6 +1476,99 @@ export const KitDetailPage = () => {
         />
       )}
 
+    </div>
+  );
+};
+
+// シールカード上の役割バッジ
+const StickerRoleBadge = ({ sticker }: { sticker: Sticker }) => {
+  const role: StickerRole | null =
+    sticker.role && (ALL_STICKER_ROLES as string[]).includes(sticker.role)
+      ? (sticker.role as StickerRole)
+      : sticker.is_percussion === 1 ? 'percussion' : null;
+  if (!role) return null;
+  const isRhythm = (RHYTHM_ROLES as string[]).includes(role);
+  const cls = isRhythm
+    ? 'bg-orange-100 text-orange-700'
+    : 'bg-blue-100 text-blue-700';
+  return (
+    <span className={`inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded ${cls}`}>
+      {ROLE_LABELS[role].ja}
+    </span>
+  );
+};
+
+// 役割選択 UI: 7 ロールをカテゴリ別にグループ表示
+const ROLE_ACCENT_CLASSES: Record<'rhythm' | 'melody', { active: string; inactive: string }> = {
+  rhythm: {
+    active: 'border-orange-500 bg-orange-50 text-orange-700',
+    inactive: 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+  },
+  melody: {
+    active: 'border-blue-500 bg-blue-50 text-blue-700',
+    inactive: 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+  },
+};
+
+const ROLE_DESC: Record<StickerRole, string> = {
+  kick:       'ドラムのキック（低音、キー非依存）',
+  snare:      'ドラムのスネア（中音、キー非依存）',
+  percussion: 'パーカッション全般（キー非依存）',
+  bass:       'ベース（キット音楽キーに同期）',
+  chord:      'コード／和音（キット音楽キーに同期）',
+  lead:       'リード／メロディ（キット音楽キーに同期）',
+  candy:      'シンセパッド／装飾音（キット音楽キーに同期）',
+};
+
+interface RoleSelectorProps {
+  value: StickerRole;
+  onChange: (role: StickerRole) => void;
+}
+
+const RoleSelector = ({ value, onChange }: RoleSelectorProps) => {
+  const isRhythm = (RHYTHM_ROLES as string[]).includes(value);
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">役割</label>
+      <div className="space-y-3">
+        <RoleRowGroup label="リズム" roles={RHYTHM_ROLES} value={value} onChange={onChange} category="rhythm" />
+        <RoleRowGroup label="メロディ" roles={MELODY_ROLES} value={value} onChange={onChange} category="melody" />
+      </div>
+      <p className={`mt-2 text-xs ${isRhythm ? 'text-orange-700' : 'text-blue-700'}`}>
+        {ROLE_DESC[value]}
+      </p>
+    </div>
+  );
+};
+
+interface RoleRowGroupProps {
+  label: string;
+  roles: StickerRole[];
+  value: StickerRole;
+  onChange: (role: StickerRole) => void;
+  category: 'rhythm' | 'melody';
+}
+
+const RoleRowGroup = ({ label, roles, value, onChange, category }: RoleRowGroupProps) => {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
+      <div className="grid grid-cols-4 gap-2">
+        {roles.map(role => {
+          const selected = value === role;
+          const cls = selected ? ROLE_ACCENT_CLASSES[category].active : ROLE_ACCENT_CLASSES[category].inactive;
+          return (
+            <button
+              key={role}
+              type="button"
+              onClick={() => onChange(role)}
+              className={`px-2 py-2 rounded-lg border-2 transition-all text-xs font-medium ${cls}`}
+            >
+              {ROLE_LABELS[role].ja}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

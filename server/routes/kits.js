@@ -38,6 +38,15 @@ try {
     db.prepare("ALTER TABLE stickers ADD COLUMN special_audio_uploaded INTEGER DEFAULT 0").run();
     console.log('Migration: Added special_audio_uploaded to stickers');
   }
+  if (!stickerCols.includes('role')) {
+    db.prepare("ALTER TABLE stickers ADD COLUMN role TEXT").run();
+    console.log('Migration: Added role to stickers');
+    // 既存シールへの仮割当: is_percussion=1 → 'percussion'、is_percussion=0 → 'lead'
+    const backfill = db.prepare(
+      "UPDATE stickers SET role = CASE WHEN is_percussion = 1 THEN 'percussion' ELSE 'lead' END WHERE role IS NULL"
+    ).run();
+    console.log(`Migration: Backfilled role for ${backfill.changes} stickers`);
+  }
 } catch (e) {
   console.error('Migration error:', e);
 }
@@ -99,6 +108,17 @@ function normalizeMusicalKey(key) {
   if (!key) return 'C/Am';
   if (key.includes('/')) return key;
   return SINGLE_KEY_TO_PARALLEL[key] || 'C/Am';
+}
+
+const ALLOWED_STICKER_ROLES = new Set([
+  'kick', 'snare', 'percussion',
+  'bass', 'chord', 'lead', 'candy',
+]);
+
+function sanitizeStickerRole(role) {
+  if (role === null || role === undefined || role === '') return null;
+  if (typeof role !== 'string') return null;
+  return ALLOWED_STICKER_ROLES.has(role) ? role : null;
 }
 
 function attachKitDetails(kits) {
@@ -946,7 +966,7 @@ router.get('/:kitId/stickers', (req, res) => {
 router.post('/:kitId/stickers', (req, res) => {
   try {
     const { kitId } = req.params;
-    const { name, nameJa, color, isPercussion } = req.body;
+    const { name, nameJa, color, isPercussion, role } = req.body;
 
     const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
     if (ownership.error) {
@@ -966,10 +986,14 @@ router.post('/:kitId/stickers', (req, res) => {
     const maxOrder = db.prepare('SELECT MAX(sort_order) as max FROM stickers WHERE kit_id = ?').get(kitId);
     const sortOrder = (maxOrder?.max ?? -1) + 1;
 
+    // role が未指定なら isPercussion から導出 (互換)
+    const sanitizedRole = sanitizeStickerRole(role) ?? (isPercussion ? 'percussion' : 'lead');
+    const isPercussionDerived = ['kick', 'snare', 'percussion'].includes(sanitizedRole) ? 1 : 0;
+
     db.prepare(`
-      INSERT INTO stickers (id, kit_id, sticker_number, full_id, name, name_ja, color, is_percussion, sort_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, kitId, stickerNumber, fullId, name, nameJa || null, color || '#CCCCCC', isPercussion ? 1 : 0, sortOrder);
+      INSERT INTO stickers (id, kit_id, sticker_number, full_id, name, name_ja, color, is_percussion, role, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, kitId, stickerNumber, fullId, name, nameJa || null, color || '#CCCCCC', isPercussionDerived, sanitizedRole, sortOrder);
 
     const sticker = db.prepare('SELECT * FROM stickers WHERE id = ?').get(id);
 
@@ -987,7 +1011,7 @@ router.post('/:kitId/stickers', (req, res) => {
 router.put('/:kitId/stickers/:stickerId', (req, res) => {
   try {
     const { kitId, stickerId } = req.params;
-    const { name, nameJa, color, isPercussion, sortOrder, layoutX, layoutY, layoutSize, layoutRotation, layoutCount } = req.body;
+    const { name, nameJa, color, isPercussion, role, sortOrder, layoutX, layoutY, layoutSize, layoutRotation, layoutCount } = req.body;
 
     const ownership = checkKitOwnership(kitId, req.user.id, req.user.role);
     if (ownership.error) {
@@ -999,12 +1023,35 @@ router.put('/:kitId/stickers/:stickerId', (req, res) => {
       return res.status(404).json({ error: 'Sticker not found' });
     }
 
+    // role と is_percussion は常に同期させる (どちらか送られたら両方とも更新)
+    let roleValue = null;
+    let isPercussionValue = null;
+    if (role !== undefined) {
+      roleValue = sanitizeStickerRole(role);
+      if (roleValue !== null) {
+        isPercussionValue = ['kick', 'snare', 'percussion'].includes(roleValue) ? 1 : 0;
+      }
+    } else if (isPercussion !== undefined) {
+      // QuickCreatePage など legacy: isPercussion のみ → 既存 role が新カテゴリと矛盾しなければ温存、矛盾するなら粗い既定値で上書き
+      isPercussionValue = isPercussion ? 1 : 0;
+      const currentRole = sticker.role;
+      const currentIsRhythm = ['kick', 'snare', 'percussion'].includes(currentRole);
+      if (currentRole && currentIsRhythm === !!isPercussion) {
+        // 矛盾なし → role はそのまま
+        roleValue = null;
+      } else {
+        // 矛盾 or 未設定 → カテゴリ既定値で上書き
+        roleValue = isPercussion ? 'percussion' : 'lead';
+      }
+    }
+
     db.prepare(`
       UPDATE stickers
       SET name = COALESCE(?, name),
           name_ja = COALESCE(?, name_ja),
           color = COALESCE(?, color),
           is_percussion = COALESCE(?, is_percussion),
+          role = COALESCE(?, role),
           sort_order = COALESCE(?, sort_order),
           layout_x = COALESCE(?, layout_x),
           layout_y = COALESCE(?, layout_y),
@@ -1017,7 +1064,8 @@ router.put('/:kitId/stickers/:stickerId', (req, res) => {
       name,
       nameJa,
       color,
-      isPercussion !== undefined ? (isPercussion ? 1 : 0) : null,
+      isPercussionValue,
+      roleValue,
       sortOrder,
       layoutX,
       layoutY,

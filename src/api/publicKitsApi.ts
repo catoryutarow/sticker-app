@@ -42,6 +42,7 @@ export interface PublicSticker {
   name_ja: string | null;
   color: string;
   is_percussion: number;
+  role: string | null;
   image_uploaded: number;
   audio_uploaded: number;
   special_audio_uploaded: number;

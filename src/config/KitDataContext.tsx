@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { fetchPublicKitsPaginated, PublicKit, PublicSticker, PaginationInfo } from '@/api/publicKitsApi';
 import { KitDefinition, registerDynamicKit, clearDynamicKits } from './kitConfig';
 import { StickerLayoutItem } from './stickerLayout';
-import { StickerDefinition, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
+import { StickerDefinition, StickerRole, ALL_STICKER_ROLES, registerDynamicSticker, clearDynamicStickers } from './stickerConfig';
 import AudioEngine from '@/audio/AudioEngine';
 
 interface KitDataContextType {
@@ -63,12 +63,16 @@ function convertKitToDefinition(kit: PublicKit & { tags?: Array<{ name: string; 
  * APIから取得したシールデータをフロントエンド形式に変換
  */
 function convertStickerToDefinition(sticker: PublicSticker): StickerDefinition {
+  const role = (sticker.role && (ALL_STICKER_ROLES as string[]).includes(sticker.role))
+    ? (sticker.role as StickerRole)
+    : null;
   return {
     id: sticker.full_id, // '004-001' など
     name: sticker.name,
     nameJa: sticker.name_ja || sticker.name,
     color: sticker.color,
     isPercussion: sticker.is_percussion === 1,
+    role,
   };
 }
 

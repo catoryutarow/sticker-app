@@ -54,6 +54,7 @@ export interface Sticker {
   name_ja: string | null;
   color: string;
   is_percussion: number;
+  role: string | null;
   image_uploaded: number;
   audio_uploaded: number;
   special_audio_uploaded: number;
@@ -96,6 +97,7 @@ export interface CreateStickerRequest {
   nameJa?: string;
   color?: string;
   isPercussion?: boolean;
+  role?: string;
 }
 
 export interface UpdateStickerRequest {
@@ -103,6 +105,7 @@ export interface UpdateStickerRequest {
   nameJa?: string;
   color?: string;
   isPercussion?: boolean;
+  role?: string | null;
   sortOrder?: number;
 }
 

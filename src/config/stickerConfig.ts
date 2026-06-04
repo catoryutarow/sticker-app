@@ -12,12 +12,37 @@
  * - シールID: 3桁（001〜999）
  */
 
+export type StickerRole =
+  | 'kick' | 'snare' | 'percussion'   // リズム系（高さが変わる、キー非依存）
+  | 'bass' | 'chord' | 'lead' | 'candy'; // メロディ系（キーが変わる）
+
+export type StickerCategory = 'rhythm' | 'melody';
+
+export const RHYTHM_ROLES: StickerRole[] = ['kick', 'snare', 'percussion'];
+export const MELODY_ROLES: StickerRole[] = ['bass', 'chord', 'lead', 'candy'];
+export const ALL_STICKER_ROLES: StickerRole[] = [...RHYTHM_ROLES, ...MELODY_ROLES];
+
+export const ROLE_LABELS: Record<StickerRole, { en: string; ja: string }> = {
+  kick:       { en: 'Kick',       ja: 'キック' },
+  snare:      { en: 'Snare',      ja: 'スネア' },
+  percussion: { en: 'Percussion', ja: 'パーカッション' },
+  bass:       { en: 'Bass',       ja: 'ベース' },
+  chord:      { en: 'Chord',      ja: 'コード' },
+  lead:       { en: 'Lead',       ja: 'リード' },
+  candy:      { en: 'Candy',      ja: 'キャンディー' },
+};
+
+export function getRoleCategory(role: StickerRole): StickerCategory {
+  return RHYTHM_ROLES.includes(role) ? 'rhythm' : 'melody';
+}
+
 export interface StickerDefinition {
   id: string;
   name: string;
   nameJa: string;
   color: string;
-  isPercussion?: boolean;  // パーカッション（キーなし）の場合true
+  isPercussion?: boolean;  // パーカッション（キーなし）の場合true（互換用、role があれば role を優先）
+  role?: StickerRole | null;
 }
 
 // 動的に追加されるシール定義を保持するマップ
@@ -129,11 +154,35 @@ export function getStickerSpecialAudioPath(id: string): string {
 }
 
 /**
- * シールがパーカッションかどうかを判定
+ * シールの役割を取得（未設定なら null）
  */
-export function isStickerPercussion(stickerId: string): boolean {
+export function getStickerRole(stickerId: string): StickerRole | null {
+  const sticker = getStickerById(stickerId);
+  return sticker?.role ?? null;
+}
+
+/**
+ * シールのカテゴリ（rhythm/melody）を取得
+ * role があればそこから導出、無ければ isPercussion を見る互換挙動
+ */
+export function getStickerCategory(stickerId: string): StickerCategory {
+  const role = getStickerRole(stickerId);
+  if (role) return getRoleCategory(role);
+  return isStickerPercussionLegacy(stickerId) ? 'rhythm' : 'melody';
+}
+
+function isStickerPercussionLegacy(stickerId: string): boolean {
   const sticker = getStickerById(stickerId);
   return sticker?.isPercussion ?? false;
+}
+
+/**
+ * シールがパーカッション（リズム系）かどうかを判定
+ * role 優先、無ければ既存 isPercussion フィールドにフォールバック。
+ * これによりオーディオ側の callsite (StickerEditor / StickerAlbum / WorkPage / AudioMixer) は無変更で動く。
+ */
+export function isStickerPercussion(stickerId: string): boolean {
+  return getStickerCategory(stickerId) === 'rhythm';
 }
 
 /**
